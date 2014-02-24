@@ -281,7 +281,7 @@ subroutine getDDerivatives(numSeg, x, h, v, ddhdh, ddvdv, dgammadh, dd2hdh, &
 end subroutine getDDerivatives
 
 subroutine getAlphaRes(numSeg, alpha, eta, CL, alphaRes)
-  ! compute the CL residual as defined by the linear aerodynamics
+  ! compute the alpha residual as defined by the linear aerodynamics
 
   !f2py intent(in) numSeg
   !f2py intent(in) alpha, eta, CL
@@ -298,7 +298,7 @@ subroutine getAlphaRes(numSeg, alpha, eta, CL, alphaRes)
 end subroutine getAlphaRes
 
 subroutine getDAlpha(numSeg, alpha, eta, CL, dalpha, deta, dCL)
-  ! compute the derivatives of residuals of CL wrt alpha, eta, and CL
+  ! compute the derivatives of residuals of alpha wrt alpha, eta, and CL
 
   !f2py intent(in) numSeg
   !f2py intent(in) alpha, eta, CL
@@ -369,7 +369,7 @@ subroutine getDCD(numSeg, AR, e, CL, CD, dAR, de, dCL, dCD)
 end subroutine getDCD
 
 subroutine getEtaRes(numSeg, alpha, eta, CM, etaRes)
-  ! compute the residuals of CM (pitching moment coefficient)
+  ! compute the residuals of eta (tail rotation angle)
 
   !f2py intent(in) numSeg
   !f2py intent(in) alpha, eta, CM
@@ -386,7 +386,7 @@ subroutine getEtaRes(numSeg, alpha, eta, CM, etaRes)
 end subroutine getEtaRes
 
 subroutine getDEta(numSeg, alpha, eta, CM, dalpha, deta, dCM)
-  ! compute the derivatives of residuals of CM wrt alpha, eta, CM
+  ! compute the derivatives of residuals of eta wrt alpha, eta, CM
 
   !f2py intent(in) numSeg
   !f2py intent(in) alpha, eta, CM
@@ -446,7 +446,8 @@ subroutine dlinspace(n, x0, x1, dy1, dy2)
 end subroutine dlinspace
 
 subroutine getTauRes(numSeg, cThrustSL, x, h, tau, Thrust, tauRes)
-  ! computes the residuals of the thrust using a simple propulsion model
+  ! computes the residuals of the throttle setting using a simple
+  ! propulsion model
 
   !f2py intent(in) numSeg
   !f2py intent(in) cThrustSL
@@ -470,7 +471,7 @@ subroutine getTauRes(numSeg, cThrustSL, x, h, tau, Thrust, tauRes)
 end subroutine getTauRes
 
 subroutine getDTau(numSeg, cThrustSL, x, h, tau, Thrust, dCThrustSL, dh, dtau, dThrust)
-  ! computes the derivatives of the residuals of thrust wrt
+  ! computes the derivatives of the residuals of throttle setting wrt
   ! propulsion parameters, h, tau, and thrust
 
   !f2py intent(in) numSeg
@@ -681,7 +682,7 @@ end subroutine getDWf
 
 subroutine getCLRes(numSeg, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      Thrust, alpha, dGamma, alphaRes)
-  ! compute the residuals for alpha using the governing flight equation
+  ! compute the residuals for CL using the governing flight equation
   ! the flight equation is integrated, and the resultant value is 
   ! determined to be the residual for alpha
   
@@ -794,7 +795,7 @@ subroutine getDCL(numSeg, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      Thrust, alpha, dGamma, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, &
      dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, &
      dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3)
-  ! compute the derivatives of the residuals of alpha wrt gamma,
+  ! compute the derivatives of the residuals of CL wrt gamma,
   ! empty weight, S, v, rho, CL, fuel weight, gamma, thrust,
   ! alpha, dgamma/dx
   ! the jacobian structure is tri-diagonal, and is stored in 3
@@ -1033,7 +1034,7 @@ end subroutine getDCL
 
 subroutine getThrustRes(numSeg, numInt, S, Wac, g, x, v, rho, gamma, dv, CD, Wf, &
      alpha, Thrust, ThrustRes)
-  ! compute the residuals for tau by integrating the T = D flight equation
+  ! compute the residuals for thrust by integrating the T = D flight equation
   
   !f2py intent(in) numSeg, numInt
   !f2py intent(in) S, Wac, g
@@ -1147,7 +1148,7 @@ subroutine getDThrust(numSeg, numInt, S, Wac, g, x, v, rho, gamma, dv, CD, Wf, &
      alpha, Thrust, dTdS, dTdWac, dTdV1, dTdV2, dTdV3, dTdRho1, dTdRho2, dTdRho3, dTdGamma1, &
      dTdGamma2, dTdGamma3, dTddV1, dTddV2, dTddV3, dTdCD1, dTdCD2, dTdCD3, dTdWf1, dTdWf2, dTdWf3, dTdAlpha1, &
      dTdAlpha2, dTdAlpha3, dTdThrust1, dTdThrust2, dTdThrust3)
-  ! compute the derivatives of residuals of tau wrt S, empty weight,
+  ! compute the derivatives of residuals of thrust wrt S, empty weight,
   ! v, rho, gamma, dv/dx, CD, fuel weight, alpha, and thrust
   ! the jacobians are tri-diagonal, and are stored in 3 vectors
   
@@ -1383,7 +1384,7 @@ end subroutine getDThrust
 
 subroutine getCMRes(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
      dGamma, d2Gamma, dv, CM, CMRes)
-  ! compute the residuals of eta by integrating the moment flight equation
+  ! compute the residuals of CM by integrating the moment flight equation
 
   !f2py intent(in) numSeg, numInt
   !f2py intent(in) S, chord, inertia
@@ -1495,7 +1496,7 @@ subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
      dGamma, d2Gamma, dv, CM, dCMdS, dCMdC, dCMdI, dCMdV1, dCMdV2, dCMdV3, dCMdRho1, dCMdRho2, dCMdRho3, &
      dCMdGamma1, dCMdGamma2, dCMdGamma3, dCMddGamma1, dCMddGamma2, dCMddGamma3, dCMdd2Gamma1, &
      dCMdd2Gamma2, dCMdd2Gamma3, dCMddV1, dCMddV2, dCMddV3, dCMdCM1, dCMdCM2, dCMdCM3)
-  ! compute the derivatives of residuals of eta wrt S, chord,
+  ! compute the derivatives of residuals of CM wrt S, chord,
   ! inertia, v, rho, gamma, dgamma/dx, d2gamma/dx2, dv/dx, CM
   ! the jacobians are tri-diagonal, and are stored in 3 vectors
   
@@ -1713,157 +1714,3 @@ subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
   enddo
 
 end subroutine getDCM
-
-subroutine getFlightResF(numSeg, numInt, rho, v, x, gamma, dGamma, d2Gamma, dv &
-     ,CL, CD, CM, Wf, tau, alpha, cThrust, S, Wac, g, chord, inertia, flightRes)
-
-  !f2py intent(in) numSeg, numInt
-  !f2py intent(in) rho, v, x, gamma, dGamma, d2Gamma, dv, CL, CD, CM, Wf, tau, alpha, cThrust
-  !f2py intent(in) S, Wac, g, chord, inertia
-  !f2py intent(out) flightRes
-  !f2py depend(numSeg) rho, v, x, gamma, dGamma, d2Gamma, dv, CL, CD, CM, Wf, tau, alpha, cThrust, flightRes
-
-  !Input/Output
-  integer, intent(in) :: numSeg, numInt
-  double precision, dimension(0:numSeg-1), intent(in) :: rho, v, x, gamma, dGamma, d2Gamma, dv, CL, CD, CM, Wf, tau, alpha, cThrust
-  double precision, intent(in) :: S, Wac, g, chord, inertia
-  double precision, dimension(0:3*numSeg-1), intent(out) :: flightRes
-
-  integer :: i = 0, j = 0, k = 0
-  double precision, dimension(0:numInt-1) :: R1, R2
-  double precision, dimension(0:numInt-1) :: rhoTemp, vTemp, QTemp, xTemp
-  double precision, dimension(0:numInt-1) :: gammaTemp, cosGamma, sinGamma
-  double precision, dimension(0:numInt-1) :: dGammaTemp, d2GammaTemp, dvTemp
-  double precision, dimension(0:numInt-1) :: CLTemp, CDTemp, CMTemp, WTemp
-  double precision, dimension(0:numInt-1) :: aTemp, tTemp, cThrustTemp
-  double precision :: tempFlight
-  double precision, dimension(0:3*numSeg-1,0:numInt-1) :: flight
-  double precision :: param_zero = 0.0, param_one = 1.0
-
-  do i = 0,3*numSeg-1
-     do j = 0,numInt-1
-        flight(i,j) = 0.0
-     enddo
-     flightRes(i) = 0.0
-  enddo
-
-  call linspace(numInt, param_one, param_zero, R1)
-  call linspace(numInt, param_zero, param_one, R2)
-
-  do i = 0,numSeg-2
-     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
-     call linspace(numInt, v(i), v(i+1), vTemp)
-     dx = (x(i+1)-x(i))/numInt
-
-     do j = 0,numInt-1
-        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)*vTemp(j)*S
-        xTemp(j) = dx
-     enddo
-
-     xTemp(0) = 0.5*dx
-     xTemp(numInt-1) = 0.5*dx
-
-     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
-     cosGamma = cos(gammaTemp)
-     sinGamma = sin(gammaTemp)
-
-     call linspace(numInt, dGamma(i), dGamma(i+1), dGammaTemp)
-     call linspace(numInt, d2Gamma(i), d2Gamma(i+1), d2GammaTemp)
-     call linspace(numInt, dv(i), dv(i+1), dvTemp)
-     
-     do j = 0,numInt-1
-        CLTemp(j) = CL(i)*R1(j) + CL(i+1)*R2(j)
-        CDTemp(j) = CD(i)*R1(j) + CD(i+1)*R2(j)
-        CMTemp(j) = CM(i)*R1(j) + CM(i+1)*R2(j)
-
-        WTemp(j) = Wac + Wf(i)*R1(j) + Wf(i+1)*R2(j)
-        aTemp(j) = alpha(i)*R1(j) + alpha(i+1)*R2(j)
-        tTemp(j) = tau(i)*R1(j) + tau(i+1)*R2(j)
-     enddo
-
-     call linspace(numInt, cThrust(i), cThrust(i+1), cThrustTemp)
-
-     do j = 0,numInt-1
-        tempFlight = (-QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j))
-        tempFlight = tempFlight-cThrustTemp(j)*sin(aTemp(j))*tTemp(j)
-        tempFlight = tempFlight+WTemp(j)*(1/g)*vTemp(j)*vTemp(j)*cosGamma(j)*dGammaTemp(j)
-        tempFlight = tempFlight*R1(j)*xTemp(j)
-        flight(i*3,j) = flight(i*3,j) + tempFlight
-
-        tempFlight = (-cThrustTemp(j)*cos(aTemp(j))*tTemp(j))
-        tempFlight = tempFlight+QTemp(j)*CDTemp(j)
-        tempFlight = tempFlight+WTemp(j)*sinGamma(j)
-        tempFlight = tempFlight+WTemp(j)*(1/g)*vTemp(j)*cosGamma(j)*dvTemp(j)
-        tempFlight = tempFlight*R1(j)*xTemp(j)
-        flight(i*3+1,j) = flight(i*3+1,j) + tempFlight
-
-        tempFlight = d2GammaTemp(j)*(vTemp(j)*cosGamma(j))*(vTemp(j)*cosGamma(j))
-        tempFlight = tempFlight+dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)*cosGamma(j)
-        tempFlight = tempFlight*(-inertia)
-        tempFlight = tempFlight+QTemp(j)*chord*CMTemp(j)
-        tempFlight = tempFlight*R1(j)*xTemp(j)
-        flight(i*3+2,j) = flight(i*3+2,j) + tempFlight
-
-     enddo
-  enddo
-
-  do i = 0,numSeg-2
-     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
-     call linspace(numInt, v(i), v(i+1), vTemp)
-     dx = (x(i+1)-x(i))/numInt
-     
-     do j = 0,numInt-1
-        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)*vTemp(j)*S
-        xTemp(j) = dx
-     enddo
-
-     xTemp(0) = 0.5*dx
-     xTemp(numInt-1) = 0.5*dx
-
-     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
-     cosGamma = cos(gammaTemp)
-     sinGamma = sin(gammaTemp)
-     call linspace(numInt, dGamma(i), dGamma(i+1), dGammaTemp)
-     call linspace(numInt, d2Gamma(i), d2Gamma(i+1), d2GammaTemp)
-     call linspace(numInt, dv(i), dv(i+1), dvTemp)
-
-     do j = 0,numInt-1
-        CLTemp(j) = CL(i)*R1(j)+CL(i+1)*R2(j)
-        CDTemp(j) = CD(i)*R1(j)+CD(i+1)*R2(j)
-        CMTemp(j) = CM(i)*R1(j)+CM(i+1)*R2(j)
-
-        WTemp(j) = Wac+Wf(i)*R1(j)+Wf(i+1)*R2(j)
-        aTemp(j) = alpha(i)*R1(j)+alpha(i+1)*R2(j)
-        tTemp(j) = tau(i)*R1(j)+tau(i+1)*R2(j)
-        call linspace(numInt, cThrust(i), cThrust(i+1), cThrustTemp)
-     enddo
-
-     do j = 0,numInt-1
-        tempFlight = (-QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j))
-        tempFlight = tempFlight-cThrustTemp(j)*sin(aTemp(j))*tTemp(j)
-        tempFlight = tempFlight+WTemp(j)*(1/g)*vTemp(j)*vTemp(j)*cosGamma(j)*dGammaTemp(j)
-        tempFlight = tempFlight*R2(j)*xTemp(j)
-        flight((i+1)*3,j) = flight((i+1)*3,j) + tempFlight
-
-        tempFlight = (-cThrustTemp(j)*cos(aTemp(j))*tTemp(j)+QTemp(j)*CDTemp(j))
-        tempFlight = tempFlight+WTemp(j)*sinGamma(j)+WTemp(j)*(1/g)*vTemp(j)*cosGamma(j)*dvTemp(j)
-        tempFlight = tempFlight*R2(j)*xTemp(j)
-        flight((i+1)*3+1,j) = flight((i+1)*3+1,j) + tempFlight
-
-        tempFlight = d2GammaTemp(j)*(vTemp(j)*cosGamma(j))*(vTemp(j)*cosGamma(j))
-        tempFlight = tempFlight+dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)*cosGamma(j)
-        tempFlight = tempFlight*(-inertia)
-        tempFlight = tempFlight+QTemp(j)*chord*CMTemp(j)
-        tempFlight = tempFlight*R2(j)*xTemp(j)
-        flight((i+1)*3+2,j) = flight((i+1)*3+2,j) + tempFlight
-     enddo
-  enddo
-
-  do i = 0,3*numSeg-1
-     do j = 0,numInt-1
-        flightRes(i) = flightRes(i) + flight(i,j)
-     enddo
-  enddo
-
-end subroutine getFlightResF
-     
