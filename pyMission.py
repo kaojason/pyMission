@@ -13,7 +13,7 @@ class flightAnalysis(object):
         #     'S': S,             (surface area of wing)  [scal]  {m^2}
         #     'Wac': Wac,         (weight without fuel)   [scal]  {Newtons}
         #     'cThrust': cThrust, (total thrust of eng)   [scal]  {Newtons}
-        #     'cT': cT,           (TSFC)                  [scal]  {kg/(s N)}
+        #     'SFC': SFC,         (TSFC at sea level)     [scal]  {kg/(s N)}
         #     'chord': chord,     (M.A.C)                 [scal]  {m}
         #     'inertia': inertia, (pitching MoI)          [scal]  {kg m^2}
         #     'AR': AR,           (AR of wing)            [scal]  {m}
@@ -35,7 +35,7 @@ class flightAnalysis(object):
         self.S = kw['S']
         self.Wac = kw['Wac']
         self.cThrustSL = kw['cThrust']
-        self.cTSL = kw['cT']
+        self.SFCSL = kw['SFC']
         self.chord = kw['chord']
         self.AR = kw['AR']
         self.e = kw['e']
@@ -70,18 +70,18 @@ class flightAnalysis(object):
          self.dd2gammadh] = mission.getdderivatives(self.numSeg,self.x,self.h,
                                                     self.v)
 
-    def getCTRes(self):
-        # compute the residuals of cT (TSFC) using a simple altitude relation
+    def getSFCRes(self):
+        # compute the residuals of SFC (TSFC) using a simple altitude relation
 
-        cTRes = self.cT - (self.cTSL + (6.39e-13)*self.h)
-        return cTRes
+        SFCRes = self.SFC - (self.SFCSL + (6.39e-13)*self.h)
+        return SFCRes
 
-    def getdCT(self):
+    def getDSFC(self):
         # compute the derivatives of the residual of TSFC
 
-        self.dCTdCT = numpy.ones(self.numSeg)
-        self.dCTdCTSL = numpy.ones(self.numSeg)*-1
-        self.dCTdh = numpy.ones(self.numSeg)*(-6.39e-13)
+        self.dSFCdSFC = numpy.ones(self.numSeg)
+        self.dSFCdSFCSL = numpy.ones(self.numSeg)*-1
+        self.dSFCdh = numpy.ones(self.numSeg)*(-6.39e-13)
         return
 
     def getVRes(self):
@@ -125,7 +125,7 @@ class flightAnalysis(object):
         return
 
     def getAlphaRes(self):
-        # compute the residuals of the lift coefficient
+        # compute the residuals of alpha from a given CL
 
         alphaRes = numpy.zeros(self.numSeg)
         alphaRes = mission.getalphares(self.numSeg, self.alpha, self.eta, self.CL)
@@ -140,14 +140,14 @@ class flightAnalysis(object):
         return CDRes
 
     def getEtaRes(self):
-        # compute the residuals of the pitching moment coefficient
+        # compute the residuals of eta from a given pitching moment coefficient
 
         etaRes = numpy.zeros(self.numSeg)
         etaRes = mission.getetares(self.numSeg, self.alpha, self.eta, self.CM)
         return etaRes
 
     def getTauRes(self):
-        # compute the residuals of the thrust
+        # compute the residuals of the throttle setting from a given Thrust
 
         tauRes = numpy.zeros(self.numSeg)
         tauRes = mission.gettaures(self.numSeg, self.cThrustSL, 
@@ -163,7 +163,7 @@ class flightAnalysis(object):
         R2 = numpy.linspace(1.0,0.0,num=self.numInt)
 
         WfRes = mission.getwfres(self.numInt,self.numSeg,self.x,self.v,
-                                 self.gamma,self.tau,self.Thrust,self.cT,
+                                 self.gamma,self.tau,self.Thrust,self.SFC,
                                  self.g,R1,R2,self.Wf)
         return WfRes
 
@@ -179,7 +179,7 @@ class flightAnalysis(object):
         return CLRes
 
     def getThrustRes(self):
-        # compute the residuals of the throttle settings
+        # compute the residuals of the thrust
 
         ThrustRes = numpy.zeros(self.numSeg)
         ThrustRes = mission.getthrustres(self.numSeg, self.numInt, self.S, 
@@ -189,7 +189,7 @@ class flightAnalysis(object):
         return ThrustRes
 
     def getCMRes(self):
-        # compute the residuals of the tail rotation angle
+        # compute the residuals of the pitching moment coefficient
 
         CMRes = numpy.zeros(self.numSeg)
         CMRes = mission.getcmres(self.numSeg, self.numInt, self.S, 
@@ -200,7 +200,7 @@ class flightAnalysis(object):
         return CMRes
 
     def getDAlpha(self):
-        # compute the derivatives of the residual of the lift coefficient
+        # compute the derivatives of the residual of alpha
 
         self.dAlphadAlpha = numpy.zeros(self.numSeg)
         self.dAlphadEta = numpy.zeros(self.numSeg)
@@ -227,7 +227,7 @@ class flightAnalysis(object):
         return
 
     def getDEta(self):
-        # compute the derivatives of the residual of the pitching moment coefficient
+        # compute the derivatives of the residual of eta
 
         self.dEtadAlpha = numpy.zeros(self.numSeg)
         self.dEtadEta = numpy.zeros(self.numSeg)
@@ -240,7 +240,7 @@ class flightAnalysis(object):
         return
 
     def getDTau(self):
-        # compute the derivatives of the residual of the thrust
+        # compute the derivatives of the residual of the throttle setting
 
         self.dTaudCThrustSL = numpy.zeros(self.numSeg)
         self.dTaudH = numpy.zeros(self.numSeg)
@@ -279,13 +279,13 @@ class flightAnalysis(object):
          self.dWfdGamma1, self.dWfdGamma2, self.dWfdWf1,
          self.dWfdWf2] = mission.getdwf(self.numSeg, self.numInt,
                                         self.g, self.x, self.v, self.gamma,
-                                        self.tau, self.Thrust, self.cT,
+                                        self.tau, self.Thrust, self.SFC,
                                         R1, R2)
 
         return
 
     def getDCL(self):
-        # compute the derivatives of the residuals of the angle of attack
+        # compute the derivatives of the residuals of the lift coefficient
 
         self.dCLdWac = numpy.zeros(self.numSeg)
         self.dCLdS = numpy.zeros(self.numSeg)
@@ -329,7 +329,7 @@ class flightAnalysis(object):
         return
 
     def getDThrust(self):
-        # compute the derivatives of the residual of the throttle setting
+        # compute the derivatives of the residual of the thrust
 
         self.dTdS = numpy.zeros(self.numSeg)
         self.dTdWac = numpy.zeros(self.numSeg)
@@ -372,7 +372,7 @@ class flightAnalysis(object):
         return
 
     def getDCM(self):
-        # compute the derivatives of the residual of the tail rotation angle
+        # compute the derivatives of the residual of the pitching moment coefficient
 
         self.dCMdS = numpy.zeros(self.numSeg)
         self.dCMdC = numpy.zeros(self.numSeg)
@@ -412,17 +412,6 @@ class flightAnalysis(object):
                                         self.dv, self.CM)
         return
 
-    def getTotalRes(self, stateVars):
-        self.alpha = stateVars[0::3]
-        self.tau = stateVars[1::3]
-        self.eta = stateVars[2::3]
-        
-        self.getWeightRes()
-        self.getAeroRes()
-        res = self.getFlightRes()
-        print numpy.linalg.norm(res)
-
-        return res
 
 
 x = numpy.linspace(0.0,1000.0,100)*1000.0
@@ -446,7 +435,7 @@ params = {'alpha':numpy.ones(100)*3.0*numpy.pi/180.0,
           'S':525.0,
           'Wac':185953*9.81,
           'cThrust':1020000,
-          'cT':8.951e-6,
+          'SFC':8.951e-6,
           'chord':8.15,
           'inertia':4.1e7,
           'AR':7.9,
