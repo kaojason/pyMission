@@ -280,130 +280,127 @@ subroutine getDDerivatives(numSeg, x, h, v, ddhdh, ddvdv, dgammadh, dd2hdh, &
   enddo
 end subroutine getDDerivatives
 
-subroutine getAlphaRes(numSeg, alpha, eta, CL, alphaRes)
-  ! compute the alpha residual as defined by the linear aerodynamics
+subroutine getAlpha(numSeg, eta, CL, alpha)
+  ! compute alpha as defined by the linear aerodynamics
+
+  !f2py intent(in) numSeg
+  !f2py intent(in) eta, CL
+  !f2py intent(out) alpha
+  !f2py depend(numSeg) eta, CL, alpha
+
+  ! Input/Output
+  integer, intent(in) :: numSeg
+  double precision, dimension(0:numSeg-1), intent(in) :: eta, CL
+  double precision, dimension(0:numSeg-1), intent(out) :: alpha
+
+  alpha = (1/4.24)*(CL-0.26-0.27*eta)
+
+end subroutine getAlpha
+
+subroutine getDAlpha(numSeg, alpha, eta, CL, deta, dCL)
+  ! compute the derivatives of alpha wrt alpha, eta, and CL
 
   !f2py intent(in) numSeg
   !f2py intent(in) alpha, eta, CL
-  !f2py intent(out) alphaRes
-  !f2py depend(numSeg) alpha, eta, CL, alphaRes
+  !f2py intent(out) deta, dCL
+  !f2py depend(numSeg) alpha, eta, CL, deta, dCL
 
   ! Input/Output
   integer, intent(in) :: numSeg
   double precision, dimension(0:numSeg-1), intent(in) :: alpha, eta, CL
-  double precision, dimension(0:numSeg-1), intent(out) :: alphaRes
-
-  alphaRes = alpha - (1/4.24)*(CL-0.26-0.27*eta)
-
-end subroutine getAlphaRes
-
-subroutine getDAlpha(numSeg, alpha, eta, CL, dalpha, deta, dCL)
-  ! compute the derivatives of residuals of alpha wrt alpha, eta, and CL
-
-  !f2py intent(in) numSeg
-  !f2py intent(in) alpha, eta, CL
-  !f2py intent(out) dalpha, deta, dCL
-  !f2py depend(numSeg) alpha, eta, CL, dalpha, deta, dCL
-
-  ! Input/Output
-  integer, intent(in) :: numSeg
-  double precision, dimension(0:numSeg-1), intent(in) :: alpha, eta, CL
-  double precision, dimension(0:numSeg-1), intent(out) :: dalpha, deta, dCL
+  double precision, dimension(0:numSeg-1), intent(out) :: deta, dCL
 
   integer :: i = 0
 
   do i = 0,numSeg-1
-     dalpha(i) = 1.0
-     deta(i) = 0.27/4.24
-     dCL(i) = -1/4.24
+     deta(i) = -0.27/4.24
+     dCL(i) = 1/4.24
   enddo
 
 end subroutine getDAlpha
 
-subroutine getCDRes(numSeg, AR, e, CL, CD, CDRes)
-  ! compute the residuals of CD using simple drag polar
+subroutine getCD(numSeg, AR, e, CL, CD)
+  ! compute CD using simple drag polar
 
   !f2py intent(in) numSeg
   !f2py intent(in) AR, e
-  !f2py intent(in) CL, CD
-  !f2py intent(out) CDRes
-  !f2py depend(numSeg) CL, CD, CDRes
+  !f2py intent(in) CL
+  !f2py intent(out) CD
+  !f2py depend(numSeg) CL, CD
 
   ! Input/Output
   integer, intent(in) :: numSeg
   double precision, intent(in) :: AR, e
-  double precision, dimension(0:numSeg-1), intent(in) :: CL, CD
-  double precision, dimension(0:numSeg-1), intent(out) :: CDRes
+  double precision, dimension(0:numSeg-1), intent(in) :: CL
+  double precision, dimension(0:numSeg-1), intent(out) :: CD
   
   double precision, parameter :: PI = 3.14159265359
 
-  CDRes = CD - (0.018 + CL**2/(PI*AR*e))
+  CD = (0.018 + CL**2/(PI*AR*e))
 
-end subroutine getCDRes
+end subroutine getCD
 
-subroutine getDCD(numSeg, AR, e, CL, CD, dAR, de, dCL, dCD)
-  ! compute the derivatives of residuals of CD wrt AR, e, CL, and CD
+subroutine getDCD(numSeg, AR, e, CL, CD, dAR, de, dCL)
+  ! compute the derivatives CD wrt AR, e, CL, and CD
 
   !f2py intent(in) numSeg
   !f2py intent(in) AR, e
   !f2py intent(in) CL, CD
-  !f2py intent(out) dAR, de, dCL, dCD
-  !f2py depend(numSeg) CL, CD, dAR, de, dCL, dCD
+  !f2py intent(out) dAR, de, dCL
+  !f2py depend(numSeg) CL, CD, dAR, de, dCL
 
   ! Input/Output
   integer, intent(in) :: numSeg
   double precision, intent(in) :: AR, e
   double precision, dimension(0:numSeg-1), intent(in) :: CL, CD
-  double precision, dimension(0:numSeg-1), intent(out) :: dAR, de, dCL, dCD
+  double precision, dimension(0:numSeg-1), intent(out) :: dAR, de, dCL
   
   integer :: i = 0
   double precision, parameter :: PI = 3.14159254359
 
   do i = 0,numSeg-1
-     dAR(i) = CL(i)**2/(PI*e*AR**2)
-     de(i) = CL(i)**2/(PI*AR*e**2)
-     dCL(i) = -2*CL(i)/(PI*AR*e)
-     dCD(i) = 1.0
+     dAR(i) = -CL(i)**2/(PI*e*AR**2)
+     de(i) = -CL(i)**2/(PI*AR*e**2)
+     dCL(i) = 2*CL(i)/(PI*AR*e)
   enddo
 
 end subroutine getDCD
 
-subroutine getEtaRes(numSeg, alpha, eta, CM, etaRes)
-  ! compute the residuals of eta (tail rotation angle)
+subroutine getEta(numSeg, alpha, CM, eta)
+  ! compute eta (tail rotation angle)
+
+  !f2py intent(in) numSeg
+  !f2py intent(in) alpha, CM
+  !f2py intent(out) eta
+  !f2py depend(numSeg) alpha, CM, eta
+
+  !Input/Output
+  integer, intent(in) :: numSeg
+  double precision, dimension(0:numSeg-1), intent(in) :: alpha, CM
+  double precision, dimension(0:numSeg-1), intent(out) :: eta
+
+  eta = (1/1.06)*(0.63*alpha - CM)
+
+end subroutine getEta
+
+subroutine getDEta(numSeg, alpha, eta, CM, dalpha, dCM)
+  ! compute the derivatives of eta wrt alpha, eta, CM
 
   !f2py intent(in) numSeg
   !f2py intent(in) alpha, eta, CM
-  !f2py intent(out) etaRes
-  !f2py depend(numSeg) alpha, eta, CM, etaRes
+  !f2py intent(out) dalpha, dCM
+  !f2py depend(numSeg) alpha, eta, CM, dalpha, dCM
 
   !Input/Output
   integer, intent(in) :: numSeg
   double precision, dimension(0:numSeg-1), intent(in) :: alpha, eta, CM
-  double precision, dimension(0:numSeg-1), intent(out) :: etaRes
-
-  etaRes = eta - (1/1.06)*(0.63*alpha - CM)
-
-end subroutine getEtaRes
-
-subroutine getDEta(numSeg, alpha, eta, CM, dalpha, deta, dCM)
-  ! compute the derivatives of residuals of eta wrt alpha, eta, CM
-
-  !f2py intent(in) numSeg
-  !f2py intent(in) alpha, eta, CM
-  !f2py intent(out) dalpha, deta, dCM
-  !f2py depend(numSeg) alpha, eta, CM, dalpha, deta, dCM
-
-  !Input/Output
-  integer, intent(in) :: numSeg
-  double precision, dimension(0:numSeg-1), intent(in) :: alpha, eta, CM
-  double precision, dimension(0:numSeg-1), intent(out) :: dalpha, deta, dCM
+  double precision, dimension(0:numSeg-1), intent(out) :: dalpha, dCM
 
   integer :: i = 0
 
   do i = 0,numSeg-1
-     dalpha(i) = -0.63/1.06
-     deta(i) = 1.0
-     dCM(i) = 1/1.06
+     dalpha(i) = 0.63/1.06
+     dCM(i) = -1/1.06
   enddo
 
 end subroutine getDEta
@@ -445,45 +442,45 @@ subroutine dlinspace(n, x0, x1, dy1, dy2)
 
 end subroutine dlinspace
 
-subroutine getTauRes(numSeg, cThrustSL, x, h, tau, Thrust, tauRes)
-  ! computes the residuals of the throttle setting using a simple
+subroutine getTau(numSeg, cThrustSL, x, h, Thrust, tau)
+  ! computes the throttle setting using a simple
   ! propulsion model
 
   !f2py intent(in) numSeg
   !f2py intent(in) cThrustSL
-  !f2py intent(in) x, h, tau, Thrust
-  !f2py intent(out) tauRes
-  !f2py depend(numSeg) x, h, tau, Thrust, tauRes
+  !f2py intent(in) x, h, Thrust
+  !f2py intent(out) tau
+  !f2py depend(numSeg) x, h, Thrust, tau
 
   integer, intent(in) :: numSeg
   double precision, intent(in) :: cThrustSL
-  double precision, dimension(0:numSeg-1), intent(in) :: x, h, tau, Thrust
-  double precision, dimension(0:numSeg-1), intent(out) :: tauRes
+  double precision, dimension(0:numSeg-1), intent(in) :: x, h, Thrust
+  double precision, dimension(0:numSeg-1), intent(out) :: tau
 
   integer :: i = 0
   double precision, dimension(0:numSeg-1) :: cThrust
 
   do i = 0,numSeg-1
      cThrust(i) = cThrustSL - 0.072*h(i)
-     tauRes(i) = tau(i) - Thrust(i)/cThrust(i)
+     tau(i) = Thrust(i)/cThrust(i)
   enddo
 
-end subroutine getTauRes
+end subroutine getTau
 
-subroutine getDTau(numSeg, cThrustSL, x, h, tau, Thrust, dCThrustSL, dh, dtau, dThrust)
-  ! computes the derivatives of the residuals of throttle setting wrt
+subroutine getDTau(numSeg, cThrustSL, x, h, tau, Thrust, dCThrustSL, dh, dThrust)
+  ! computes the derivatives of throttle setting wrt
   ! propulsion parameters, h, tau, and thrust
 
   !f2py intent(in) numSeg
   !f2py intent(in) cThrustSL
   !f2py intent(in) x, h, tau, Thrust
-  !f2py intent(out) dCThrustSL, dh, dtau, dThrust
-  !f2py depend(numSeg) x, h, tau, Thrust, dCThrustSL, dh, dtau, dThrust
+  !f2py intent(out) dCThrustSL, dh, dThrust
+  !f2py depend(numSeg) x, h, tau, Thrust, dCThrustSL, dh, dThrust
 
   integer, intent(in) :: numSeg
   double precision, intent(in) :: cThrustSL
   double precision, dimension(0:numSeg-1), intent(in) :: x, h, tau, Thrust
-  double precision, dimension(0:numSeg-1), intent(out) :: dCThrustSL, dh, dtau, dThrust
+  double precision, dimension(0:numSeg-1), intent(out) :: dCThrustSL, dh, dThrust
 
   integer :: i = 0
   double precision, dimension(0:numseg-1) :: cThrust
@@ -492,38 +489,34 @@ subroutine getDTau(numSeg, cThrustSL, x, h, tau, Thrust, dCThrustSL, dh, dtau, d
      cThrust(i) = cThrustSL - 0.072*h(i)
      dCThrustSL(i) = 1/(cThrust(i)**2)
      dh(i) = -0.072/(cThrust(i)**2)
-     dtau(i) = 1.0
      dThrust(i) = -1/cThrust(i)
   enddo
 
 end subroutine getDTau
 
-subroutine getWfRes(numInt, numSeg, x, v, gamma, tau, Thrust, cT, g, R1, R2, WfIn, WfRes)
-  ! computes the residuals of the fuel weight for each segment
+subroutine getWf(numInt, numSeg, x, v, gamma, Thrust, cT, g, R1, R2, Wf)
+  ! computes fuel weight for each segment
   ! using a forward Euler scheme implemented backwards from the
   ! end of the mission
   ! the current initial condition is set to be 0 fuel at the end
   ! of the mission
 
   !f2py intent(in) numInt, numSeg
-  !f2py intent(in) x, v, gamma, tau, Thrust, cT
+  !f2py intent(in) x, v, gamma, Thrust, cT
   !f2py intent(in) g
   !f2py intent(in) R1, R2
-  !f2py intent(in) WfIn
-  !f2py intent(out) WfRes
-  !f2py depend(numSeg) x, v, gamma, tau, Thrust, cT, WfIn
+  !f2py intent(out) Wf
+  !f2py depend(numSeg) x, v, gamma, Thrust, cT, Wf
   !f2py depend(numInt) R1, R2
 
   !Input/Output
   integer, intent(in) :: numInt, numSeg
-  double precision, dimension(0:numSeg-1), intent(in) :: x, v, gamma, tau
+  double precision, dimension(0:numSeg-1), intent(in) :: x, v, gamma
   double precision, dimension(0:numSeg-1), intent(in) :: Thrust, cT
   double precision, intent(in) :: g
   double precision, dimension(0:numInt-1), intent(in) :: R1, R2
-  double precision, dimension(0:numSeg-1), intent(in) :: WfIn
-  double precision, dimension(0:numSeg-1), intent(out) :: WfRes
+  double precision, dimension(0:numSeg-1), intent(out) :: Wf
 
-  double precision, dimension(0:numSeg-1) :: Wf
   double precision, dimension(0:numInt-1,0:numSeg-1) :: estWf
   double precision, dimension(0:numInt-1) :: vTemp, xTemp, cTTemp, gammaTemp, cosGamma
   double precision :: dx, WfTemp
@@ -569,38 +562,36 @@ subroutine getWfRes(numInt, numSeg, x, v, gamma, tau, Thrust, cT, g, R1, R2, WfI
      Wf(i) = Wf(i) * g
   enddo
 
-  do i = 0,numSeg-2
-     j = numSeg-2-i
-     Wf(j) = Wf(j) + WfIn(j+1)
-  enddo
+!  do i = 0,numSeg-2
+!     j = numSeg-2-i
+!     Wf(j) = Wf(j) + WfIn(j+1)
+!  enddo
 
-  WfRes = WfIn - Wf
+end subroutine getWf
 
-end subroutine getWfRes
-
-subroutine getDWf(numSeg, numInt, g, x, v, gamma, tau, Thrust, cT, R1, R2, &
-     dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2, dWf1, dWf2)
-  ! computes the derivatives of the residuals of fuel weights wrt
+subroutine getDWf(numSeg, numInt, g, x, v, gamma, Thrust, cT, R1, R2, &
+     dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2)
+  ! computes the derivatives of fuel weights wrt
   ! propulsion parameters, thrust, v, gamma, and fuel weight
   ! the resultant jacobian is bi-diagonal, and is stored in 2
   ! vectors for each derivative, ie, d___1 and d___2
 
   !f2py intent(in) numSeg, numInt
   !f2py intent(in) g
-  !f2py intent(in) x, v, gamma, tau, Thrust, cT
+  !f2py intent(in) x, v, gamma, Thrust, cT
   !f2py intent(in) R1, R2
-  !f2py intent(out) dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2, dWf1, dWf2
-  !f2py depend(numSeg) x, v, gamma, tau, Thrust, cT, dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2, dWf
+  !f2py intent(out) dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2
+  !f2py depend(numSeg) x, v, gamma, Thrust, cT, dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2
   !f2py depend(numInt) R1, R2
 
   !Input/Output
   integer, intent(in) :: numSeg, numInt
   double precision, intent(in) :: g
-  double precision, dimension(0:numSeg-1), intent(in) :: x, v, gamma, tau
+  double precision, dimension(0:numSeg-1), intent(in) :: x, v, gamma
   double precision, dimension(0:numSeg-1), intent(in) :: Thrust, cT
   double precision, dimension(0:numInt-1), intent(in) :: R1, R2
   double precision, dimension(0:numSeg-1), intent(out) :: dCT1, dCT2, dThrust1, dThrust2
-  double precision, dimension(0:numSeg-1), intent(out) :: dV1, dV2, dGamma1, dGamma2, dWf1, dWf2
+  double precision, dimension(0:numSeg-1), intent(out) :: dV1, dV2, dGamma1, dGamma2
 
   integer :: i = 0, j = 0, k = 0
   double precision :: deltax
@@ -620,11 +611,7 @@ subroutine getDWf(numSeg, numInt, g, x, v, gamma, tau, Thrust, cT, R1, R2, &
      dV2(i) = 0.0
      dGamma1(i) = 0.0
      dGamma2(i) = 0.0
-     dWf1(i) = 1.0
-     dWf2(i) = -1.0
   enddo
-
-  dWf2(numSeg-1) = 0.0
 
   do i = 0,numSeg-2
 
@@ -654,27 +641,27 @@ subroutine getDWf(numSeg, numInt, g, x, v, gamma, tau, Thrust, cT, R1, R2, &
         dWfTempdCT2 = dWfTempdCT1
         dWfTempdCT1 = dWfTempdCT1*dCTTemp1(k)
         dWfTempdCT2 = dWfTempdCT2*dCTTemp2(k)
-        dCT1(j) = dCT1(j)-dWfTempdCT1*g
-        dCT2(j) = dCT2(j)-dWfTempdCT2*g
+        dCT1(j) = dCT1(j)+dWfTempdCT1*g
+        dCT2(j+1) = dCT2(j+1)+dWfTempdCT2*g
         
         dWfTempdThrust1 = cTTemp(k)*R2(k)*xTemp(k)/(vTemp(k)*cosGamma(k))
         dWfTempdThrust2 = cTTemp(k)*R1(k)*xTemp(k)/(vTemp(k)*cosGamma(k))
-        dThrust1(j) = dThrust1(j)-dWfTempdThrust1*g
-        dThrust2(j) = dThrust2(j)-dWfTempdThrust2*g
+        dThrust1(j) = dThrust1(j)+dWfTempdThrust1*g
+        dThrust2(j+1) = dThrust2(j+1)+dWfTempdThrust2*g
 
         dWfTempdV1 = -(cTTemp(k)*Thrust(j+1)*R1(k)+cTTemp(k)*Thrust(j)*R2(k))/(cosGamma(k)*vTemp(k)**2)*xTemp(k)
         dWfTempdV2 = dWfTempdV1
         dWfTempdV1 = dWfTempdV1*dVTemp1(k)
         dWfTempdV2 = dWfTempdV2*dVTemp2(k)
-        dV1(j) = dV1(j)-dWfTempdV1*g
-        dV2(j) = dV2(j)-dWfTempdV2*g
+        dV1(j) = dV1(j)+dWfTempdV1*g
+        dV2(j+1) = dV2(j+1)+dWfTempdV2*g
 
         dWfTempdGamma1 = -(cTTemp(k)*Thrust(j+1)*R1(k)+cTTemp(k)*Thrust(j)*R2(k))/(vTemp(k)*cosGamma(k)**2)*xTemp(k)
         dWfTempdGamma2 = dWfTempdGamma1
         dWfTempdGamma1 = dWfTempdGamma1*dCosGamma1(k)
         dWfTempdGamma2 = dWfTempdGamma2*dCosGamma2(k)
-        dGamma1(j) = dGamma1(j)-dWfTempdGamma1*g
-        dGamma2(j) = dGamma2(j)-dWfTempdGamma2*g
+        dGamma1(j) = dGamma1(j)+dWfTempdGamma1*g
+        dGamma2(j+1) = dGamma2(j+1)+dWfTempdGamma2*g
      enddo
   enddo
        

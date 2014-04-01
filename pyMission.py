@@ -1,5 +1,6 @@
 import numpy
 import mission
+import system
 
 class flightAnalysis(object):
     def __init__(self, x, h, M, kw):
@@ -61,130 +62,131 @@ class flightAnalysis(object):
         self.dd3hdh = numpy.zeros(self.numSeg)
         self.dd2gammadh = numpy.zeros(self.numSeg)
 
+    def getDerivatives(self):
+        # compute the derivatives of v, h to get dvdx, gamma,
+        # dGammadx, d2Gammadx2
+
         [self.dv,self.gamma,self.dGamma,
          self.d2Gamma] = mission.getderivatives(self.numSeg,
                                                 self.x,self.h,self.v)
+
+    def getDDerivatives(self):
+        # compute the derivatives of the derivatives
 
         [self.ddhdh,self.ddvdv,self.dgammadh,self.dd2hdh,
          self.ddgammadh,self.dd3hdh,
          self.dd2gammadh] = mission.getdderivatives(self.numSeg,self.x,self.h,
                                                     self.v)
 
-    def getSFCRes(self):
-        # compute the residuals of SFC (TSFC) using a simple altitude relation
+    def getSFC(self):
+        # compute the SFC (TSFC) using a simple altitude relation
 
-        SFCRes = self.SFC - (self.SFCSL + (6.39e-13)*self.h)
-        return SFCRes
+        SFC = (self.SFCSL + (6.39e-13)*self.h)
+        return SFC
 
     def getDSFC(self):
-        # compute the derivatives of the residual of TSFC
+        # compute the derivatives of TSFC
 
-        self.dSFCdSFC = numpy.ones(self.numSeg)
-        self.dSFCdSFCSL = numpy.ones(self.numSeg)*-1
-        self.dSFCdh = numpy.ones(self.numSeg)*(-6.39e-13)
+        self.dSFCdSFCSL = numpy.ones(self.numSeg)
+        self.dSFCdH = numpy.ones(self.numSeg)*(6.39e-13)
         return
 
-    def getVRes(self):
-        # compute the residuals of the flight velocity
+    def getV(self):
+        # compute the flight velocity
 
-        VRes = self.v - numpy.sqrt(1.4*287*self.T)*self.M
-        return VRes
+        V = numpy.sqrt(1.4*287*self.T)*self.M
+        return V
     
     def getDV(self):
-        # compute the derivatives of the residual of flight velocity
+        # compute the derivatives of flight velocity
 
-        self.dVdV = numpy.ones(self.numSeg)
         self.dVdTemp = self.Mach*numpy.power(1.4*287*self.T,-0.5)*1.4*287
         self.dVdM = numpy.sqrt(1.4*287*self.T)
         return
 
-    def getTempRes(self):
-        # compute the residuals of the atmospheric temperature
+    def getTemp(self):
+        # compute the atmospheric temperature
 
-        TempRes = self.T - (288.16 - 6.5e-3 * self.h)
-        return TempRes
+        Temp = (288.16 - 6.5e-3 * self.h)
+        return Temp
 
     def getDTemp(self):
-        # compute the derivatives of the residual of the atmosphreic temperature
+        # compute the derivatives of the atmosphreic temperature
 
-        self.dTempdTemp = numpy.ones(self.numSeg)
-        self.dTempdh = numpy.ones(self.numSeg)*6.5e-3
+        self.dTempdH = numpy.ones(self.numSeg)*(-6.5e-3)
         return
 
-    def getRhoRes(self):
-        # compute the residuals of the atmospheric density
+    def getRho(self):
+        # compute the atmospheric density
 
-        RhoRes = self.rho - (1.225*numpy.power(self.T/288.16,-(self.g/(-6.5e-3*287)+1)))
-        return RhoRes
+        rho = (1.225*numpy.power(self.T/288.16,-(self.g/(-6.5e-3*287)+1)))
+        return rho
 
     def getDRho(self):
-        # compute the derivatives of the residual of the atmospheric density
+        # compute the derivatives of the atmospheric density
 
-        self.dRhodRho = numpy.ones(self.numSeg)
-        self.dRhodTemp = -1.225*numpy.power(self.T/288.16,-(self.g/(-6.5e-3*287)+2))*(1/288.16)
+        self.dRhodTemp = 1.225*numpy.power(self.T/288.16,-(self.g/(-6.5e-3*287)+2))*(1/288.16)
         return
 
-    def getAlphaRes(self):
-        # compute the residuals of alpha from a given CL
+    def getAlpha(self):
+        # compute alpha from a given CL
 
-        alphaRes = numpy.zeros(self.numSeg)
-        alphaRes = mission.getalphares(self.numSeg, self.alpha, self.eta, self.CL)
-        return alphaRes
+        alpha = numpy.zeros(self.numSeg)
+        alpha = mission.getalpha(self.numSeg, self.eta, self.CL)
+        return alpha
 
-    def getCDRes(self):
-        # compute the residuals of the drag coefficient
+    def getCD(self):
+        # compute the drag coefficient
 
-        CDRes = numpy.zeros(self.numSeg)
-        CDRes = mission.getcdres(self.numSeg, self.AR, self.e, self.CL, 
-                                   self.CD)
-        return CDRes
+        CD = numpy.zeros(self.numSeg)
+        CD = mission.getcd(self.numSeg, self.AR, self.e, self.CL)
+        return CD
 
-    def getEtaRes(self):
-        # compute the residuals of eta from a given pitching moment coefficient
+    def getEta(self):
+        # compute eta from a given pitching moment coefficient
 
-        etaRes = numpy.zeros(self.numSeg)
-        etaRes = mission.getetares(self.numSeg, self.alpha, self.eta, self.CM)
-        return etaRes
+        eta = numpy.zeros(self.numSeg)
+        eta = mission.geteta(self.numSeg, self.alpha, self.eta, self.CM)
+        return eta
 
-    def getTauRes(self):
-        # compute the residuals of the throttle setting from a given Thrust
+    def getTau(self):
+        # compute the throttle setting from a given Thrust
 
-        tauRes = numpy.zeros(self.numSeg)
-        tauRes = mission.gettaures(self.numSeg, self.cThrustSL, 
-                                         self.x, self.h, self.tau, 
-                                         self.Thrust)
-        return tauRes
+        tau = numpy.zeros(self.numSeg)
+        tau = mission.gettau(self.numSeg, self.cThrustSL, 
+                             self.x, self.h, self.Thrust)
+        return tau
 
-    def getWfRes(self):
-        # compute the residuals of the fuel weight
+    def getWf(self):
+        # compute the fuel weight
 
-        WfRes = numpy.zeros(self.numSeg)
+        Wf = numpy.zeros(self.numSeg)
         R1 = numpy.linspace(0.0,1.0,num=self.numInt)
         R2 = numpy.linspace(1.0,0.0,num=self.numInt)
 
-        WfRes = mission.getwfres(self.numInt,self.numSeg,self.x,self.v,
-                                 self.gamma,self.tau,self.Thrust,self.SFC,
-                                 self.g,R1,R2,self.Wf)
-        return WfRes
+        Wf = mission.getwf(self.numInt,self.numSeg,self.x,self.v,
+                           self.gamma,self.Thrust,self.SFC,
+                           self.g,R1,R2)
+        return Wf
 
     def getCLRes(self):
         # compute the residuals of the lift coefficient
 
         CLRes = numpy.zeros(self.numSeg)
-        CLRes = mission.getclres(self.numSeg, self.numInt, self.Wac, 
-                                 self.S, self.g, self.x, self.v, 
-                                 self.rho, self.CL, self.Wf, 
+        CLRes = mission.getclres(self.numSeg, self.numInt, self.Wac,
+                                 self.S, self.g, self.x, self.v,
+                                 self.rho, self.CL, self.Wf,
                                  self.gamma, self.Thrust, self.alpha,
                                  self.dGamma)
         return CLRes
 
     def getThrustRes(self):
-        # compute the residuals of the thrust
+        # compute the residuals of thrust
 
         ThrustRes = numpy.zeros(self.numSeg)
-        ThrustRes = mission.getthrustres(self.numSeg, self.numInt, self.S, 
-                                         self.Wac, self.g, self.x, self.v, 
-                                         self.rho, self.gamma, self.dv, self.CD, 
+        ThrustRes = mission.getthrustres(self.numSeg, self.numInt, self.S,
+                                         self.Wac, self.g, self.x, self.v,
+                                         self.rho, self.gamma, self.dv, self.CD,
                                          self.Wf, self.alpha, self.Thrust)
         return ThrustRes
 
@@ -192,63 +194,58 @@ class flightAnalysis(object):
         # compute the residuals of the pitching moment coefficient
 
         CMRes = numpy.zeros(self.numSeg)
-        CMRes = mission.getcmres(self.numSeg, self.numInt, self.S, 
-                                  self.chord, self.inertia, self.x, 
-                                  self.v, self.rho, self.gamma, 
-                                  self.dGamma, self.d2Gamma, self.dv, 
-                                  self.CM)
+        CMRes = mission.getcmres(self.numSeg, self.numInt, self.S,
+                                 self.chord, self.inertia, self.x,
+                                 self.v, self.rho, self.gamma,
+                                 self.dGamma, self.d2Gamma, self.dv,
+                                 self.CM)
         return CMRes
 
     def getDAlpha(self):
-        # compute the derivatives of the residual of alpha
+        # compute the derivatives of alpha
 
-        self.dAlphadAlpha = numpy.zeros(self.numSeg)
         self.dAlphadEta = numpy.zeros(self.numSeg)
         self.dAlphadCL = numpy.zeros(self.numSeg)
         
-        [self.dAlphadAlpha, self.dAlphadEta, 
-         self.dAlphadCL] = mission.getdalpha(self.numSeg, self.alpha, self.eta, 
+        [self.dAlphadEta, 
+         self.dAlphadCL] = mission.getdalpha(self.numSeg, self.alpha, self.eta,
                                              self.CL)
         
         return
 
     def getDCD(self):
-        # compute the derivatives of the residual of the drag coefficient
+        # compute the derivatives of the drag coefficient
 
         self.dCDdAR = numpy.zeros(self.numSeg)
         self.dCDdE = numpy.zeros(self.numSeg)
         self.dCDdCL = numpy.zeros(self.numSeg)
-        self.dCDdCD = numpy.zeros(self.numSeg)
 
-        [self.dCDdAR, self.dCDdE, self.dCDdCL,
-         self.dCDdCD] = mission.getdcd(self.numSeg, self.AR, self.e, self.CL, 
-                                       self.CD)
+        [self.dCDdAR, self.dCDdE, self.dCDdCL] \
+            = mission.getdcd(self.numSeg, self.AR, self.e, self.CL, 
+                             self.CD)
 
         return
 
     def getDEta(self):
-        # compute the derivatives of the residual of eta
+        # compute the derivatives of eta
 
         self.dEtadAlpha = numpy.zeros(self.numSeg)
-        self.dEtadEta = numpy.zeros(self.numSeg)
         self.dEtadCM = numpy.zeros(self.numSeg)
 
-        [self.dEtadAlpha, self.dEtadEta,
+        [self.dEtadAlpha,
          self.dEtadCM] = mission.getdeta(self.numSeg, self.alpha, self.eta, 
                                          self.CM)
 
         return
 
     def getDTau(self):
-        # compute the derivatives of the residual of the throttle setting
+        # compute the derivatives of the throttle setting
 
         self.dTaudCThrustSL = numpy.zeros(self.numSeg)
         self.dTaudH = numpy.zeros(self.numSeg)
-        self.dTaudTau = numpy.zeros(self.numSeg)
         self.dTaudThrust = numpy.zeros(self.numSeg)
 
-        [self.dTaudCThrustSL, self.dTaudH, 
-         self.dTaudTau, 
+        [self.dTaudCThrustSL, self.dTaudH,
          self.dTaudThrust] = mission.getdtau(self.numSeg, self.cThrustSL, 
                                              self.x, self.h, self.tau, 
                                              self.Thrust)
@@ -256,31 +253,27 @@ class flightAnalysis(object):
         return
 
     def getDWf(self):
-        # compute the derivatives of the residual of the fuel weight
+        # compute the derivatives of the fuel weight
 
-        self.dWfdCT1 = numpy.zeros(self.numSeg)
-        self.dWfdCT2 = numpy.zeros(self.numSeg)
+        self.dWfdSFC1 = numpy.zeros(self.numSeg)
+        self.dWfdSFC2 = numpy.zeros(self.numSeg)
         self.dWfdThrust1 = numpy.zeros(self.numSeg)
         self.dWfdThrust2 = numpy.zeros(self.numSeg)
-        self.dWfdX1 = numpy.zeros(self.numSeg)
-        self.dWfdX2 = numpy.zeros(self.numSeg)
         self.dWfdV1 = numpy.zeros(self.numSeg)
         self.dWfdV2 = numpy.zeros(self.numSeg)
         self.dWfdGamma1 = numpy.zeros(self.numSeg)
         self.dWfdGamma2 = numpy.zeros(self.numSeg)
-        self.dWfdWf1 = numpy.zeros(self.numSeg)
-        self.dWfdWf2 = numpy.zeros(self.numSeg)
 
         R1 = numpy.linspace(0.0,1.0,num=self.numInt)
         R2 = numpy.linspace(1.0,0.0,num=self.numInt)
 
-        [self.dWfdCT1, self.dWfdCT2, self.dWfdThrust1,
+        [self.dWfdSFC1, self.dWfdSFC2, self.dWfdThrust1,
          self.dWfdThrust2, self.dWfdV1, self.dWfdV2, 
-         self.dWfdGamma1, self.dWfdGamma2, self.dWfdWf1,
-         self.dWfdWf2] = mission.getdwf(self.numSeg, self.numInt,
-                                        self.g, self.x, self.v, self.gamma,
-                                        self.tau, self.Thrust, self.SFC,
-                                        R1, R2)
+         self.dWfdGamma1, 
+         self.dWfdGamma2] = mission.getdwf(self.numSeg, self.numInt,
+                                           self.g, self.x, self.v, self.gamma,
+                                           self.Thrust, self.SFC,
+                                           R1, R2)
 
         return
 
@@ -329,7 +322,7 @@ class flightAnalysis(object):
         return
 
     def getDThrust(self):
-        # compute the derivatives of the residual of the thrust
+        # compute the derivatives of the residuals of thrust
 
         self.dTdS = numpy.zeros(self.numSeg)
         self.dTdWac = numpy.zeros(self.numSeg)
@@ -372,7 +365,7 @@ class flightAnalysis(object):
         return
 
     def getDCM(self):
-        # compute the derivatives of the residual of the pitching moment coefficient
+        # compute the derivatives of the residuals of the pitching moment coefficient
 
         self.dCMdS = numpy.zeros(self.numSeg)
         self.dCMdC = numpy.zeros(self.numSeg)
@@ -412,7 +405,551 @@ class flightAnalysis(object):
                                         self.dv, self.CM)
         return
 
+class Var_SFC(ExplicitSystem):
+    
+    def _declare_global(self):
+        return 'SFC', 1
 
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*8.951e-6,
+                                     lb=numpy.zeros(len(segs)))
+        self._declare_local_argument('SFCSL')
+        self._declare_local_argument('h', indices=segs)
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        self.uVec()[:] = fa.getSFC()
+        fa.SFC = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDSFC()
+
+        if mode == 'fwd':
+            if self._ID('SFCSL') in arguments:
+                self.dgVec()[:] += fa.dSFCdSFCSL * self.dpVec('SFCSL')[:]
+            if self._ID('h') in arguments:
+                self.dgVec()[:] += fa.dSFCdH * self.dpVec('h')[:]
+        if mode == 'rev':
+            if self._ID('SFCSL') in arguments:
+                self.dpVec('SFCSL')[:] = fa.dSFCdSFCSL * self.dgVec()[:]
+            if self._ID('h') in arguments:
+                self.dpVec('h')[:] = fa.dSFCdH * self.dgVec()[:]
+
+class Var_v(ExplicitSystem):
+
+    def _declare_global(self):
+        return 'v', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*300.0,
+                                     lb=numpy.ones(len(segs)))
+        self._declare_local_argument('T', indices=segs)
+        self._declare_local_argument('M', indices=segs)
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        self.uVec()[:] = fa.getV()
+        fa.v = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDV()
+
+        if mode == 'fwd':
+            if self._ID('T') in arguments:
+                self.dgVec()[:] += fa.dVdTemp * self.dpVec('T')[:]
+            if self._ID('M') in arguments:
+                self.dgVec()[:] += fa.dVdM * self.dpVec('M')[:]
+        if mode == 'rev':
+            if self._ID('T') in arguments:
+                self.dpVec('T')[:] += fa.dVdTemp * self.dgVec()[:]
+            if self._ID('M') in arguments:
+                self.dpVec('M')[:] += fa.dVdM * self.dgVec()[:]
+
+class Var_temp(ExplicitSystem):
+
+    def _declare_global(self):
+        return 'temp', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*200.0,
+                                     lb=numpy.ones(len(segs)))
+        self._declare_local_argument('h', indices=segs)
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        self.uVec()[:] = fa.getTemp()
+        fa.T = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDTemp()
+
+        if mode == 'fwd':
+            if self._ID('h') in arguments:
+                self.dgVec()[:] += fa.dTempdH * self.dpVec('h')[:]
+        if mode == 'rev':
+            if self._ID('h') in arguments:
+                self.dpVec('h')[:] += fa.dTempdH * self.dgVec()[:]
+
+class Var_rho(ExplicitSystem):
+    
+    def _declare_global(self):
+        return 'rho', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs)),
+                                     lb=numpy.ones(len(segs))*0.01)
+        self._declare_local_argument('T', indices=segs)
+        self._declare_local_argument('g')
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        self.uVec()[:] = fa.getRho()
+        fa.rho = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDRho()
+
+        if mode == 'fwd':
+            if self._ID('T') in arguments:
+                self.dgVec()[:] += fa.dRhodTemp * self.dpVec('T')[:]
+        if mode == 'rev':
+            if self._ID('T') in arguments:
+                self.dfVec('T')[:] += fa.dRhodTemp * self.dgVec()[:]
+
+class Var_gamma(ExplicitSystem):
+
+    def _declare_global(self):
+        return 'gamma', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.zeros(len(segs)))
+        self._declare_local_argument('x', indices=segs)
+        self._declare_local_argument('h', indices=segs)
+        self._declare_local_argument('v', indices=segs)
+
+    def _apply_G(self):
+
+class Var_alpha(ExplicitSystem):
+
+    def _declare_global(self):
+        return 'alpha', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*pi/180.0)
+        self._declare_local_argument('eta', indices=segs)
+        self._declare_local_argument('CL', indices=segs)
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        fa.eta = self.pVec('eta')[:]
+        fa.CL = self.pVec('CL')[:]
+        self.vVec()[:] = fa.getAlpha()
+        fa.alpha = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDAlpha()
+
+        if mode == 'fwd':
+            if self._ID('eta') in arguments:
+                self.dgVec()[:] += fa.dAlphadEta * self.dpVec('eta')[:]
+            if self._ID('CL') in arguments:
+                self.dgVec()[:] += fa.dAlphadCL * self.dpVec('CL')[:]
+        if mode == 'rev':
+            if self._ID('eta') in arguments:
+                self.dpVec('eta')[:] += fa.dAlphadEta * self.dgVec()[:]
+            if self._ID('CL') in arguments:
+                self.dpVec('CL')[:] += fa.dAlphadCL * self.dgVec()[:]
+
+class Var_CD(ExplicitSystem):
+    
+    def _declare_global(self):
+        return 'CD', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*1e-5,
+                                     lb=numpy.zeros(len(segs)))
+        self._declare_local_argument('AR')
+        self._declare_local_argument('e')
+        self._declare_local_argument('CL', indices=segs)
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        fa.CL = self.pVec('CL')[:]
+        self.vVec()[:] = fa.getCD()
+        fa.CD = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDCD()
+
+        if mode == 'fwd':
+            if self._ID('AR') in arguments:
+                self.dgVec()[:] += fa.dCDdAR * self.dpVec('AR')[:]
+            if self._ID('e') in arguments:
+                self.dgVec()[:] += fa.dCDdE * self.dpVec('e')[:]
+            if self._ID('CL') in arguments:
+                self.dgVec()[:] += fa.dCDdCL * self.dpVec('CL')[:]
+        if mode == 'rev':
+            if self._ID('AR') in arguments:
+                self.dpVec('AR')[:] += fa.dCDdAR * self.dgVec()[:]
+            if self._ID('e') in arguments:
+                self.dpVec('e')[:] += fa.dCDdE * self.dgVec()[:]
+            if self._ID('CL') in arguments:
+                self.dpVec('CL')[:] += fa.dCDdCL * self.dgVec()[:]
+
+class Var_eta(ExplicitSystem):
+    
+    def _declare_global(self):
+        return 'eta', 1
+    
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*(-pi/180.0))
+        self._declare_local_argument('alpha', indices=segs)
+        self._declare_local_argument('CM', indices=segs)
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        fa.alpha = self.pVec('alpha')[:]
+        fa.CM = self.pVec('CM')[:]
+        self.uVec()[:] = fa.getEta()
+        fa.eta = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDEta()
+
+        if mode == 'fwd':
+            if self._ID('alpha') in arguments:
+                self.dgVec()[:] += fa.dEtadAlpha * self.dpVec('alpha')[:]
+            if self._ID('CM') in arguments:
+                self.dgVec()[:] += fa.dEtadCM * self.dpVec('CM')[:]
+        if mode == 'rev':
+            if self._ID('alpha') in arguments:
+                self.dpVec('alpha')[:] += fa.dEtadAlpha * self.dgVec()[:]
+            if self._ID('CM') in arguments:
+                self.dpVec('CM')[:] += fa.dEtadCM * self.dgVec()[:]
+
+class Var_tau(ExplicitSystem):
+    
+    def _declare_global(self):
+        return 'tau', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*0.5,
+                                     lb=numpy.zeros(len(segs)),ub=numpy.ones(len(segs)))
+        self._declare_local_argument('cThrustSL')
+        self._declare_local_argument('x', indices=segs)
+        self._declare_local_argument('h', indices=segs)
+        self._declare_local_argument('Thrust', indices=segs)
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        fa.Thrust = self.pVec('Thrust')[:]
+        self.uVec()[:] = fa.getTau()
+        fa.tau = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDTau()
+
+        if mode == 'fwd':
+            if self._ID('cThrustSL') in arguments:
+                self.dgVec()[:] += fa.dTaudCThrustSL * self.dpVec('cThrustSL')[:]
+            if self._ID('h') in arguments:
+                self.dgVec()[:] += fa.dTaudH * self.dpVec('h')[:]
+            if self._ID('Thrust') in arguments:
+                self.dgVec()[:] += fa.dTaudThrust * self.dpVec('Thrust')[:]
+        if mode == 'rev':
+            if self._ID('cThrustSL') in arguments:
+                self.dpVec('cThrustSL')[:] += fa.dTaudCThrustSL * self.dgVec()[:]
+            if self._ID('h') in arguments:
+                self.dpVec('h')[:] += fa.dTaudH * self.dgVec()[:]
+            if self._ID('Thrust') in arguments:
+                self.dpVec('Thrust')[:] += fa.dTaudThrust * self.dgVec()[:]
+
+class Var_Wf(ExplicitSystem):
+    
+    def _declare_global(self):
+        return 'Wf', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.linspace(20000.0,0.0,len(segs)),
+                                     lb=numpy.zeros(len(segs)))
+        self._declare_local_argument('x', indices=segs)
+        self._declare_local_argument('v', indices=segs)
+        self._declare_local_argument('gamma', indices=segs)
+        self._declare_local_argument('Thrust', indices=segs)
+        self._declare_local_argument('SFC', indices=segs)
+        self._declare_local_argument('g')
+
+    def _apply_G(self):
+        fa = self.kwargs['fa']
+        fa.Thrust = self.pVec('Thrust')
+        self.uVec()[:] = fa.getWf()
+        fa.Wf = self.uVec()[:]
+
+    def _apply_dGdp(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDWf()
+
+        if mode == 'fwd':
+            if self._ID('v') in arguments:
+                self.dgVec()[:] += (fa.dWfdV1+fa.dWfdV2) * self.dpVec('v')[:]
+            if self._ID('gamma') in arguments:
+                self.dgVec()[:] += (fa.dWfdGamma1+fa.dWfdGamma2) * self.dpVec('gamma')[:]
+            if self._ID('Thrust') in arguments:
+                self.dgVec()[:] += (fa.dWfdThrust1+fa.dWfdThrust2) * self.dpVec('Thrust')[:]
+            if self._ID('SFC') in arguments:
+                self.dgVec()[:] += (fa.dWfdSFC1+fa.dWfdSFC2) * self.dpVec('SFC')[:]
+        if mode == 'rev':
+            if self._ID('v') in arguments:
+                self.dpVec('v')[:] += (fa.dWfdV1+fa.dWfdV2) * self.dgVec()[:]
+            if self._ID('gamma') in arguments:
+                self.dpVec('gamma')[:] += (fa.dWfdGamma1+fa.dWfdGamma2) * self.dgVec()[:]
+            if self._ID('Thrust') in arguments:
+                self.dpVec('Thrust')[:] += (fa.dWfdThrust1+fa.dWfdThrust2) * self.dgVec()[:]
+            if self._ID('SFC') in arguments:
+                self.dpVec('SFC')[:] += (fa.dWfdSFC1+fa.dWfdSFC2) * self.dgVec()[:]
+
+class Var_CL(ImplicitSystem):
+
+    def _declare_global(self):
+        return 'CL', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs)))
+        self._declare_local_argument('Wac')
+        self._declare_local_argument('S')
+        self._declare_local_argument('g')
+        self._declare_local_argument('x', indices=segs)
+        self._declare_local_argument('v', indices=segs)
+        self._declare_local_argument('rho', indices=segs)
+        self._declare_local_argument('Wf', indices=segs)
+        self._declare_local_argument('gamma', indices=segs)
+        self._declare_local_argument('Thrust', indices=segs)
+        self._declare_local_argument('alpha', indices=segs)
+        self._declare_local_argument('dGamma', indices=segs)
+
+    def _apply_F(self):
+        fa = self.kwargs['fa']
+        fa.CL = self.uVec()[:]
+        fa.Wf = self.pVec('Wf')[:]
+        fa.Thrust = self.pVec('Thrust')[:]
+        fa.alpha = self.pVec('alpha')[:]
+        self.fVec()[:] = fa.getCLRes()
+
+    def _apply_dFdpu(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDCL()
+
+        if mode == 'fwd':
+            if self._ID('Wac') in arguments:
+                self.dfVec()[:] += fa.dCLdWac * self.dpVec('Wac')[:]
+            if self._ID('S') in arguments:
+                self.dfVec()[:] += fa.dCLdS * self.dpVec('S')[:]
+            if self._ID('v') in arguments:
+                self.dfVec()[:] += (fa.dCLdV1+fa.dCLdV2+fa.dCLdV3) * self.dpVec('v')[:]
+            if self._ID('rho') in arguments:
+                self.dfVec()[:] += (fa.dCLdRho1+fa.dCLdRho2+fa.dCLdRho3) * self.dpVec('rho')[:]
+            if self._ID('Wf') in arguments:
+                self.dfVec()[:] += (fa.dCLdWf1+fa.dCLdWf2+fa.dCLdWf3) * self.dpVec('Wf')[:]
+            if self._ID('gamma') in arguments:
+                self.dfVec()[:] += (fa.dCLdGamma1+fa.dCLdGamma2+fa.dCLdGamma3) * self.dpVec('gamma')[:]
+            if self._ID('Thrust') in arguments:
+                self.dfVec()[:] += (fa.dCLdThrust1+fa.dCLdThrust2+fa.dCLdThrust3) * self.dpVec('Thrust')[:]
+            if self._ID('alpha') in arguments:
+                self.dfVec()[:] += (fa.dCLdAlpha1+fa.dCLdAlpha2+fa.dCLdAlpha3) * self.dpVec('alpha')[:]
+            if self._ID('dGamma') in arguments:
+                self.dfVec()[:] += (fa.dCLddGamma1+fa.dCLddGamma2+fa.dCLddGamma3) * self.dpVec('dGamma')[:]
+            if self._ID('CL') in arguments:
+                self.dfVec()[:] += (fa.dCLdCL1+fa.dCLdCL2+fa.dCLdCL3) * self.duVec('CL')[:]
+
+        elif mode == 'rev':
+            if self._ID('Wac') in arguments:
+                self.dpVec('Wac')[:] += fa.dCLdWac * self.dfVec()[:]
+            if self._ID('S') in arguments:
+                self.dpVec('S')[:] += fa.dCLdS * self.dfVec()[:]
+            if self._ID('v') in arguments:
+                self.dpVec('v')[:] += (fa.dCLdV1+fa.dCLdV2+fa.dCLdV3) * self.dfVec()[:]
+            if self._ID('rho') in arguments:
+                self.dpVec('rho')[:] += (fa.dCLdRho1+fa.dCLdRho2+fa.dCLdRho3) * self.dfVec()[:]
+            if self._ID('Wf') in arguments:
+                self.dpVec('Wf')[:] += (fa.dCLdWf1+fa.dCLdWf2+fa.dCLdWf3) * self.dfVec()[:]
+            if self._ID('gamma') in arguments:
+                self.dpVec('gamma')[:] += (fa.dCLdGamma1+fa.dCLdGamma2+fa.dCLdGamma3) * self.dfVec()[:]
+            if self._ID('Thrust') in arguments:
+                self.dpVec('Thrust')[:] += (fa.dCLdThrust1+fa.dCLdThrust2+fa.dCLdThrust3) * self.dfVec()[:]
+            if self._ID('alpha') in arguments:
+                self.dpVec('alpha')[:] += (fa.dCLdAlpha1+fa.dCLdAlpha2+fa.dCLdAlpha3) * self.dfVec()[:]
+            if self._ID('dGamma') in arguments:
+                self.dpVec('dGamma')[:] += (fa.dCLddGamma1+fa.dCLddGamma2+fa.dCLddGamma3) * self.dfVec()[:]
+            if self._ID('CL') in arguments:
+                self.duVec('CL')[:] += (fa.dCLdCL1+fa.dCLdCL2+fa.dCLdCL3) * self.dfVec()[:]
+
+class Var_Thrust(ImplicitSystem):
+    
+    def _declare_global(self):
+        return 'Thrust', 1
+    
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.ones(len(segs))*400.0e3,
+                                     lb=numpy.zeros(len(segs)))
+        self._declare_local_argument('S')
+        self._declare_local_argument('Wac')
+        self._declare_local_argument('g')
+        self._declare_local_argument('x', indices=segs)
+        self._declare_local_argument('v', indices=segs)
+        self._declare_local_argument('rho', indices=segs)
+        self._declare_local_argument('gamma', indices=segs)
+        self._declare_local_argument('dv', indices=segs)
+        self._declare_local_argument('CD', indices=segs)
+        self._declare_local_argument('Wf', indices=segs)
+        self._declare_local_argument('alpha', indices=segs)
+
+    def _apply_F(self):
+        fa = self.kwargs['fa']
+        fa.CD = self.pVec('CD')[:]
+        fa.Wf = self.pVec('Wf')[:]
+        fa.alpha = self.pVec('alpha')[:]
+        fa.Thrust = self.uVec()[:]
+        self.fVec()[:] = fa.getThrustRes()
+
+    def _apply_dFdpu(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDThrust()
+
+        if mode == 'fwd':
+            if self._ID('S') in arguments:
+                self.dfVec()[:] += fa.dTdS * self.dpVec('S')[:]
+            if self._ID('Wac') in arguments:
+                self.dfVec()[:] += fa.dTdWac * self.dpVec('Wac')[:]
+            if self._ID('v') in arguments:
+                self.dfVec()[:] += (fa.dTdV1+fa.dTdV2+fa.dTdV3) * self.dpVec('v')[:]
+            if self._ID('rho') in arguments:
+                self.dfVec()[:] += (fa.dTdRho1+fa.dTdRho2+fa.dTdRho3) * self.dpVec('rho')[:]
+            if self._ID('gamma') in arguments:
+                self.dfVec()[:] += (fa.dTdGamma1+fa.dTdGamma2+fa.dTdGamma3) * self.dpVec('gamma')[:]
+            if self._ID('dv') in arguments:
+                self.dfVec()[:] += (fa.dTddV1+fa.dTddV2+fa.dTddV3) * self.dpVec('dv')[:]
+            if self._ID('CD') in arguments:
+                self.dfVec()[:] += (fa.dTdCD1+fa.dTdCD2+fa.dTdCD3) * self.dpVec('CD')[:]
+            if self._ID('WF') in arguments:
+                self.dfVec()[:] += (fa.dTdWf1+fa.dTdWf2+fa.dTdWf3) * self.dpVec('Wf')[:]
+            if self._ID('alpha') in arguments:
+                self.dfVec()[:] += (fa.dTdAlpha1+fa.dTdAlpha2+fa.dTdAlpha3) * self.dpVec('alpha')[:]
+            if self._ID('Thrust') in arguments:
+                self.dfVec()[:] += (fa.dTdThrust1+fa.dTdThrust2+fa.dTdThrust3) * self.duVec('Thrust')[:]
+
+        elif mode == 'rev':
+            if self._ID('S') in arguments:
+                self.dpVec('S')[:] += fa.dTdS * self.dfVec()[:]
+            if self._ID('Wac') in arguments:
+                self.dpVec('Wac')[:] += fa.dTdWac * self.dfVec()[:]
+            if self._ID('v') in arguments:
+                self.dpVec('v')[:] += (fa.dTdV1+fa.dTdV2+fa.dTdV3) * self.dfVec()[:]
+            if self._ID('rho') in arguments:
+                self.dpVec('rho')[:] += (fa.dTdRho1+fa.dTdRho2+fa.dTdRho3) * self.dfVec()[:]
+            if self._ID('gamma') in arguments:
+                self.dpVec('gamma')[:] += (fa.dTdGamma1+fa.dTdGamma2+fa.dTdGamma3) * self.dfVec()[:]
+            if self._ID('dv') in arguments:
+                self.dpVec('dv')[:] += (fa.dTddV1+fa.dTddV2+fa.dTddV3) * self.dfVec()[:]
+            if self._ID('CD') in arguments:
+                self.dpVec('CD')[:] += (fa.dTdCD1+fa.dTdCD2+fa.dTdCD3) * self.dfVec()[:]
+            if self._ID('Wf') in arguments:
+                self.dpVec('Wf')[:] += (fa.dTdWf1+fa.dTdWf2+fa.dTdWf3) * self.dfVec()[:]
+            if self._ID('alpha') in arguments:
+                self.dpVec('alpha')[:] += (fa.dTdAlpha1+fa.dTdAlpha2+fa.dTdAlpha3) * self.dfVec()[:]
+            if self._ID('Thrust') in arguments:
+                self.duVec('Thrust')[:] += (fa.dTdThrust1+fa.dTdThrust2+fa.dTdThrust3) * self.dfVec()[:]
+
+class Var_CM(ImplicitSystem):
+    
+    def _declare_global(self):
+        return 'CM', 1
+
+    def _declare_local(self):
+        segs = range(self.kwargs['numSeg'])
+        self._declare_local_variable(len(segs),val=numpy.zeros(len(segs)))
+        self._declare_local_argument('S')
+        self._declare_local_argument('chord')
+        self._declare_local_argument('inertia')
+        self._declare_local_argument('x', indices=segs)
+        self._declare_local_argument('v', indices=segs)
+        self._declare_local_argument('rho', indices=segs)
+        self._declare_local_argument('gamma', indices=segs)
+        self._declare_local_argument('dGamma', indices=segs)
+        self._declare_local_argument('d2Gamma', indices=segs)
+        self._declare_local_argument('dv', indices=segs)
+
+    def _apply_F(self):
+        fa = self.kwargs['fa']
+        fa.CM = self.vVec()[:]
+        self.cVec()[:] = fa.getCMRes()
+
+    def _apply_dFdpu(self, mode, arguments):
+        fa = self.kwargs['fa']
+        fa.getDCM()
+
+        if mode == 'fwd':
+            if self._ID('S') in arguments:
+                self.dfVec()[:] += fa.dCMdS * self.dpVec('S')[:]
+            if self._ID('chord') in arguments:
+                self.dfVec()[:] += fa.dCMdC * self.dpVec('chord')[:]
+            if self._ID('inertia') in arguments:
+                self.dfVec()[:] += fa.dCMdI * self.dpVec('inertia')[:]
+            if self._ID('v') in arguments:
+                self.dfVec()[:] += (fa.dCMdV1+fa.dCMdV2+fa.dCMdV3) * self.dpVec('v')[:]
+            if self._ID('rho') in arguments:
+                self.dfVec()[:] += (fa.dCMdRho1+fa.dCMdRho2+fa.dCMdRho3) * self.dpVec('rho')[:]
+            if self._ID('gamma') in arguments:
+                self.dfVec()[:] += (fa.dCMdGamma1+fa.dCMdGamma2+fa.dCMdGamma3) * self.dpVec('gamma')[:]
+            if self._ID('dGamma') in arguments:
+                self.dfVec()[:] += (fa.dCMddGamma1+fa.dCMddGamma2+fa.dCMddGamma3) * self.dpVec('dGamma')[:]
+            if self._ID('d2Gamma') in arguments:
+                self.dfVec()[:] += (fa.dCMdd2Gamma1+fa.dCMdd2Gamma2+fa.dCMdd2Gamma3) * self.dpVec('d2Gamma')[:]
+            if self._ID('dv') in arguments:
+                self.dfVec()[:] += (fa.dCMddV1+fa.dCMddV2+fa.dCMddV3) * self.dpVec('dv')[:]
+            if self._ID('CM') in arguments:
+                self.dfVec()[:] += (fa.dCMdCM1+fa.dCMdCM2+fa.dCMdCM3) * self.duVec('CM')[:]
+
+        elif mode == 'rev':
+            if self._ID('S') in arguments:
+                self.dpVec('S')[:] += fa.dCMdS * self.dfVec()[:]
+            if self._ID('chord') in arguments:
+                self.dpVec('chord')[:] += fa.dCMdC * self.dfVec()[:]
+            if self._ID('inertia') in arguments:
+                self.dpVec('inertia')[:] += fa.dCMdI * self.dfVec()[:]
+            if self._ID('v') in arguments:
+                self.dpVec('v')[:] += (fa.dCMdV1+fa.dCMdV2+fa.dCMdV3) * self.dfVec()[:]
+            if self._ID('rho') in arguments:
+                self.dpVec('rho')[:] += (fa.dCMdRho1+fa.dCMdRho2+fa.dCMdRho3) * self.dfVec()[:]
+            if self._ID('gamma') in arguments:
+                self.dpVec('gamma')[:] += (fa.dCMdGamma1+fa.dCMdGamma2+fa.dCMdGamma3) * self.dfVec()[:]
+            if self._ID('dGamma') in arguments:
+                self.dpVec('dGamma')[:] += (fa.dCMddGamma1+fa.dCMddGamma2+fa.dCMddGamma3) * self.dfVec()[:]
+            if self._ID('d2Gamma') in arguments:
+                self.dpVec('d2Gamma')[:] += (fa.dCMdd2Gamma1+fa.dCMdd2Gamma2+fa.dCMdd2Gamma3) * self.dfVec()[:]
+            if self._ID('dv') in arguments:
+                self.dpVec('dv')[:] += (fa.dCMddV1+fa.dCMddV2+fa.dCMddV3) * self.dfVec()[:]
+            if self._ID('CM') in arguments:
+                self.duVec('CM')[:] += (fa.dCMdCM1+fa.dCMdCM2+fa.dCMdCM3) * self.dfVec()[:]
 
 x = numpy.linspace(0.0,1000.0,100)*1000.0
 h = numpy.zeros(100)
@@ -427,18 +964,27 @@ M = numpy.zeros(100)
 M[0:30] = numpy.linspace(0.2,0.84,30)
 M[30:75] = numpy.ones(45)*0.84
 M[75:100] = numpy.linspace(0.84,0.2,25)
+S = 427.8
+Wac = 185953*9.81
+cThrust = 1020000.0
+SFCSL = 8.9513-6
+chord = 8.15
+inertia = 4.1e7
+AR = 8.68
+e = 0.8
+g = 9.81
 
 params = {'alpha':numpy.ones(100)*3.0*numpy.pi/180.0,
           'tau':numpy.ones(100)*0.3,
           'eta':numpy.zeros(100),
           'Wf':numpy.linspace(100000,0.0,100)*9.81,
-          'S':525.0,
+          'S':427.8,
           'Wac':185953*9.81,
           'cThrust':1020000,
           'SFC':8.951e-6,
           'chord':8.15,
           'inertia':4.1e7,
-          'AR':7.9,
+          'AR':8.68,
           'e':0.8,
           'CL':numpy.ones(100)*0.3,
           'CD':numpy.ones(100)*0.0015,
@@ -448,13 +994,53 @@ params = {'alpha':numpy.ones(100)*3.0*numpy.pi/180.0,
           }
 
 flightProblem = flightAnalysis(x,h,M,params)
-xin = numpy.zeros([3*flightProblem.numSeg])
-xin[0::3] = numpy.ones(100)*3*numpy.pi/180.0
-xin[1::3] = numpy.ones(100)*0.3
-xin[2::3] = numpy.zeros(100)
 
-flightProblem.CM = numpy.ones(100)*0.1
-flightProblem.getDEta()
-print flightProblem.dEdGamma1
-print flightProblem.dEdGamma2
-print flightProblem.dEdGamma3
+
+Var_x = IndependentSystem('x',0,value=x)
+Var_h = IndependentSystem('h',0,value=h)
+Var_M = IndependentSystem('M',0,value=M)
+Var_S = IndependentSystem('S',0,value=S,size=1)
+Var_Wac = IndependentSystem('Wac',0,value=Wac,size=1)
+Var_cThrustSL = IndependentSystem('cThrustSL',0,value=cThrustSL,size=1)
+Var_SFCSL = IndependentSystem('SFCSL',0,value=SFCSL,size=1)
+Var_chord = IndependentSystem('chord',0,value=chord,size=1)
+Var_inertia = IndependentSystem('inertia',0,value=inertia,size=1)
+Var_AR = IndependentSystem('AR',0,value=AR,size=1)
+Var_e = IndependentSystem('e',0,value=e,size=1)
+Var_g = IndependentSystem('g',0,value=g,size=1)
+
+main = SerialSystem('main',[
+        Var_x,
+        Var_h,
+        Var_M,
+        Var_S,
+        Var_Wac,
+        Var_cThrustSL,
+        Var_SFCSL,
+        Var_chord,
+        Var_inertia,
+        Var_AR,
+        Var_e,
+        Var_g,
+        Var_temp(),
+        Var_rho(),
+        Var_v(),
+        Var_SFC(),
+        Var_gamma(),
+        Var_dGamma(),
+        Var_d2Gamma(),
+        Var_dv(),
+        SerialSystem('aeroFlight',[
+                SerialSystem('aero',[
+                        Var_alpha(),
+                        Var_CD(),
+                        Var_Eta(),
+                        Var_Tau(),
+                        ]),
+                SerialSystem('flight',[
+                        Var_CL(),
+                        Var_Thrust(),
+                        Var_CM(),
+                        ])
+                ])
+        ])
