@@ -664,8 +664,8 @@ subroutine get_v_d(numElem, v_ends, dv0, dv1)
   integer :: i
 
   do i=0,numElem
-     dv0(i) = -i/numElem + 1
-     dv1(i) = i/numElem
+     dv0(i) = -real(i)/numElem + 1
+     dv1(i) = real(i)/numElem
   enddo
 end subroutine get_v_d
 
@@ -902,22 +902,22 @@ subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, r
 
         temp = (xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)
         temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2*S)
-        temp = temp * (-CTTemp(j)*SIN(aTemp(j))*daTemp1(j) - CDTemp(j))
+        temp = temp * (-CTTemp(j)*SIN(aTemp(j))*daTemp1(j))
         dhda1(i+1) = dhda1(i+1) + temp
 
         temp = (xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)
         temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2*S)
-        temp = temp * (-CTTemp(j)*SIN(aTemp(j))*daTemp2(j) - CDTemp(j))
+        temp = temp * (-CTTemp(j)*SIN(aTemp(j))*daTemp2(j))
         dhda2(i+1) = dhda2(i+1) + temp
 
         temp = (xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)
         temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2*S)
-        temp = temp * (CTTemp(j)*cosa - dCDTemp1(j))
+        temp = temp * (-dCDTemp1(j))
         dhdCD1(i+1) = dhdCD1(i+1) + temp
         
         temp = (xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)
         temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2*S)
-        temp = temp * (CTTemp(j)*cosa - dCDTemp2(j))
+        temp = temp * (-dCDTemp2(j))
         dhdCD2(i+1) = dhdCD2(i+1) + temp
      enddo
   enddo
@@ -960,18 +960,15 @@ subroutine dlinspace(n, x0, x1, dy1, dy2)
 
 end subroutine dlinspace
 
-subroutine get_tau(numElem, cThrustSL, CT, rho, v, h, tau)
-  ! computes the throttle setting using a simple
-  ! propulsion model
-
+subroutine get_tau(numElem, cThrustSL, S, CT, rho, v, h, tau)
   !f2py intent(in) numElem
-  !f2py intent(in) cThrustSL
+  !f2py intent(in) cThrustSL, S
   !f2py intent(in) CT, rho, v, h
   !f2py intent(out) tau
   !f2py depend(numElem) CT, rho, v, h, tau
 
   integer, intent(in) :: numElem
-  double precision, intent(in) :: cThrustSL
+  double precision, intent(in) :: cThrustSL, S
   double precision, dimension(0:numElem), intent(in) :: CT, rho, v, h
   double precision, dimension(0:numElem), intent(out) :: tau
 
@@ -980,38 +977,41 @@ subroutine get_tau(numElem, cThrustSL, CT, rho, v, h, tau)
 
   do i = 0,numElem
      cThrust(i) = cThrustSL - 0.072*h(i)
-     Thrust(i) = 0.5*rho(i)*v(i)**2*CT(i)
+     Thrust(i) = 0.5*rho(i)*v(i)**2*S*CT(i)
      tau(i) = Thrust(i)/cThrust(i)
   enddo
 
 end subroutine get_tau
 
-subroutine getDTau(numSeg, cThrustSL, x, h, tau, Thrust, dCThrustSL, dh, dThrust)
+subroutine get_tau_d(numElem, cThrustSL, S, h, CT, rho, v, dCThrustSL, dh, dCT, &
+     dRho, dV, dS)
   ! computes the derivatives of throttle setting wrt
   ! propulsion parameters, h, tau, and thrust
 
-  !f2py intent(in) numSeg
-  !f2py intent(in) cThrustSL
-  !f2py intent(in) x, h, tau, Thrust
-  !f2py intent(out) dCThrustSL, dh, dThrust
-  !f2py depend(numSeg) x, h, tau, Thrust, dCThrustSL, dh, dThrust
+  !f2py intent(in) numElem
+  !f2py intent(in) cThrustSL, S
+  !f2py intent(in) h, CT, rho, v
+  !f2py intent(out) dCThrustSL, dh, dCT, dRho, dV, dS
+  !f2py depend(numElem) h, CT, rho, v, dCThrustSL, dh, dCT, dRho, dV, dS
 
-  integer, intent(in) :: numSeg
-  double precision, intent(in) :: cThrustSL
-  double precision, dimension(0:numSeg-1), intent(in) :: x, h, tau, Thrust
-  double precision, dimension(0:numSeg-1), intent(out) :: dCThrustSL, dh, dThrust
+  integer, intent(in) :: numElem
+  double precision, intent(in) :: cThrustSL, S
+  double precision, dimension(0:numElem), intent(in) :: h, CT, rho, v
+  double precision, dimension(0:numElem), intent(out) :: dCThrustSL, dh, dCT, dRho, dV, dS
 
   integer :: i = 0
-  double precision, dimension(0:numseg-1) :: cThrust
+  double precision, dimension(0:numElem) :: cThrust
 
-  do i = 0,numSeg-1
-     cThrust(i) = cThrustSL - 0.072*h(i)
-     dCThrustSL(i) = 1/(cThrust(i)**2)
-     dh(i) = -0.072/(cThrust(i)**2)
-     dThrust(i) = -1/cThrust(i)
+  do i = 0,numElem
+     dRho(i) = (0.5*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))
+     dV(i) = (rho(i)*v(i)*S*CT(i))/(cThrustSL-0.072*h(i))
+     dS(i) = (0.5*rho(i)*v(i)**2*CT(i))/(cThrustSL-0.072*h(i))
+     dCT(i) = (0.5*rho(i)*v(i)**2*S)/(cThrustSL-0.072*h(i))
+     dCThrustSL(i) = -(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
+     dh(i) = -0.072*(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
   enddo
 
-end subroutine getDTau
+end subroutine get_tau_d
 
 subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, Wf)
   ! computes fuel weight for each segment
@@ -1177,7 +1177,7 @@ end subroutine getDWf
   ! the flight equation is integrated, and the resultant value is 
   ! determined to be the residual for alpha
   
-subroutine get_CL(numElem, numInt, Wac, S, g, x, v, rho, CL, wf, gamma, &
+subroutine get_CL(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      CT, alpha, CLRes)
 
   !f2py intent(in) numElem, numInt
@@ -1280,7 +1280,7 @@ subroutine get_CL(numElem, numInt, Wac, S, g, x, v, rho, CL, wf, gamma, &
 
 end subroutine get_CL
 
-subroutine getDCL(numSeg, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
+subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      Thrust, alpha, dGamma, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, &
      dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, &
      dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3)
@@ -1290,21 +1290,21 @@ subroutine getDCL(numSeg, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
   ! the jacobian structure is tri-diagonal, and is stored in 3
   ! vectors for each derivative
 
-  !f2py intent(in) numSeg, numInt
+  !f2py intent(in) numElem, numInt
   !f2py intent(in) Wac, S, g
   !f2py intent(in) x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma
   !f2py intent(out) dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, dCLdCL1, dCLdCL2, dCLdCL3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3
-  !f2py depend(numSeg) x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3
+  !f2py depend(numElem) x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3
 
   ! Input/Output
-  integer, intent(in) :: numSeg, numInt
+  integer, intent(in) :: numElem, numInt
   double precision, intent(in) :: Wac, S, g
-  double precision, dimension(0:numSeg-1), intent(in) :: x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma
-  double precision, dimension(0:numSeg-1), intent(out) :: dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3
-  double precision, dimension(0:numSeg-1), intent(out) :: dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1
-  double precision, dimension(0:numSeg-1), intent(out) :: dCLdGamma2, dCLdGamma3
-  double precision, dimension(0:numSeg-1), intent(out) :: dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3
-  double precision, dimension(0:numSeg-1), intent(out) :: dCLddGamma1, dCLddGamma2, dCLddGamma3
+  double precision, dimension(0:numElem), intent(in) :: x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma
+  double precision, dimension(0:numElem), intent(out) :: dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3
+  double precision, dimension(0:numElem), intent(out) :: dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1
+  double precision, dimension(0:numElem), intent(out) :: dCLdGamma2, dCLdGamma3
+  double precision, dimension(0:numElem), intent(out) :: dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3
+  double precision, dimension(0:numElem), intent(out) :: dCLddGamma1, dCLddGamma2, dCLddGamma3
 
   integer :: i = 0, j = 0, k = 0
   double precision :: temp, deltax
@@ -1329,7 +1329,7 @@ subroutine getDCL(numSeg, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
   call linspace(numInt, param_one, param_zero, R1)
   call linspace(numInt, param_zero, param_one, R2)
 
-  do i = 0,numSeg-1
+  do i = 0,numElem
      dCLdWac(i) = 0.0
      dCLdS(i) = 0.0
      dCLdV1(i) = 0.0
@@ -1358,7 +1358,7 @@ subroutine getDCL(numSeg, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      dCLddGamma3(i) = 0.0
   enddo
 
-  do i = 0,numSeg-2
+  do i = 0,numElem-1
      call linspace(numInt, rho(i), rho(i+1), rhoTemp)
      call linspace(numInt, v(i), v(i+1), vTemp)
      call dlinspace(numInt, rho(i), rho(i+1), dRhoTemp1, dRhoTemp2)
@@ -1440,7 +1440,7 @@ subroutine getDCL(numSeg, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      enddo
   enddo
 
-  do i = 0,numSeg-2
+  do i = 0,numElem-1
      call linspace(numInt, rho(i), rho(i+1), rhoTemp)
      call linspace(numInt, v(i), v(i+1), vTemp)
      call dlinspace(numInt, rho(i), rho(i+1), dRhoTemp1, dRhoTemp2)

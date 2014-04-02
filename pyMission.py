@@ -2,6 +2,7 @@ from __future__ import division
 import sys
 sys.path.insert(0, '/home/jason/github/CMF')
 import numpy
+import copy
 from framework import *
 import mission
 
@@ -123,28 +124,28 @@ class Sys_h(ImplicitSystem):
                     #print 'dhdx0', dhdx0, 'dhdx1',dhdx1
                     #print 'dhdx',dhdx0*dp(['x',0])[0] + dhdx1*dp(['x',0])[1]
                 if self.get_id('Wf') in arguments:
-                    df(['h',-1])[:] += (dhdWf1+dhdWf2)*dp(['Wf',-1])
+                    df(['h',-1])[:] -= (dhdWf1+dhdWf2)*dp(['Wf',-1])
                     #print 'dhdWf',(dhdWf1+dhdWf2)*dp(['Wf',-1])
                 if self.get_id('rho') in arguments:
-                    df(['h',-1])[:] += (dhdRho1+dhdRho2)*dp(['rho',-1])
+                    df(['h',-1])[:] -= (dhdRho1+dhdRho2)*dp(['rho',-1])
                     #print 'dhdRho',(dhdRho1+dhdRho2)*dp(['rho',-1])
                 if self.get_id('v') in arguments:
-                    df(['h',-1])[:] += (dhdV1+dhdV2)*dp(['v',-1])
+                    df(['h',-1])[:] -= (dhdV1+dhdV2)*dp(['v',-1])
                     #print 'dhdV',(dhdV1+dhdV2)*dp(['v',-1])
                 if self.get_id('CT') in arguments:
-                    df(['h',-1])[:] += (dhdCT1+dhdCT2)*dp(['CT',-1])
+                    df(['h',-1])[:] -= (dhdCT1+dhdCT2)*dp(['CT',-1])
                     #print 'dhdCT',(dhdCT1+dhdCT2)*dp(['CT',-1])
                 if self.get_id('alpha') in arguments:
-                    df(['h',-1])[:] += (dhdA1+dhdA2)*dp(['alpha',-1])
+                    df(['h',-1])[:] -= (dhdA1+dhdA2)*dp(['alpha',-1])
                     #print 'dhdA',(dhdA1+dhdA2)*dp(['alpha',-1])
                 if self.get_id('CD') in arguments:
-                    df(['h',-1])[:] += (dhdCD1+dhdCD2)*dp(['CD',-1])
+                    df(['h',-1])[:] -= (dhdCD1+dhdCD2)*dp(['CD',-1])
                     #print 'dhdCD',(dhdCD1+dhdCD2)*dp(['CD',-1])
                 if self.get_id('h_ends') in arguments:
-                    df(['h',-1])[:] += numpy.ones(self.numPts)*dp(['h_ends',-1])[0]
+                    df(['h',-1])[:] -= numpy.ones(self.numPts)*dp(['h_ends',-1])[0]
                     #print 'dhdh', numpy.sum(dhdh*du(['h',-1]),axis=1)
-                #if self.get_id('h') in arguments:
-                #df(['h',-1])[:] += du(['h',-1])
+                if self.get_id('h') in arguments:
+                    df(['h',-1])[:] += du(['h',-1])
                 #print 'DH:',df(['h',-1])
 
             if self.mode == 'rev':
@@ -473,13 +474,14 @@ class Sys_v(ExplicitSystem):
         v_ends = p(['v_ends',-1])
         M_ends = p(['M_ends',-1])
         Temp = p(['Temp',-1])
+        v_copy = copy.copy(v_ends)
         
-        if v_ends[0] == -1:
-            v_ends[0] = M_ends[0]*numpy.sqrt(1.4*288*Temp[0])
-        if v_ends[1] == -1:
-            v_ends[1] = M_ends[1]*numpy.sqrt(1.4*288*Temp[self.numElem])
+        if v_copy[0] == -1:
+            v_copy[0] = M_ends[0]*numpy.sqrt(1.4*288*Temp[0])
+        if v_copy[1] == -1:
+            v_copy[1] = M_ends[1]*numpy.sqrt(1.4*288*Temp[self.numElem])
 
-        v = mission.get_v(self.numElem, v_ends)
+        v = mission.get_v(self.numElem, v_copy)
         #print "current v: ", v
         u(['v',-1])[:] = v
     '''
@@ -515,9 +517,14 @@ class Sys_v(ExplicitSystem):
             if self.get_id('v_ends') in arguments:
                 dg(['v',-1])[:] += dv_dvEnds0 * dp(['v_ends',-1])[0] + \
                     dv_dvEnds1 * dp(['v_ends',-1])[1]
+            if self.get_id('M_ends') in arguments:
+                dg(['v',-1])[:] += dv_dMEnds0 * dp(['M_ends',-1])[0] + \
+                    dv_dMEnds1 * dp(['M_ends',-1])[1]
         if self.mode == 'rev':
             if self.get_id('v_ends') in arguments:
                 dp(['v_ends',-1])[:] = [dv_dvEnds0, dv_dvEnds1]*dg(['v',-1])
+            if self.get_id('M_ends') in arguments:
+                dp(['M_ends',-1])[:] = [dv_dMEnds0, dv_dMEnds1]*dg(['v',-1])
             if self.get_id('v') in arguments:
                 dp(['v',-1])[:] = 0.0
 
@@ -614,6 +621,7 @@ class Sys_tau(ExplicitSystem):
         self._declare_argument(['v',-1], indices=iPts)
         self._declare_argument(['h',-1], indices=iPts)
         self._declare_argument(['cThrustSL',0], indices=[0])
+        self._declare_argument(['S',0], indices=[0])
 
     def apply_G(self):
         p = self.vec['p']
@@ -624,13 +632,61 @@ class Sys_tau(ExplicitSystem):
         v = p(['v',-1])
         h = p(['h',-1])
         cThrustSL = p(['cThrustSL',0])
+        S = p(['S',0])
 
-        tau = mission.get_tau(self.numElem+1, cThrustSL, CT, rho, v, h)
+        tau = mission.get_tau(self.numElem, cThrustSL, S, CT, rho, v, h)
         #print "current tau: ", tau
         u(['tau',-1])[:] = tau
 
-    def apply_dFdpu(self, arguments):
+    def apply_dFdpu0(self, arguments):
         self._apply_dFdpu_FD(arguments)
+
+    def apply_dGdp(self, arguments):
+        p = self.vec['p']
+        dp = self.vec['dp']
+        dg = self.vec['dg']
+        du = self.vec['du']
+
+        cThrustSL = p(['cThrustSL',0])
+        S = p(['S',0])
+        h = p(['h',-1])
+        CT = p(['CT',-1])
+        rho = p(['rho',-1])
+        v = p(['v',-1])
+        
+        [dtdcThrustSL, dtdh, dtdCT, dtdRho, dtdV,
+         dtdS] = mission.get_tau_d(self.numElem, cThrustSL, S, h, CT,
+                                   rho, v)
+
+        if self.mode == 'fwd':
+            dg(['tau',-1])[:] = 0.0
+            if self.get_id('cThrustSL') in arguments:
+                dg(['tau',-1])[:] += dtdcThrustSL * dp(['cThrustSL',0])
+            if self.get_id('h') in arguments:
+                dg(['tau',-1])[:] += dtdh * dp(['h',-1])
+            if self.get_id('CT') in arguments:
+                dg(['tau',-1])[:] += dtdCT * dp(['CT',-1])
+            if self.get_id('rho') in arguments:
+                dg(['tau',-1])[:] += dtdRho * dp(['rho',-1])
+            if self.get_id('v') in arguments:
+                dg(['tau',-1])[:] += dtdV * dp(['v',-1])
+            if self.get_id('S') in arguments:
+                dg(['tau',-1])[:] += dtdS * dp(['S',0])
+        if self.mode == 'rev':
+            if self.get_id('cThrustSL') in arguments:
+                dp(['cThrustSL',0])[:] = dtdcThrustSL * dg(['tau',-1])
+            if self.get_id('h') in arguments:
+                dp(['h',-1])[:] = dtdh * dg(['tau',-1])
+            if self.get_id('CT') in arguments:
+                dp(['CT',-1])[:] = dtdCT * dg(['tau',-1])
+            if self.get_id('rho') in arguments:
+                dp(['rho',-1])[:] = dtdRho * dg(['tau',-1])
+            if self.get_id('v') in arguments:
+                dp(['v',-1])[:] = dtdV * dg(['tau',-1])
+            if self.get_id('S') in arguments:
+                dp(['S',0])[:] = dtdS * dg(['tau',-1])
+            if self.get_id('tau') in arguments:
+                du(['tau',-1])[:] = 0.0
 
 class Sys_CL(ImplicitSystem):
     def _declare(self):
@@ -666,7 +722,7 @@ class Sys_CL(ImplicitSystem):
         v = p(['v',-1])
         S = p(['S',0])
         Wac = p(['Wac',0])
-        g = p(['g',0])
+        g = 9.81
         CL = u(['CL',-1])
         x_ends = p(['x',0])
         x_int = numpy.linspace(x_ends[0], x_ends[1], self.numElem+1)
@@ -677,8 +733,25 @@ class Sys_CL(ImplicitSystem):
         #print "current CLRes: ", CLRes
         f(['CL',-1])[:] = CLRes
 
-    def apply_dFdpu(self, arguments):
+    def apply_dFdpu0(self, arguments):
         self._apply_dFdpu_FD(arguments)
+
+    def apply_dFdpu(self, arguments):
+        p = self.vec['p']
+        u = self.vec['u']
+        dp = self.vec['dp']
+        du = self.vec['du']
+
+        Wac = p(['Wac',0])
+        S = p(['S',0])
+        x_ends = p(['x_ends',0])
+        v = p(['v',-1])
+        rho = p(['rho',-1])
+        CL = u(['CL',-1])
+        Wf = p(['Wf',-1])
+        gamma = p(['gamma',-1])
+        CT = p(['CT',-1])
+        alpha = p(['alpha',-1])
 
 class Sys_alpha(ExplicitSystem):
     def _declare(self):
@@ -1158,6 +1231,7 @@ class Trajectory(object):
                 Sys_rho('rho',pt,numElem=self.numElem[pt],rho_IC=self.rho_IC),
                 Sys_v('v',pt,numElem=self.numElem[pt],v_IC=self.v_IC),
                 Sys_CT('CT',pt,numElem=self.numElem[pt],climb=self.tPts[pt],t_IC=t_IC),
+                Sys_tau('tau',pt,numElem=self.numElem[pt]),
                 Sys_Wf('Wf',pt,numElem=self.numElem[pt],numInt=self.numInt,Wf_IC=Wf_IC),
                 Sys_CM('CM',pt,numElem=self.numElem[pt],numInt=self.numInt,CM_IC=self.CM_IC),
                 Sys_eta('eta',pt,numElem=self.numElem[pt],e_IC=self.e_IC),
@@ -1209,10 +1283,10 @@ problemPtr.vec['u'].array[:] *= problemPtr.vec['u0'].array[:]
 print problemPtr.vec['u0']
 
 print "---------------------------------------"
-for name in ['SFC', 'gamma', 'Temp', 'h', 'rho', 'CT', 'v']:
+for name in ['SFC', 'gamma', 'Temp', 'h', 'rho', 'CT', 'v', 'tau']:
     print 'check ' + name, problemPtr([name,0]).check_derivatives(problemPtr.variables.keys())
 
-print 'checking h', problemPtr(['h',0]).check_derivatives(([('Wf',0)]))
+#print 'checking h', problemPtr(['h',0]).check_derivatives(([('CD',0)]))
 
 """
 print problemPtr.vec['u']['h',0]
