@@ -311,27 +311,27 @@ subroutine get_alpha(numElem, CL, eta, alpha)
 
 end subroutine get_alpha
 
-subroutine getDAlpha(numSeg, alpha, eta, CL, deta, dCL)
+subroutine get_alpha_d(numElem, eta, CL, deta, dCL)
   ! compute the derivatives of alpha wrt alpha, eta, and CL
 
-  !f2py intent(in) numSeg
-  !f2py intent(in) alpha, eta, CL
+  !f2py intent(in) numElem
+  !f2py intent(in) eta, CL
   !f2py intent(out) deta, dCL
-  !f2py depend(numSeg) alpha, eta, CL, deta, dCL
+  !f2py depend(numElem) eta, CL, deta, dCL
 
   ! Input/Output
-  integer, intent(in) :: numSeg
-  double precision, dimension(0:numSeg-1), intent(in) :: alpha, eta, CL
-  double precision, dimension(0:numSeg-1), intent(out) :: deta, dCL
+  integer, intent(in) :: numElem
+  double precision, dimension(0:numElem), intent(in) :: eta, CL
+  double precision, dimension(0:numElem), intent(out) :: deta, dCL
 
   integer :: i = 0
 
-  do i = 0,numSeg-1
+  do i = 0,numElem
      deta(i) = -0.27/4.24
      dCL(i) = 1/4.24
   enddo
 
-end subroutine getDAlpha
+end subroutine get_alpha_d
 
 subroutine get_CD(numElem, AR, e, CL, CD)
   ! compute CD using simple drag polar
@@ -354,31 +354,28 @@ subroutine get_CD(numElem, AR, e, CL, CD)
 
 end subroutine get_CD
 
-subroutine getDCD(numSeg, AR, e, CL, CD, dAR, de, dCL)
-  ! compute the derivatives CD wrt AR, e, CL, and CD
-
-  !f2py intent(in) numSeg
+subroutine get_CD_d(numElem, AR, e, CL, dAR, de, dCL)
+  !f2py intent(in) numElem
   !f2py intent(in) AR, e
-  !f2py intent(in) CL, CD
+  !f2py intent(in) CL
   !f2py intent(out) dAR, de, dCL
-  !f2py depend(numSeg) CL, CD, dAR, de, dCL
+  !f2py depend(numElem) CL, dAR, de, dCL
 
-  ! Input/Output
-  integer, intent(in) :: numSeg
+  integer, intent(in) :: numElem
   double precision, intent(in) :: AR, e
-  double precision, dimension(0:numSeg-1), intent(in) :: CL, CD
-  double precision, dimension(0:numSeg-1), intent(out) :: dAR, de, dCL
+  double precision, dimension(0:numElem), intent(in) :: CL
+  double precision, dimension(0:numElem), intent(out) :: dAR, de, dCL
   
   integer :: i = 0
   double precision, parameter :: PI = 3.14159254359
 
-  do i = 0,numSeg-1
+  do i = 0,numElem
      dAR(i) = -CL(i)**2/(PI*e*AR**2)
      de(i) = -CL(i)**2/(PI*AR*e**2)
      dCL(i) = 2*CL(i)/(PI*AR*e)
   enddo
 
-end subroutine getDCD
+end subroutine get_CD_d
 
 subroutine get_Eta(numElem, CM, alpha, eta)
   ! compute eta (tail rotation angle)
@@ -397,27 +394,27 @@ subroutine get_Eta(numElem, CM, alpha, eta)
 
 end subroutine get_Eta
 
-subroutine getDEta(numSeg, alpha, eta, CM, dalpha, dCM)
+subroutine get_eta_d(numElem, alpha, CM, dalpha, dCM)
   ! compute the derivatives of eta wrt alpha, eta, CM
 
-  !f2py intent(in) numSeg
-  !f2py intent(in) alpha, eta, CM
+  !f2py intent(in) numElem
+  !f2py intent(in) alpha, CM
   !f2py intent(out) dalpha, dCM
-  !f2py depend(numSeg) alpha, eta, CM, dalpha, dCM
+  !f2py depend(numElem) alpha, CM, dalpha, dCM
 
   !Input/Output
-  integer, intent(in) :: numSeg
-  double precision, dimension(0:numSeg-1), intent(in) :: alpha, eta, CM
-  double precision, dimension(0:numSeg-1), intent(out) :: dalpha, dCM
+  integer, intent(in) :: numElem
+  double precision, dimension(0:numElem), intent(in) :: alpha, CM
+  double precision, dimension(0:numElem), intent(out) :: dalpha, dCM
 
   integer :: i = 0
 
-  do i = 0,numSeg-1
+  do i = 0,numElem
      dalpha(i) = 0.63/1.06
      dCM(i) = -1/1.06
   enddo
 
-end subroutine getDEta
+end subroutine get_eta_d
 
 subroutine get_sfc(numElem, SFCSL, h, SFC)
   !f2py intent(in) numElem
@@ -892,12 +889,12 @@ subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, r
 
         temp = (xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)
         temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2*S)
-        temp = temp * (dCTTemp1(j)*cosa - CDTemp(j))
+        temp = temp * (dCTTemp1(j)*cosa)
         dhdCT1(i+1) = dhdCT1(i+1) + temp
         
         temp = (xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)
         temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2*S)
-        temp = temp * (dCTTemp2(j)*cosa - CDTemp(j))
+        temp = temp * (dCTTemp2(j)*cosa)
         dhdCT2(i+1) = dhdCT2(i+1) + temp
 
         temp = (xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)
@@ -1008,12 +1005,12 @@ subroutine get_tau_d(numElem, cThrustSL, S, h, CT, rho, v, dCThrustSL, dh, dCT, 
      dS(i) = (0.5*rho(i)*v(i)**2*CT(i))/(cThrustSL-0.072*h(i))
      dCT(i) = (0.5*rho(i)*v(i)**2*S)/(cThrustSL-0.072*h(i))
      dCThrustSL(i) = -(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
-     dh(i) = -0.072*(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
+     dh(i) = 0.072*(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
   enddo
 
 end subroutine get_tau_d
 
-subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, Wf)
+subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, S, Wf)
   ! computes fuel weight for each segment
   ! using a forward Euler scheme implemented backwards from the
   ! end of the mission
@@ -1022,7 +1019,7 @@ subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, Wf
 
   !f2py intent(in) numInt, numElem
   !f2py intent(in) x, v, gamma, CT, SFC, rho, WfIn
-  !f2py intent(in) g, WfSeg
+  !f2py intent(in) g, WfSeg, S
   !f2py intent(out) Wf
   !f2py depend(numElem) x, v, gamma, CT, SFC, rho, WfIn, Wf
 
@@ -1030,7 +1027,7 @@ subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, Wf
   integer, intent(in) :: numInt, numElem
   double precision, dimension(0:numElem), intent(in) :: x, v, gamma
   double precision, dimension(0:numElem), intent(in) :: CT, SFC, rho, WfIn
-  double precision, intent(in) :: g, WfSeg
+  double precision, intent(in) :: g, WfSeg, S
 !  double precision, intent(in) :: Wff
   double precision, dimension(0:numElem), intent(out) :: Wf
 
@@ -1039,7 +1036,7 @@ subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, Wf
   integer :: i = 0, j = 0, k = 0, l = 0
 
   do i = 0,numElem
-     Wf(i) = WfSeg
+     Wf(i) = 0.0
   enddo
 
   do i = 0,numElem-1
@@ -1058,7 +1055,7 @@ subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, Wf
      call linspace(numInt, gamma(j), gamma(j+1), gammaTemp)
      call linspace(numInt, CT(j), CT(j+1), CTTemp)
      call linspace(numInt, rho(j), rho(j+1), rhoTemp)
-     QTemp = 0.5*rhoTemp*vTemp**2
+     QTemp = 0.5*rhoTemp*vTemp**2*S
      cosGamma = cos(gammaTemp)
 
      do k = 0,numInt-1
@@ -1073,55 +1070,60 @@ subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, Wf
      Wf(j) = Wf(j) + Wf(j+1)
   enddo
 
+  do i = 0,numElem
+     Wf(i) = Wf(i) + WfSeg
+  enddo
+
 end subroutine get_Wf
 
-subroutine getDWf(numSeg, numInt, g, x, v, gamma, Thrust, cT, R1, R2, &
-     dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2)
+subroutine get_Wf_d(numElem, numInt, g, WfSeg, S, x, v, gamma, CT, SFC, rho, &
+     dCT1, dCT2, dSFC1, dSFC2, dV1, dV2, dGamma1, dGamma2, dRho1, dRho2, dS)
   ! computes the derivatives of fuel weights wrt
   ! propulsion parameters, thrust, v, gamma, and fuel weight
   ! the resultant jacobian is bi-diagonal, and is stored in 2
   ! vectors for each derivative, ie, d___1 and d___2
 
-  !f2py intent(in) numSeg, numInt
-  !f2py intent(in) g
-  !f2py intent(in) x, v, gamma, Thrust, cT
-  !f2py intent(in) R1, R2
-  !f2py intent(out) dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2
-  !f2py depend(numSeg) x, v, gamma, Thrust, cT, dCT1, dCT2, dThrust1, dThrust2, dV1, dV2, dGamma1, dGamma2
-  !f2py depend(numInt) R1, R2
+  !f2py intent(in) numElem, numInt
+  !f2py intent(in) g, WfSeg, S
+  !f2py intent(in) x, v, gamma, CT, SFC, rho
+  !f2py intent(out) dCT1, dCT2, dSFC1, dSFC2, dV1, dV2, dGamma1, dGamma2, dRho1, dRho2, dS
+  !f2py depend(numElem) x, v, gamma, CT, SFC, rho, dCT1, dCT2, dSFC1, dSFC2, dV1, dV2, dGamma1, dGamma2, dRho1, dRho2, dS
 
   !Input/Output
-  integer, intent(in) :: numSeg, numInt
-  double precision, intent(in) :: g
-  double precision, dimension(0:numSeg-1), intent(in) :: x, v, gamma
-  double precision, dimension(0:numSeg-1), intent(in) :: Thrust, cT
-  double precision, dimension(0:numInt-1), intent(in) :: R1, R2
-  double precision, dimension(0:numSeg-1), intent(out) :: dCT1, dCT2, dThrust1, dThrust2
-  double precision, dimension(0:numSeg-1), intent(out) :: dV1, dV2, dGamma1, dGamma2
+  integer, intent(in) :: numElem, numInt
+  double precision, intent(in) :: g, WfSeg, S
+  double precision, dimension(0:numElem), intent(in) :: x, v, gamma
+  double precision, dimension(0:numElem), intent(in) :: CT, SFC, rho
+  double precision, dimension(0:numElem), intent(out) :: dCT1, dCT2, dSFC1, dSFC2
+  double precision, dimension(0:numElem), intent(out) :: dV1, dV2, dGamma1, dGamma2, dRho1, dRho2, dS
 
   integer :: i = 0, j = 0, k = 0
   double precision :: deltax
-  double precision :: dWfTempdCT1, dWfTempdCT2, dWfTempdThrust1, dWfTempdThrust2
+  double precision :: dWfTempdSFC1, dWfTempdSFC2, dWfTempdCT1, dWfTempdCT2
   double precision :: dWfTempdV1, dWfTempdV2
-  double precision :: dWfTempdGamma1, dWfTempdGamma2
-  double precision, dimension(0:numInt-1) :: vTemp, xTemp, cTTemp, gammaTemp, cosGamma
-  double precision, dimension(0:numInt-1) :: dVTemp1, dVTemp2, dCTTemp1, dCTTemp2, dGammaTemp1, dGammaTemp2
-  double precision, dimension(0:numInt-1) :: dCosGamma1, dCosGamma2
+  double precision :: dWfTempdGamma1, dWfTempdGamma2, dWfTempdRho1, dWfTempdRho2, dWfTempdS
+  double precision, dimension(0:numInt-1) :: vTemp, xTemp, SFCTemp, gammaTemp, cosGamma, CTTemp, rhoTemp
+  double precision, dimension(0:numInt-1) :: dVTemp1, dVTemp2, dSFCTemp1, dSFCTemp2, dGammaTemp1, dGammaTemp2
+  double precision, dimension(0:numInt-1) :: dCosGamma1, dCosGamma2, dCTTemp1, dCTTemp2, dRhoTemp1, dRhoTemp2
+  double precision, dimension(0:numInt-1) :: QTemp, dQTempdRho1, dQTempdRho2, dQTempdV1, dQTempdV2, dQTempdS
 
-  do i = 0,numSeg-1
+  do i = 0,numElem
+     dSFC1(i) = 0.0
+     dSFC2(i) = 0.0
      dCT1(i) = 0.0
      dCT2(i) = 0.0
-     dThrust1(i) = 0.0
-     dThrust2(i) = 0.0
      dV1(i) = 0.0
      dV2(i) = 0.0
      dGamma1(i) = 0.0
      dGamma2(i) = 0.0
+     dRho1(i) = 0.0
+     dRho2(i) = 0.0
+     dS(i) = 0.0
   enddo
 
-  do i = 0,numSeg-2
+  do i = 0,numElem-1
 
-     j = numSeg-2-i
+     j = numElem-1-i
      call linspace(numInt, v(j), v(j+1), vTemp)
      call dlinspace(numInt, v(j), v(j+1), dVTemp1, dVTemp2)
      deltax = (x(j+1)-x(j))/real(numInt)
@@ -1133,45 +1135,84 @@ subroutine getDWf(numSeg, numInt, g, x, v, gamma, Thrust, cT, R1, R2, &
      xTemp(0) = 0.5*deltax
      xTemp(numInt-1) = 0.5*deltax
 
-     call linspace(numInt, cT(j), cT(j+1), cTTemp)
-     call dlinspace(numInt, cT(j), cT(j+1), dCTTemp1, dCTTemp2)
+     call linspace(numInt, SFC(j), SFC(j+1), SFCTemp)
+     call dlinspace(numInt, SFC(j), SFC(j+1), dSFCTemp1, dSFCTemp2)
      call linspace(numInt, gamma(j), gamma(j+1), gammaTemp)
      call dlinspace(numInt, gamma(j), gamma(j+1), dGammaTemp1, dGammaTemp2)
+     call linspace(numInt, CT(j), CT(j+1), CTTemp)
+     call dlinspace(numInt, CT(j), CT(j+1), dCTTemp1, dCTTemp2)
+     call linspace(numInt, rho(j), rho(j+1), rhoTemp)
+     call dlinspace(numInt, rho(j), rho(j+1), dRhoTemp1, dRhoTemp2)
+     QTemp = 0.5*rhoTemp*vTemp**2*S
+     dQTempdRho1 = 0.5*vTemp**2*S*dRhoTemp1
+     dQTempdRho2 = 0.5*vTemp**2*S*dRhoTemp2
+     dQTempdV1 = rhoTemp*vTemp*S*dVTemp1
+     dQTempdV2 = rhoTemp*vTemp*S*dVTemp2
+     dQTempdS = 0.5*rhoTemp*vTemp**2
      cosGamma = cos(gammaTemp)
      dCosGamma1 = -sin(gammaTemp)*dGammaTemp1
      dCosGamma2 = -sin(gammaTemp)*dGammaTemp2
 
      do k = 0,numInt-1
 
-        dWfTempdCT1 = (Thrust(j+1)*R1(k)+Thrust(j)*R2(k))*xTemp(k)/(vTemp(k)*cosGamma(k))
+        dWfTempdSFC1 = (CTTemp(k)*QTemp(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
+        dWfTempdSFC2 = dWfTempdSFC1
+        dWfTempdSFC1 = dWfTempdSFC1*dSFCTemp1(k)
+        dWfTempdSFC2 = dWfTempdSFC2*dSFCTemp2(k)
+        dSFC1(j) = dSFC1(j)+dWfTempdSFC1*g
+        dSFC2(j) = dSFC2(j)+dWfTempdSFC2*g
+        
+        dWfTempdCT1 = (SFCTemp(k)*QTemp(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
         dWfTempdCT2 = dWfTempdCT1
         dWfTempdCT1 = dWfTempdCT1*dCTTemp1(k)
         dWfTempdCT2 = dWfTempdCT2*dCTTemp2(k)
         dCT1(j) = dCT1(j)+dWfTempdCT1*g
-        dCT2(j+1) = dCT2(j+1)+dWfTempdCT2*g
-        
-        dWfTempdThrust1 = cTTemp(k)*R2(k)*xTemp(k)/(vTemp(k)*cosGamma(k))
-        dWfTempdThrust2 = cTTemp(k)*R1(k)*xTemp(k)/(vTemp(k)*cosGamma(k))
-        dThrust1(j) = dThrust1(j)+dWfTempdThrust1*g
-        dThrust2(j+1) = dThrust2(j+1)+dWfTempdThrust2*g
+        dCT2(j) = dCT2(j)+dWfTempdCT2*g
 
-        dWfTempdV1 = -(cTTemp(k)*Thrust(j+1)*R1(k)+cTTemp(k)*Thrust(j)*R2(k))/(cosGamma(k)*vTemp(k)**2)*xTemp(k)
+        dWfTempdRho1 = (SFCTemp(k)*CTTemp(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
+        dWfTempdRho2 = dWfTempdRho1
+        dWfTempdRho1 = dWfTempdRho1*dQTempdRho1(k)
+        dWfTempdRho2 = dWfTempdRho2*dQTempdRho2(k)
+        dRho1(j) = dRho1(j)+dWfTempdRho1*g
+        dRho2(j) = dRho2(j)+dWfTempdRho2*g
+
+        dWfTempdV1 = -(SFCTemp(k)*CTTemp(k)*QTemp(k)*xTemp(k))/(cosGamma(k)*vTemp(k)**2)
         dWfTempdV2 = dWfTempdV1
         dWfTempdV1 = dWfTempdV1*dVTemp1(k)
         dWfTempdV2 = dWfTempdV2*dVTemp2(k)
+        dWfTempdV1 = dWfTempdV1 + (SFCTemp(k)*CTTemp(k)*dQTempdV1(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
+        dWfTempdV2 = dWfTempdV2 + (SFCTemp(k)*CTTemp(k)*dQTempdV2(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
         dV1(j) = dV1(j)+dWfTempdV1*g
-        dV2(j+1) = dV2(j+1)+dWfTempdV2*g
+        dV2(j) = dV2(j)+dWfTempdV2*g
 
-        dWfTempdGamma1 = -(cTTemp(k)*Thrust(j+1)*R1(k)+cTTemp(k)*Thrust(j)*R2(k))/(vTemp(k)*cosGamma(k)**2)*xTemp(k)
+        dWfTempdGamma1 = -(SFCTemp(k)*CTTemp(k)*QTemp(k)*xTemp(k))/(vTemp(k)*cosGamma(k)**2)
         dWfTempdGamma2 = dWfTempdGamma1
         dWfTempdGamma1 = dWfTempdGamma1*dCosGamma1(k)
         dWfTempdGamma2 = dWfTempdGamma2*dCosGamma2(k)
         dGamma1(j) = dGamma1(j)+dWfTempdGamma1*g
-        dGamma2(j+1) = dGamma2(j+1)+dWfTempdGamma2*g
+        dGamma2(j) = dGamma2(j)+dWfTempdGamma2*g
+
+        dWfTempdS = (SFCTemp(k)*CTTemp(k)*dQTempdS(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
+        dS(j) = dS(j)+dWfTempdS*g
      enddo
   enddo
+
+  do i = 0,numElem-1
+     j = numElem-1-i
+     dCT1(j) = dCT1(j) + dCT1(j+1)
+     dCT2(j) = dCT2(j) + dCT2(j+1)
+     dSFC1(j) = dSFC1(j) + dSFC1(j+1)
+     dSFC2(j) = dSFC2(j) + dSFC2(j+1)
+     dV1(j) = dV1(j) + dV1(j+1)
+     dV2(j) = dV2(j) + dV2(j+1)
+     dGamma1(j) = dGamma1(j) + dGamma1(j+1)
+     dGamma2(j) = dGamma2(j) + dGamma2(j+1)
+     dRho1(j) = dRho1(j) + dRho1(j+1)
+     dRho2(j) = dRho2(j) + dRho2(j+1)
+     dS(j) = dS(j) + dS(j+1)
+  enddo
        
-end subroutine getDWf
+end subroutine get_Wf_d
 
   ! compute the residuals for CL using the governing flight equation
   ! the flight equation is integrated, and the resultant value is 
@@ -1216,38 +1257,7 @@ subroutine get_CL(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      dx = (x(i+1)-x(i))/numInt
 
      do j = 0,numInt-1
-        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)*vTemp(j)*S
-        xTemp(j) = dx
-     enddo
-
-     xTemp(0) = 0.5*dx
-     xTemp(numInt-1) = 0.5*dx
-
-     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
-     cosGamma = cos(gammaTemp)     
-     
-     do j = 0,numInt-1
-        CLTemp(j) = CL(i)*R1(j) + CL(i+1)*R2(j)
-        WTemp(j) = Wac + Wf(i)*R1(j) + Wf(i+1)*R2(j)
-        aTemp(j) = alpha(i)*R1(j) + alpha(i+1)*R2(j)
-        tTemp(j) = CT(i)*R1(j) + CT(i+1)*R2(j)
-     enddo
-
-     do j = 0,numInt-1
-        temp = (-QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j))
-        temp = temp-sin(aTemp(j))*tTemp(j)*QTemp(j)
-        temp = temp*R1(j)*xTemp(j)
-        alphaTemp(i,j) = alphaTemp(i,j) + temp
-     enddo
-  enddo
-
-  do i = 0,numElem-1
-     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
-     call linspace(numInt, v(i), v(i+1), vTemp)
-     dx = (x(i+1)-x(i))/numInt
-     
-     do j = 0,numInt-1
-        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)*vTemp(j)*S
+        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
         xTemp(j) = dx
      enddo
 
@@ -1257,33 +1267,62 @@ subroutine get_CL(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
      cosGamma = cos(gammaTemp)
 
+     call linspace(numInt, CL(i), CL(i+1), CLTemp)
+     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
+     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
+     call linspace(numInt, CT(i), CT(i+1), tTemp)
+
      do j = 0,numInt-1
-        CLTemp(j) = CL(i)*R1(j) + CL(i+1)*R2(j)
-        WTemp(j) = Wac + Wf(i)*R1(j) + Wf(i+1)*R2(j)
-        aTemp(j) = alpha(i)*R1(j) + alpha(i+1)*R2(j)
-        tTemp(j) = CT(i)*R1(j) + CT(i+1)*R2(j)
+        WTemp(j) = WTemp(j) + Wac
      enddo
 
      do j = 0,numInt-1
-        temp = (-QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j))
-        temp = temp-sin(aTemp(j))*tTemp(j)*QTemp(j)
-        temp = temp*R2(j)*xTemp(j)
-        alphaTemp(i+1,j) = alphaTemp(i+1,j) + temp
+        temp = -QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j) &
+             -sin(aTemp(j))*tTemp(j)*QTemp(j)
+        temp = temp*R1(j)*xTemp(j)
+        CLRes(i) = CLRes(i) + temp
      enddo
   enddo
 
-  do i = 0,numElem
+  do i = 0,numElem-1
+     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
+     call linspace(numInt, v(i), v(i+1), vTemp)
+     dx = (x(i+1)-x(i))/numInt
+     
      do j = 0,numInt-1
-        CLRes(i) = CLRes(i) + alphaTemp(i,j)
+        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
+        xTemp(j) = dx
+     enddo
+
+     xTemp(0) = 0.5*dx
+     xTemp(numInt-1) = 0.5*dx
+
+     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
+     cosGamma = cos(gammaTemp)
+
+     call linspace(numInt, CL(i), CL(i+1), CLTemp)
+     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
+     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
+     call linspace(numInt, CT(i), CT(i+1), tTemp)
+     
+     do j = 0,numInt-1
+        WTemp(j) = WTemp(j) + Wac
+     enddo
+
+     do j = 0,numInt-1
+        temp = -QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j) &
+             -sin(aTemp(j))*tTemp(j)*QTemp(j)
+        temp = temp*R2(j)*xTemp(j)
+        CLRes(i+1) = CLRes(i+1) + temp
      enddo
   enddo
 
 end subroutine get_CL
 
 subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
-     Thrust, alpha, dGamma, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, &
+     CT, alpha, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, &
      dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, &
-     dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3)
+     dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3)
   ! compute the derivatives of the residuals of CL wrt gamma,
   ! empty weight, S, v, rho, CL, fuel weight, gamma, thrust,
   ! alpha, dgamma/dx
@@ -1292,27 +1331,26 @@ subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
 
   !f2py intent(in) numElem, numInt
   !f2py intent(in) Wac, S, g
-  !f2py intent(in) x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma
-  !f2py intent(out) dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, dCLdCL1, dCLdCL2, dCLdCL3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3
-  !f2py depend(numElem) x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3, dCLddGamma1, dCLddGamma2, dCLddGamma3
+  !f2py intent(in) x, v, rho, CL, Wf, gamma, CT, alpha
+  !f2py intent(out) dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, dCLdCL1, dCLdCL2, dCLdCL3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3
+  !f2py depend(numElem) x, v, rho, CL, Wf, gamma, CT, alpha, dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3, dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1, dCLdGamma2, dCLdGamma3, dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3
 
   ! Input/Output
   integer, intent(in) :: numElem, numInt
   double precision, intent(in) :: Wac, S, g
-  double precision, dimension(0:numElem), intent(in) :: x, v, rho, CL, Wf, gamma, Thrust, alpha, dGamma
+  double precision, dimension(0:numElem), intent(in) :: x, v, rho, CL, Wf, gamma, CT, alpha
   double precision, dimension(0:numElem), intent(out) :: dCLdWac, dCLdS, dCLdV1, dCLdV2, dCLdV3, dCLdRho1, dCLdRho2, dCLdRho3
   double precision, dimension(0:numElem), intent(out) :: dCLdCL1, dCLdCL2, dCLdCL3, dCLdWf1, dCLdWf2, dCLdWf3, dCLdGamma1
   double precision, dimension(0:numElem), intent(out) :: dCLdGamma2, dCLdGamma3
   double precision, dimension(0:numElem), intent(out) :: dCLdThrust1, dCLdThrust2, dCLdThrust3, dCLdAlpha1, dCLdAlpha2, dCLdAlpha3
-  double precision, dimension(0:numElem), intent(out) :: dCLddGamma1, dCLddGamma2, dCLddGamma3
 
   integer :: i = 0, j = 0, k = 0
   double precision :: temp, deltax
   double precision, parameter :: param_zero = 0.0, param_one = 1.0
   double precision, dimension(0:numInt-1) :: R1, R2
   double precision, dimension(0:numInt-1) :: xTemp, vTemp, rhoTemp, QTemp
-  double precision, dimension(0:numInt-1) :: gammaTemp, cosGamma, dGammaTemp
-  double precision, dimension(0:numInt-1) :: CLTemp, WTemp, aTemp, tTemp
+  double precision, dimension(0:numInt-1) :: gammaTemp, cosGamma
+  double precision, dimension(0:numInt-1) :: CLTemp, WTemp, aTemp, CTTemp
   double precision, dimension(0:numInt-1) :: dQTempdRho1, dQTempdRho2
   double precision, dimension(0:numInt-1) :: dQTempdV1, dQTempdV2
   double precision, dimension(0:numInt-1) :: dQTempdS
@@ -1320,11 +1358,10 @@ subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
   double precision, dimension(0:numInt-1) :: dVTemp1, dVTemp2
   double precision, dimension(0:numInt-1) :: dGammaTemp1, dGammaTemp2
   double precision, dimension(0:numInt-1) :: dCosGamma1, dCosGamma2
-  double precision, dimension(0:numInt-1) :: ddGammaTemp1, ddGammaTemp2
   double precision, dimension(0:numInt-1) :: dCLTemp1, dCLTemp2
   double precision, dimension(0:numInt-1) :: dWTempdWf1, dWTempdWf2
   double precision, dimension(0:numInt-1) :: dWTempdWac, dATemp1, dATemp2
-  double precision, dimension(0:numInt-1) :: dTTemp1, dTTemp2
+  double precision, dimension(0:numInt-1) :: dCTTemp1, dCTTemp2
 
   call linspace(numInt, param_one, param_zero, R1)
   call linspace(numInt, param_zero, param_one, R2)
@@ -1353,9 +1390,6 @@ subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      dCLdAlpha1(i) = 0.0
      dCLdAlpha2(i) = 0.0
      dCLdAlpha3(i) = 0.0
-     dCLddGamma1(i) = 0.0
-     dCLddGamma2(i) = 0.0
-     dCLddGamma3(i) = 0.0
   enddo
 
   do i = 0,numElem-1
@@ -1363,7 +1397,7 @@ subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      call linspace(numInt, v(i), v(i+1), vTemp)
      call dlinspace(numInt, rho(i), rho(i+1), dRhoTemp1, dRhoTemp2)
      call dlinspace(numInt, v(i), v(i+1), dVTemp1, dVTemp2)
-     deltax = (x(i+1)-x(i))/numInt
+     deltax = (x(i+1)-x(i))/(numInt)
      
      do j = 0,numInt-1
         QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)*vTemp(j)*S
@@ -1383,60 +1417,47 @@ subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      cosGamma = cos(gammaTemp)
      dCosGamma1 = -sin(gammaTemp)*dGammaTemp1
      dCosGamma2 = -sin(gammaTemp)*dGammaTemp2
-     call linspace(numInt, dGamma(i), dGamma(i+1), dGammaTemp)
-     call dlinspace(numInt, dGamma(i), dGamma(i+1), ddGammaTemp1, ddGammaTemp2)
+
+     call linspace(numInt, CL(i), CL(i+1), CLTemp)
+     call dlinspace(numInt, CL(i), CL(i+1), dCLTemp1, dCLTemp2)
+     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
+     call dlinspace(numInt, alpha(i), alpha(i+1), dATemp1, dATemp2)
+     call linspace(numInt, CT(i), CT(i+1), CTTemp)
+     call dlinspace(numInt, CT(i), CT(i+1), dCTTemp1, dCTTemp2)
+     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
+     call dlinspace(numInt, Wf(i), Wf(i+1), dWTempdWf1, dWTempdWf2)
      
      do j = 0,numInt-1
-        CLTemp(j) = CL(i)*R1(j) + CL(i+1)*R2(j)
-        dCLTemp1(j) = R1(j)
-        dCLTemp2(j) = R2(j)
-        
-        WTemp(j) = Wac + Wf(i)*R1(j) + Wf(i+1)*R2(j)
-        dWTempdWf1(j) = R1(j)
-        dWTempdWf2(j) = R2(j)
+        WTemp(j) = WTemp(j) + Wac
         dWTempdWac(j) = 1.0
-
-        aTemp(j) = alpha(i)*R1(j) + alpha(i+1)*R2(j)
-        dATemp1(j) = R1(j)
-        dATemp2(j) = R2(j)
-
-        tTemp(j) = Thrust(i)*R1(j) + Thrust(i+1)*R2(j)
-        dTTemp1(j) = R1(j)
-        dTTemp2(j) = R2(j)
      enddo
 
      do j = 0,numInt-1
-        dCLdWac(i) = dCLdWac(i)+R1(j)*xTemp(j)*(cosGamma(j)*dWTempdWac(j) &
-             +(1/g)*vTemp(j)**2*cosGamma(j)*dGammaTemp(j)*dWTempdWac(j))
-        dCLdS(i) = dCLdS(i)-R1(j)*xTemp(j)*(dQTempdS(j)*CLTemp(j))
+        dCLdWac(i) = dCLdWac(i)+R1(j)*xTemp(j)*(cosGamma(j))
+        dCLdS(i) = dCLdS(i)-R1(j)*xTemp(j)*(dQTempdS(j)*CLTemp(j) &
+             +SIN(aTemp(j))*CTTemp(j)*dQTempdS(j))
         dCLdV2(i) = dCLdV2(i)+R1(j)*xTemp(j)*(-dQTempdV1(j)*CLTemp(j) &
-             +(2/g)*WTemp(j)*vTemp(j)*dVTemp1(j)*cosGamma(j)*dGammaTemp(j))
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdV1(j))
         dCLdV3(i) = dCLdV3(i)+R1(j)*xTemp(j)*(-dQTempdV2(j)*CLTemp(j) &
-             +(2/g)*WTemp(j)*vTemp(j)*dVTemp2(j)*cosGamma(j)*dGammaTemp(j))
-        dCLdRho2(i) = dCLdRho2(i)+R1(j)*xTemp(j)*(-dQTempdRho1(j)*CLTemp(j))
-        dCLdRho3(i) = dCLdRho3(i)+R1(j)*xTemp(j)*(-dQTempdRho2(j)*CLTemp(j))
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdV2(j))
+        dCLdRho2(i) = dCLdRho2(i)+R1(j)*xTemp(j)*(-dQTempdRho1(j)*CLTemp(j) &
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdRho1(j))
+        dCLdRho3(i) = dCLdRho3(i)+R1(j)*xTemp(j)*(-dQTempdRho2(j)*CLTemp(j) &
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdRho2(j))
         dCLdCL2(i) = dCLdCL2(i)+R1(j)*xTemp(j)*(-QTemp(j)*dCLTemp1(j))
         dCLdCL3(i) = dCLdCL3(i)+R1(j)*xTemp(j)*(-QTemp(j)*dCLTemp2(j))
-        dCLdWf2(i) = dCLdWf2(i)+R1(j)*xTemp(j)*(dWTempdWf1(j)*cosGamma(j) &
-             +dWTempdWf1(j)*(1/g)*vTemp(j)**2*cosGamma(j)*dGammaTemp(j))
-        dCLdWf3(i) = dCLdWf3(i)+R1(j)*xTemp(j)*(dWTempdWf2(j)*cosGamma(j) &
-             +dWTempdWf2(j)*(1/g)*vTemp(j)**2*cosGamma(j)*dGammaTemp(j))
-        dCLdGamma2(i) = dCLdGamma2(i)+R1(j)*xTemp(j)*(WTemp(j)*dCosGamma1(j) &
-             +WTemp(j)*(1/g)*vTemp(j)**2*dCosGamma1(j)*dGammaTemp(j))
-        dCLdGamma3(i) = dCLdGamma3(i)+R1(j)*xTemp(j)*(WTemp(j)*dCosGamma2(j) &
-             +WTemp(j)*(1/g)*vTemp(j)**2*dCosGamma2(j)*dGammaTemp(j))
+        dCLdWf2(i) = dCLdWf2(i)+R1(j)*xTemp(j)*(dWTempdWf1(j)*cosGamma(j))
+        dCLdWf3(i) = dCLdWf3(i)+R1(j)*xTemp(j)*(dWTempdWf2(j)*cosGamma(j))
+        dCLdGamma2(i) = dCLdGamma2(i)+R1(j)*xTemp(j)*(WTemp(j)*dCosGamma1(j))
+        dCLdGamma3(i) = dCLdGamma3(i)+R1(j)*xTemp(j)*(WTemp(j)*dCosGamma2(j))
         dCLdThrust2(i) = dCLdThrust2(i)+R1(j)*xTemp(j)*(-sin(aTemp(j)) &
-             *dTTemp1(j))
+             *dCTTemp1(j)*QTemp(j))
         dCLdThrust3(i) = dCLdThrust3(i)+R1(j)*xTemp(j)*(-sin(aTemp(j)) &
-             *dTTemp2(j))
+             *dCTTemp2(j)*QTemp(j))
         dCLdAlpha2(i) = dCLdAlpha2(i)+R1(j)*xTemp(j)*(-cos(aTemp(j)) &
-             *tTemp(j)*dATemp1(j))
+             *CTTemp(j)*dATemp1(j)*QTemp(j))
         dCLdAlpha3(i) = dCLdAlpha3(i)+R1(j)*xTemp(j)*(-cos(aTemp(j)) &
-             *tTemp(j)*dATemp2(j))
-        dCLddGamma2(i) = dCLddGamma2(i)+R1(j)*xTemp(j)*(WTemp(j)*(1/g) &
-             *vTemp(j)**2*cosGamma(j)*ddGammaTemp1(j))
-        dCLddGamma3(i) = dCLddGamma3(i)+R1(j)*xTemp(j)*(WTemp(j)*(1/g) &
-             *vTemp(j)**2*cosGamma(j)*ddGammaTemp2(j))
+             *CTTemp(j)*dATemp2(j)*QTemp(j))
      enddo
   enddo
 
@@ -1445,7 +1466,7 @@ subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      call linspace(numInt, v(i), v(i+1), vTemp)
      call dlinspace(numInt, rho(i), rho(i+1), dRhoTemp1, dRhoTemp2)
      call dlinspace(numInt, v(i), v(i+1), dVTemp1, dVTemp2)
-     deltax = (x(i+1)-x(i))/numInt
+     deltax = (x(i+1)-x(i))/(numInt)
 
      do j = 0,numInt-1
         QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
@@ -1465,61 +1486,51 @@ subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
      cosGamma = cos(gammaTemp)
      dCosGamma1 = -sin(gammaTemp)*dGammaTemp1
      dCosGamma2 = -sin(gammaTemp)*dGammaTemp2
-     call linspace(numInt, dGamma(i), dGamma(i+1), dGammaTemp)
-     call dlinspace(numInt, dGamma(i), dGamma(i+1), dGammaTemp1, dGammaTemp2)
+
+     call linspace(numInt, CL(i), CL(i+1), CLTemp)
+     call dlinspace(numInt, CL(i), CL(i+1), dCLTemp1, dCLTemp2)
+     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
+     call dlinspace(numInt, alpha(i), alpha(i+1), dATemp1, dATemp2)
+     call linspace(numInt, CT(i), CT(i+1), CTTemp)
+     call dlinspace(numInt, CT(i), CT(i+1), dCTTemp1, dCTTemp2)
+     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
+     call dlinspace(numInt, Wf(i), Wf(i+1), dWTempdWf1, dWTempdWf2)
      
      do j = 0,numInt-1
-        CLTemp(j) = CL(i)*R1(j) + CL(i+1)*R2(j)
-        dCLTemp1(j) = R1(j)
-        dCLTemp2(j) = R2(j)
-        WTemp(j) = Wac + Wf(i)*R1(j) + Wf(i+1)*R2(j)
-        dWTempdWf1(j) = R1(j)
-        dWTempdWf2(j) = R2(j)
+        WTemp(j) = WTemp(j) + Wac
         dWTempdWac(j) = 1.0
-        aTemp(j) = alpha(i)*R1(j) + alpha(i+1)*R2(j)
-        dATemp1(j) = R1(j)
-        dATemp2(j) = R2(j)
-        tTemp(j) = Thrust(i)*R1(j) + Thrust(i+1)*R2(j)
-        dTTemp1(j) = R1(j)
-        dTTemp2(j) = R2(j)
      enddo
 
      do j = 0,numInt-1
-        dCLdWac(i+1) = dCLdWac(i+1)+R2(j)*xTemp(j)*(cosGamma(j)*dWTempdWac(j) &
-             +dWTempdWac(j)*(1/g)*vTemp(j)**2*cosGamma(j)*dGammaTemp(j))
-        dCLdS(i+1) = dCLdS(i+1)+R2(j)*xTemp(j)*(-dQTempdS(j)*CLTemp(j))
+        dCLdWac(i+1) = dCLdWac(i+1)+R2(j)*xTemp(j)*(cosGamma(j))
+        dCLdS(i+1) = dCLdS(i+1)+R2(j)*xTemp(j)*(-dQTempdS(j)*CLTemp(j) &
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdS(j))
         dCLdV1(i+1) = dCLdV1(i+1)+R2(j)*xTemp(j)*(-dQTempdV1(j)*CLTemp(j) &
-             +(2/g)*WTemp(j)*vTemp(j)*dVTemp1(j)*cosGamma(j)*dGammaTemp(j))
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdV1(j))
         dCLdV2(i+1) = dCLdV2(i+1)+R2(j)*xTemp(j)*(-dQTempdV2(j)*CLTemp(j) &
-             +(2/g)*WTemp(j)*vTemp(j)*dVTemp2(j)*cosGamma(j)*dGammaTemp(j))
-        dCLdRho1(i+1) = dCLdRho1(i+1)+R2(j)*xTemp(j)*(-dQTempdRho1(j)*CLTemp(j))
-        dCLdRho2(i+1) = dCLdRho2(i+1)+R2(j)*xTemp(j)*(-dQTempdRho2(j)*CLTemp(j))
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdV2(j))
+        dCLdRho1(i+1) = dCLdRho1(i+1)+R2(j)*xTemp(j)*(-dQTempdRho1(j)*CLTemp(j) &
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdRho1(j))
+        dCLdRho2(i+1) = dCLdRho2(i+1)+R2(j)*xTemp(j)*(-dQTempdRho2(j)*CLTemp(j) &
+             -SIN(aTemp(j))*CTTemp(j)*dQTempdRho2(j))
         dCLdCL1(i+1) = dCLdCL1(i+1)+R2(j)*xTemp(j)*(-QTemp(j)*dCLTemp1(j))
         dCLdCL2(i+1) = dCLdCL2(i+1)+R2(j)*xTemp(j)*(-QTemp(j)*dCLTemp2(j))
-        dCLdWf1(i+1) = dCLdWf1(i+1)+R2(j)*xTemp(j)*(dWTempdWf1(j)*cosGamma(j) &
-             +dWTempdWf1(j)*(1/g)*vTemp(j)**2*cosGamma(j)*dGammaTemp(j))
-        dCLdWf2(i+1) = dCLdWf2(i+1)+R2(j)*xTemp(j)*(dWTempdWf2(j)*cosGamma(j) &
-             +dWTempdWf2(j)*(1/g)*vTemp(j)**2*cosGamma(j)*dGammaTemp(j))
-        dCLdGamma1(i+1) = dCLdGamma1(i+1)+R2(j)*xTemp(j)*(WTemp(j)*dCosGamma1(j) &
-             +WTemp(j)*(1/g)*vTemp(j)**2*dCosGamma1(j)*dGammaTemp(j))
-        dCLdGamma2(i+1) = dCLdGamma2(i+1)+R2(j)*xTemp(j)*(WTemp(j)*dCosGamma2(j) &
-             +WTemp(j)*(1/g)*vTemp(j)**2*dCosGamma2(j)*dGammaTemp(j))
+        dCLdWf1(i+1) = dCLdWf1(i+1)+R2(j)*xTemp(j)*(dWTempdWf1(j)*cosGamma(j))
+        dCLdWf2(i+1) = dCLdWf2(i+1)+R2(j)*xTemp(j)*(dWTempdWf2(j)*cosGamma(j))
+        dCLdGamma1(i+1) = dCLdGamma1(i+1)+R2(j)*xTemp(j)*(WTemp(j)*dCosGamma1(j))
+        dCLdGamma2(i+1) = dCLdGamma2(i+1)+R2(j)*xTemp(j)*(WTemp(j)*dCosGamma2(j))
         dCLdThrust1(i+1) = dCLdThrust1(i+1)+R2(j)*xTemp(j)*(-sin(aTemp(j)) &
-             *dTTemp1(j))
+             *dCTTemp1(j)*QTemp(j))
         dCLdThrust2(i+1) = dCLdThrust2(i+1)+R2(j)*xTemp(j)*(-sin(aTemp(j)) &
-             *dTTemp2(j))
+             *dCTTemp2(j)*QTemp(j))
         dCLdAlpha1(i+1) = dCLdAlpha1(i+1)+R2(j)*xTemp(j)*(-cos(aTemp(j)) &
-             *tTemp(j)*dATemp1(j))
+             *CTTemp(j)*dATemp1(j)*QTemp(j))
         dCLdAlpha2(i+1) = dCLdAlpha2(i+1)+R2(j)*xTemp(j)*(-cos(aTemp(j)) &
-             *tTemp(j)*dATemp2(j))
-        dCLddGamma1(i+1) = dCLddGamma1(i+1)+R2(j)*xTemp(j)*(WTemp(j)*(1/g) &
-             *vTemp(j)**2*cosGamma(j)*ddGammaTemp1(j))
-        dCLddGamma2(i+1) = dCLddGamma2(i+1)+R2(j)*xTemp(j)*(WTemp(j)*(1/g) &
-             *vTemp(j)**2*cosGamma(j)*ddGammaTemp2(j))
+             *CTTemp(j)*dATemp2(j)*QTemp(j))
      enddo
   enddo
 
-end subroutine getDCL
+end subroutine get_CL_d
 
 subroutine getThrustRes(numSeg, numInt, S, Wac, g, x, v, rho, gamma, dv, CD, Wf, &
      alpha, Thrust, ThrustRes)
@@ -1961,71 +1972,48 @@ subroutine get_CM(numElem, numInt, S, chord, x, v, rho, CM, CMRes)
 
 end subroutine get_CM
 
-subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
-     dGamma, d2Gamma, dv, CM, dCMdS, dCMdC, dCMdI, dCMdV1, dCMdV2, dCMdV3, dCMdRho1, dCMdRho2, dCMdRho3, &
-     dCMdGamma1, dCMdGamma2, dCMdGamma3, dCMddGamma1, dCMddGamma2, dCMddGamma3, dCMdd2Gamma1, &
-     dCMdd2Gamma2, dCMdd2Gamma3, dCMddV1, dCMddV2, dCMddV3, dCMdCM1, dCMdCM2, dCMdCM3)
+subroutine get_CM_d(numElem, numInt, S, chord, x, v, rho, &
+     CM, dCMdS, dCMdC, dCMdV1, dCMdV2, dCMdV3, dCMdRho1, dCMdRho2, dCMdRho3, &
+     dCMdCM1, dCMdCM2, dCMdCM3)
   ! compute the derivatives of residuals of CM wrt S, chord,
   ! inertia, v, rho, gamma, dgamma/dx, d2gamma/dx2, dv/dx, CM
   ! the jacobians are tri-diagonal, and are stored in 3 vectors
   
-  !f2py intent(in) numSeg, numInt
-  !f2py intent(in) S, chord, inertia
-  !f2py intent(in) x, v, rho, gamma, dGamma, d2Gamma, dv, CM
-  !f2py intent(out) dCMdS, dCMdC, dCMdI, dCMdV1, dCMdV2, dCMdV3, dCMdRho1, dCMdRho2, dCMdRho3, dCMdGamma1, dCMdGamma2, dCMdGamma3, dCMddGamma1, dCMddGamma2, dCMddGamma3, dCMdd2Gamma1, dCMdd2Gamma2, dCMdd2Gamma3, dCMddV1, dCMddV2, dCMddV3, dCMdCM1, dCMdCM2, dCMdCM3
-  !f2py depend(numSeg) x, v, rho, gamma, dGamma, d2Gamma, dv, CM, dCMdS, dCMdC, dCMdI, dCMdV1, dCMdV2, dCMdV3, dCMdRho1, dCMdRho2, dCMdRho3, dCMdGamma1, dCMdGamma2, dCMdGamma3, dCMddGamma1, dCMddGamma2, dCMddGamma3, dCMdd2Gamma1, dCMdd2Gamma2, dCMdd2Gamma3, dCMddV1, dCMddV2, dCMddV3, dCMdCM1, dCMdCM2, dCMdCM3
+  !f2py intent(in) numElem, numInt
+  !f2py intent(in) S, chord
+  !f2py intent(in) x, v, rho, CM
+  !f2py intent(out) dCMdS, dCMdC, dCMdV1, dCMdV2, dCMdV3, dCMdRho1, dCMdRho2, dCMdRho3, dCMdCM1, dCMdCM2, dCMdCM3
+  !f2py depend(numElem) x, v, rho, CM, dCMdS, dCMdC, dCMdV1, dCMdV2, dCMdV3, dCMdRho1, dCMdRho2, dCMdRho3, dCMdCM1, dCMdCM2, dCMdCM3
 
   !Input/Output
-  integer, intent(in) :: numSeg, numInt
-  double precision, intent(in) :: S, chord, inertia
-  double precision, dimension(0:numSeg-1), intent(in) :: x, v, rho, gamma, dGamma
-  double precision, dimension(0:numSeg-1), intent(in) :: d2Gamma, dv, CM
-  double precision, dimension(0:numSeg-1), intent(out) :: dCMdS, dCMdC, dCMdI
-  double precision, dimension(0:numSeg-1), intent(out) :: dCMdV1, dCMdV2, dCMdV3, dCMdRho1
-  double precision, dimension(0:numSeg-1), intent(out) :: dCMdRho2, dCMdRho3, dCMdGamma1
-  double precision, dimension(0:numSeg-1), intent(out) :: dCMdGamma2, dCMdGamma3, dCMddGamma1
-  double precision, dimension(0:numSeg-1), intent(out) :: dCMddGamma2, dCMddGamma3, dCMdd2Gamma1
-  double precision, dimension(0:numSeg-1), intent(out) :: dCMdd2Gamma2, dCMdd2Gamma3, dCMddV1
-  double precision, dimension(0:numSeg-1), intent(out) :: dCMddV2, dCMddV3, dCMdCM1, dCMdCM2, dCMdCM3
+  integer, intent(in) :: numElem, numInt
+  double precision, intent(in) :: S, chord
+  double precision, dimension(0:numElem), intent(in) :: x, v, rho, CM
+  double precision, dimension(0:numElem), intent(out) :: dCMdS, dCMdC
+  double precision, dimension(0:numElem), intent(out) :: dCMdV1, dCMdV2, dCMdV3, dCMdRho1
+  double precision, dimension(0:numElem), intent(out) :: dCMdRho2, dCMdRho3
+  double precision, dimension(0:numElem), intent(out) :: dCMdCM1, dCMdCM2, dCMdCM3
 
   integer :: i = 0, j = 0, k = 0
   double precision :: deltax
   double precision, parameter :: param_zero = 0.0, param_one = 1.0
   double precision, dimension(0:numInt-1) :: R1, R2
   double precision, dimension(0:numInt-1) :: xTemp, vTemp, rhoTemp, QTemp
-  double precision, dimension(0:numInt-1) :: gammaTemp, cosGamma, dGammaTemp
-  double precision, dimension(0:numInt-1) :: d2GammaTemp, dvTemp, CMTemp
+  double precision, dimension(0:numInt-1) :: CMTemp
   double precision, dimension(0:numInt-1) :: dRhoTemp1, dRhoTemp2, dVTemp1
   double precision, dimension(0:numInt-1) :: dVTemp2, dQTempdRho1, dQTempdRho2
   double precision, dimension(0:numInt-1) :: dQTempdV1, dQTempdV2, dQTempdS
-  double precision, dimension(0:numInt-1) :: dGammaTemp1, dGammaTemp2
-  double precision, dimension(0:numInt-1) :: dCosGamma1, dCosGamma2
-  double precision, dimension(0:numInt-1) :: ddGammaTemp1, ddGammaTemp2
-  double precision, dimension(0:numInt-1) :: dd2GammaTemp1, dd2GammaTemp2
-  double precision, dimension(0:numInt-1) :: ddVTemp1, ddVTemp2, dCMTemp1, dCMTemp2
+  double precision, dimension(0:numInt-1) :: dCMTemp1, dCMTemp2
   
-  do i = 0,numSeg-1
+  do i = 0,numElem
      dCMdS(i) = 0.0
      dCMdC(i) = 0.0
-     dCMdI(i) = 0.0
      dCMdV1(i) = 0.0
      dCMdV2(i) = 0.0
      dCMdV3(i) = 0.0
      dCMdRho1(i) = 0.0
      dCMdRho2(i) = 0.0
      dCMdRho3(i) = 0.0
-     dCMdGamma1(i) = 0.0
-     dCMdGamma2(i) = 0.0
-     dCMdGamma3(i) = 0.0
-     dCMddGamma1(i) = 0.0
-     dCMddGamma2(i) = 0.0
-     dCMddGamma3(i) = 0.0
-     dCMdd2Gamma1(i) = 0.0
-     dCMdd2Gamma2(i) = 0.0
-     dCMdd2Gamma3(i) = 0.0
-     dCMddV1(i) = 0.0
-     dCMddV2(i) = 0.0
-     dCMddV3(i) = 0.0
      dCMdCM1(i) = 0.0
      dCMdCM2(i) = 0.0
      dCMdCM3(i) = 0.0
@@ -2034,7 +2022,7 @@ subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
   call linspace(numInt, param_one, param_zero, R1)
   call linspace(numInt, param_zero, param_one, R2)
 
-  do i = 0,numSeg-2
+  do i = 0,numElem-1
      call linspace(numInt, rho(i), rho(i+1), rhoTemp)
      call linspace(numInt, v(i), v(i+1), vTemp)
      call dlinspace(numInt, rho(i), rho(i+1), dRhoTemp1, dRhoTemp2)
@@ -2053,18 +2041,6 @@ subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
 
      xTemp(0) = 0.5*deltax
      xTemp(numInt-1) = 0.5*deltax
-
-     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
-     call dlinspace(numInt, gamma(i), gamma(i+1), dGammaTemp1, dGammaTemp2)
-     cosGamma = cos(gammaTemp)
-     dCosGamma1 = -sin(gammaTemp)*dGammaTemp1
-     dCosGamma2 = -sin(gammaTemp)*dGammaTemp2
-     call linspace(numInt, dGamma(i), dGamma(i+1), dGammaTemp)
-     call linspace(numInt, d2Gamma(i), d2Gamma(i+1), d2GammaTemp)
-     call linspace(numInt, dv(i), dv(i+1), dvTemp)
-     call dlinspace(numInt, dGamma(i), dGamma(i+1), ddGammaTemp1, ddGammaTemp2)
-     call dlinspace(numInt, d2Gamma(i), d2Gamma(i+1), dd2GammaTemp1, dd2GammaTemp2)
-     call dlinspace(numInt, dv(i), dv(i+1), ddVTemp1, ddVTemp2)
 
      do j = 0,numInt-1
         CMTemp(j) = CM(i)*R1(j) + CM(i+1)*R2(j)
@@ -2075,40 +2051,16 @@ subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
      do j = 0,numInt-1
         dCMdS(i) = dCMdS(i)+R1(j)*xTemp(j)*(dQTempdS(j)*chord*CMTemp(j))
         dCMdC(i) = dCMdC(i)+R1(j)*xTemp(j)*(QTemp(j)*CMTemp(j))
-        dCMdI(i) = dCMdI(i)+R1(j)*xTemp(j)*(-(d2GammaTemp(j)*(vTemp(j) &
-             *cosGamma(j))**2+dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)**2))
-        dCMdV2(i) = dCMdV2(i)+R1(j)*xTemp(j)*(dQTempdV1(j)*chord*CMTemp(j) &
-             -inertia*(dGammaTemp(j)*dvTemp(j)*dVTemp1(j)*cosGamma(j)**2 &
-             +2*d2GammaTemp(j)*(vTemp(j)*cosGamma(j))*dVTemp1(j)))
-        dCMdV3(i) = dCMdV3(i)+R1(j)*xTemp(j)*(dQTempdV2(j)*chord*CMTemp(j) &
-             -inertia*(dGammaTemp(j)*dvTemp(j)*dVTemp2(j)*cosGamma(j)**2 &
-             +2*d2GammaTemp(j)*(vTemp(j)*cosGamma(j))*dVTemp2(j)))
+        dCMdV2(i) = dCMdV2(i)+R1(j)*xTemp(j)*(dQTempdV1(j)*chord*CMTemp(j))
+        dCMdV3(i) = dCMdV3(i)+R1(j)*xTemp(j)*(dQTempdV2(j)*chord*CMTemp(j))
         dCMdRho2(i) = dCMdRho2(i)+R1(j)*xTemp(j)*(dQTempdRho1(j)*chord*CMTemp(j))
         dCMdRho3(i) = dCMdRho3(i)+R1(j)*xTemp(j)*(dQTempdRho2(j)*chord*CMTemp(j))
-        dCMdGamma2(i) = dCMdGamma2(i)+R1(j)*xTemp(j)*2*(-inertia) &
-             *(d2GammaTemp(j)*vTemp(j)**2*cosGamma(j)*dCosGamma1(j) &
-             +dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)*dCosGamma1(j))
-        dCMdGamma3(i) = dCMdGamma3(i)+R1(j)*xTemp(j)*2*(-inertia) &
-             *(d2GammaTemp(j)*vTemp(j)**2*cosGamma(j)*dCosGamma2(j) &
-             +dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)*dCosGamma2(j))
-        dCMddGamma2(i) = dCMddGamma2(i)+R1(j)*xTemp(j)*(-inertia) &
-             *ddGammaTemp1(j)*dvTemp(j)*vTemp(j)*cosGamma(j)**2
-        dCMddGamma3(i) = dCMddGamma3(i)+R1(j)*xTemp(j)*(-inertia) &
-             *ddGammaTemp2(j)*dvTemp(j)*vTemp(j)*cosGamma(j)**2
-        dCMdd2Gamma2(i) = dCMdd2Gamma2(i)+R1(j)*xTemp(j)*(-inertia) &
-             *dd2GammaTemp1(j)*(vTemp(j)*cosGamma(j))**2
-        dCMdd2Gamma3(i) = dCMdd2Gamma3(i)+R1(j)*xTemp(j)*(-inertia) &
-             *dd2GammaTemp2(j)*(vTemp(j)*cosGamma(j))**2
-        dCMddV2(i) = dCMddV2(i)+R1(j)*xTemp(j)*(-inertia) &
-             *dGammaTemp(j)*ddVTemp1(j)*vTemp(j)*cosGamma(j)**2
-        dCMddV3(i) = dCMddV3(i)+R1(j)*xTemp(j)*(-inertia) &
-             *dGammaTemp(j)*ddVTemp2(j)*vTemp(j)*cosGamma(j)**2
         dCMdCM2(i) = dCMdCM2(i)+R1(j)*xTemp(j)*QTemp(j)*chord*dCMTemp1(j)
         dCMdCM3(i) = dCMdCM3(i)+R1(j)*xTemp(j)*QTemp(j)*chord*dCMTemp2(j)
      enddo
   enddo
 
-  do i = 0,numSeg-2
+  do i = 0,numElem-1
      call linspace(numInt, rho(i), rho(i+1), rhoTemp)
      call linspace(numInt, v(i), v(i+1), vTemp)
      call dlinspace(numInt, rho(i), rho(i+1), dRhoTemp1, dRhoTemp2)
@@ -2128,18 +2080,6 @@ subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
      xTemp(0) = 0.5*deltax
      xTemp(numInt-1) = 0.5*deltax
      
-     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
-     call dlinspace(numInt, gamma(i), gamma(i+1), dGammaTemp1, dGammaTemp2)
-     cosGamma = cos(gammaTemp)
-     dCosGamma1 = -sin(gammaTemp)*dGammaTemp1
-     dCosGamma2 = -sin(gammaTemp)*dGammaTemp2
-     call linspace(numInt, dGamma(i), dGamma(i+1), dGammaTemp)
-     call linspace(numInt, d2Gamma(i), d2Gamma(i+1), d2GammaTemp)
-     call linspace(numInt, dv(i), dv(i+1), dvTemp)
-     call dlinspace(numInt, dGamma(i), dGamma(i+1), ddGammaTemp1, ddGammaTemp2)
-     call dlinspace(numInt, d2Gamma(i), d2Gamma(i+1), dd2GammaTemp1, dd2GammaTemp2)
-     call dlinspace(numInt, dv(i), dv(i+1), ddVTemp1, ddVTemp2)
-
      do j = 0,numInt-1
         CMTemp(j) = CM(i)*R1(j) + CM(i+1)*R2(j)
         dCMTemp1(j) = R1(j)
@@ -2149,40 +2089,16 @@ subroutine getDCM(numSeg, numInt, S, chord, inertia, x, v, rho, gamma, &
      do j = 0,numInt-1
         dCMdS(i+1) = dCMdS(i+1)+R2(j)*xTemp(j)*(dQTempdS(j)*chord*CMTemp(j))
         dCMdC(i+1) = dCMdC(i+1)+R2(j)*xTemp(j)*(QTemp(j)*CMTemp(j))
-        dCMdI(i+1) = dCMdI(i+1)+R2(j)*xTemp(j)*(-(d2GammaTemp(j)*(vTemp(j) &
-             *cosGamma(j))**2+dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)**2))
-        dCMdV1(i+1) = dCMdV1(i+1)+R2(j)*xTemp(j)*(dQTempdV1(j)*chord*CMTemp(j) &
-             -inertia*(dGammaTemp(j)*dvTemp(j)*dVTemp1(j)*cosGamma(j)**2 &
-             +2*d2GammaTemp(j)*(vTemp(j)*cosGamma(j))*dVTemp1(j)))
-        dCMdV2(i+1) = dCMdV2(i+1)+R2(j)*xTemp(j)*(dQTempdV2(j)*chord*CMTemp(j) &
-             -inertia*(dGammaTemp(j)*dvTemp(j)*dVTemp2(j)*cosGamma(j)**2 &
-             +2*d2GammaTemp(j)*(vTemp(j)*cosGamma(j))*dVTemp2(j)))
+        dCMdV1(i+1) = dCMdV1(i+1)+R2(j)*xTemp(j)*(dQTempdV1(j)*chord*CMTemp(j))
+        dCMdV2(i+1) = dCMdV2(i+1)+R2(j)*xTemp(j)*(dQTempdV2(j)*chord*CMTemp(j))
         dCMdRho1(i+1) = dCMdRho1(i+1)+R2(j)*xTemp(j)*(dQTempdRho1(j)*chord*CMTemp(j))
         dCMdRho2(i+1) = dCMdRho2(i+1)+R2(j)*xTemp(j)*(dQTempdRho2(j)*chord*CMTemp(j))
-        dCMdGamma1(i+1) = dCMdGamma1(i+1)+R2(j)*xTemp(j)*2*(-inertia) &
-             *(d2GammaTemp(j)*vTemp(j)**2*cosGamma(j)*dCosGamma1(j) &
-             +dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)*dCosGamma1(j))
-        dCMdGamma2(i+1) = dCMdGamma2(i+1)+R2(j)*xTemp(j)*2*(-inertia) &
-             *(d2GammaTemp(j)*vTemp(j)**2*cosGamma(j)*dCosGamma2(j) &
-             +dGammaTemp(j)*dvTemp(j)*vTemp(j)*cosGamma(j)*dCosGamma2(j))
-        dCMddGamma1(i+1) = dCMddGamma1(i+1)+R2(j)*xTemp(j)*(-inertia) &
-             *ddGammaTemp1(j)*dvTemp(j)*vTemp(j)*cosGamma(j)**2
-        dCMddGamma2(i+1) = dCMddGamma2(i+1)+R2(j)*xTemp(j)*(-inertia) &
-             *ddGammaTemp2(j)*dvTemp(j)*vTemp(j)*cosGamma(j)**2
-        dCMdd2Gamma1(i+1) = dCMdd2Gamma1(i+1)+R2(j)*xTemp(j)*(-inertia) &
-             *dd2GammaTemp1(j)*(vTemp(j)*cosGamma(j))**2
-        dCMdd2Gamma2(i+1) = dCMdd2Gamma2(i+1)+R2(j)*xTemp(j)*(-inertia) &
-             *dd2GammaTemp2(j)*(vTemp(j)*cosGamma(j))**2
-        dCMddV1(i+1) = dCMddV1(i+1)+R2(j)*xTemp(j)*(-inertia) &
-             *dGammaTemp(j)*ddVTemp1(j)*vTemp(j)*cosGamma(j)**2
-        dCMddV2(i+1) = dCMddV2(i+1)+R2(j)*xTemp(j)*(-inertia) &
-             *dGammaTemp(j)*ddVTemp2(j)*vTemp(j)*cosGamma(j)**2
         dCMdCM1(i+1) = dCMdCM1(i+1)+R2(j)*xTemp(j)*QTemp(j)*chord*dCMTemp1(j)
         dCMdCM2(i+1) = dCMdCM2(i+1)+R2(j)*xTemp(j)*QTemp(j)*chord*dCMTemp2(j)
      enddo
   enddo
 
-end subroutine getDCM
+end subroutine get_CM_d
 
 subroutine get_h_des(numElem,numInt,h_dot,x_ends,v_ends,h_ends,h)
   
