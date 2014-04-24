@@ -1814,16 +1814,15 @@ class Trajectory(object):
             self.segments.append(SerialSystem('segment', pt, 
                                               NL="NLN_GS", 
                                               LN="LIN_GS",
-                                              #PC="LIN_GS", 
-                                              LN_ilimit=10, 
-                                              LN_rtol=1e-10, 
-                                              LN_atol=1e-10, 
-                                              NL_ilimit=20, 
-                                              NL_rtol=1e-10, 
+                                              LN_ilimit=1, 
+                                              NL_ilimit=1, 
                                               output=True,
                                               subsystems=[
                         SerialSystem('seg_param',pt,
                                      NL='NLN_GS',
+                                     LN='LIN_GS',
+                                     LN_ilimit=1, 
+                                     NL_ilimit=1, 
                                      subsystems=[
                                 IndVar('h_ends',pt,val=[self.hPts[pt],self.hPts[pt+1]],size=2),
                                 IndVar('v_ends',pt,val=[self.vPts[pt],self.vPts[pt+1]],size=2),
@@ -1832,47 +1831,30 @@ class Trajectory(object):
                                 IndVar('tau_init',pt,val=self.tPts[pt],size=1),
                                 IndVar('numElem',pt,val=ne[pt],size=1),
                                 ]),
-                        #SerialSystem('init',pt,subsystems=[
-                                #Sys_h('h',pt,des=self.hDotPts[pt],
-                                      #opt=self.opt[pt],h_IC=h_IC,
-                                      #numInt=self.numInt,numElem=self.numElem[pt]),
-                                #Sys_SFCInit('SFC',pt,numElem=self.numElem[pt]),
-                                #Sys_gammaInit('gamma',pt,numElem=self.numElem[pt]),
-                                #Sys_TempInit('Temp',pt,numElem=self.numElem[pt]),
-                                #Sys_rhoInit('rho',pt,numElem=self.numElem[pt]),
-                                #Sys_vInit('v',pt,numElem=self.numElem[pt]),
-                                #Sys_hDepInit(pt,numElem=self.numElem[pt]),
-                                #Sys_CTInit('CT',pt,numElem=self.numElem[pt],climb=self.tPts[pt],t_IC=t_IC),
-                                #], NL='NLN_GS',),
                         SerialSystem('seg_analysis', pt,
                                      NL='NLN_GS', 
-                                     LN='LIN_GS',
-                                     LN_ilimit=40, 
-                                     LN_rtol=1e-7, 
-                                     NL_ilimit=10, 
-                                     NL_rtol=1e-7,
-                                     NL_atol=1e-10,
-                                     output=False,
+                                     LN='KSP_PC',
+                                     PC='LIN_GS',
+                                     LN_ilimit=100, 
+                                     LN_rtol=1e-10, 
+                                     LN_atol=1e-12, 
+                                     NL_ilimit=100, 
+                                     NL_rtol=1e-13,
+                                     NL_atol=1e-13,
+                                     PC_ilimit=20,
+                                     PC_rtol=1e-1, 
+                                     PC_atol=1e-4, 
+                                     output=True,
                                      subsystems=[
-                                #IndVar('Wf',pt,val=ones(ne[pt]+1)*10000.0),
-                                #IndVar('alpha',pt,val=ones(ne[pt]+1)*3.0*numpy.pi/180.0),
-                                #IndVar('CT',pt,val=ones(ne[pt]+1)*0.1),
-                                #IndVar('CD',pt,val=ones(ne[pt]+1)*0.1),
-                                #IndVar('rho',pt,val=ls(1.225,0.5,ne+1)),
-                                #IndVar('v',pt,val=ls(150.0,250.0,ne+1)),
-                                #IndVar('eta',pt,val=numpy.zeros(ne[pt]+1)),
-
                                 Sys_CL('CL',pt,numElem=self.numElem[pt],numInt=self.numInt,CL_IC=CL_IC),
                                 Sys_alpha('alpha',pt,numElem=self.numElem[pt],a_IC=a_IC),
                                 Sys_CD('CD',pt,numElem=self.numElem[pt],CD_IC=CD_IC),
                                 Sys_h('h',pt,climb=self.tPts[pt],h_IC=h_IC,numElem=self.numElem[pt],numInt=self.numInt),
-                                #Sys_hDep(pt,numElem=self.numElem[pt]),
                                 Sys_SFC('SFC',pt,numElem=self.numElem[pt],SFC_IC=SFC_IC),
                                 Sys_gamma('gamma',pt,numElem=self.numElem[pt],gamma_IC=gamma_IC),
                                 Sys_Temp('Temp',pt,numElem=self.numElem[pt],Temp_IC=Temp_IC),
                                 Sys_rho('rho',pt,numElem=self.numElem[pt],rho_IC=rho_IC),
                                 Sys_v('v',pt,numElem=self.numElem[pt],v_IC=v_IC),
-                                #Sys_v(pt,numElem=self.numElem[pt]),
                                 Sys_CT('CT',pt,numElem=self.numElem[pt],climb=self.tPts[pt],t_IC=t_IC),
                                 Sys_tau('tau',pt,numElem=self.numElem[pt]),
                                 Sys_Wf('Wf',pt,numElem=self.numElem[pt],numInt=self.numInt,Wf_IC=Wf_IC, numSeg=self.numSeg),
@@ -1889,16 +1871,16 @@ class Trajectory(object):
         
         self.mainMission = SerialSystem('mission',
                                         NL='NLN_GS', 
-                                        #LN='LIN_GS',
-                                        LN_ilimit=100, 
-                                        LN_rtol=1e-6, 
-                                        LN_atol=1e-10, 
-                                        NL_ilimit=10, 
-                                        NL_rtol=1e-6, 
+                                        LN='LIN_GS',
+                                        LN_ilimit=1, 
+                                        NL_ilimit=1, 
                                         output=True,
                                         subsystems=[
-                SerialSystem('global_ind',
+                SerialSystem('mission_param',
                              NL='NLN_GS',
+                             LN='LIN_GS',
+                             LN_ilimit=1, 
+                             NL_ilimit=1, 
                              subsystems=[
                         IndVar('S',val=self.S,size=1),
                         IndVar('Wac',val=self.Wac,size=1),
@@ -1910,13 +1892,11 @@ class Trajectory(object):
                         IndVar('e',val=self.e,size=1),
                         IndVar('g',val=self.g,size=1),
                         ]),
-                SerialSystem('segments', 0,
+                SerialSystem('mission_analysis', 0,
                              NL='NLN_GS', 
                              LN='LIN_GS',
-                             LN_ilimit=10, 
-                             LN_rtol=1e-6, 
-                             NL_ilimit=10, 
-                             NL_rtol=1e-6, 
+                             LN_ilimit=1, 
+                             NL_ilimit=1, 
                              output=True,
                              subsystems=self.segments,
                              #self.segments.reverse(),
@@ -2003,14 +1983,17 @@ problemPtr = missionProblem.initialize()
 #print 'rho_IC: ', problemPtr.vec['u']['rho',0]
 
 problemPtr.compute(True).array
+print
+print 'Computing derivatives'
+print problemPtr.compute_derivatives('fwd', 'v_ends', output=True)#.array
 #exit()
 '''
 problemPtr('segment').kwargs['NL'] = 'NLN_GS'
 problemPtr.compute(True).array
 '''
 #problemPtr.check_derivatives_all(fwd=True, rev=False)
-
-print problemPtr.compute_derivatives('fwd', 'v_ends')#.array
+"""
+print problemPtr.compute_derivatives('fwd', 'v_ends', output=True)#.array
 exit()
 h = 1e-3
 f0 = numpy.array(problemPtr.vec['u'].array)
@@ -2022,6 +2005,7 @@ problemPtr.vec['du'].array[:] = (f-f0)/h
 #print '--------------------NOW COMPUTING DERIVATIVES'
 print problemPtr.vec['du']
 exit()
+"""
 '''
 analytic_array = problemPtr.compute_derivatives('fwd','SFCSL').array[:]
 problemPtr.vec['u'](['SFCSL',0])[:] += 1e-5
