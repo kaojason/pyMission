@@ -763,21 +763,21 @@ subroutine get_h(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, rho
 end subroutine get_h
 
 subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, rho, &
-     v, dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2, dhdCT1, &
+     v, dhdS, dhdWac, dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2, dhdCT1, &
      dhdCT2, dhda1, dhda2, dhdCD1, dhdCD2)
   !f2py intent(in) numElem, numInt
   !f2py intent(in) S, Wac
   !f2py intent(in) x_ends, h_ends
   !f2py intent(in) Wf, CT, alpha, CD, rho, v
-  !f2py intent(out) dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2, dhdCT1, dhdCT2, dhda1, dhda2, dhdCD1, dhdCD2
-  !f2py depend(numElem) Wf, CT, alpha, CD, rho, v, dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2, dhdCT1, dhdCT2, dhda1, dhda1, dhdCD1, dhdCD2
+  !f2py intent(out) dhdS, dhdWac, dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2, dhdCT1, dhdCT2, dhda1, dhda2, dhdCD1, dhdCD2
+  !f2py depend(numElem) Wf, CT, alpha, CD, rho, v, dhdS, dhdWac, dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2, dhdCT1, dhdCT2, dhda1, dhda1, dhdCD1, dhdCD2
 
   integer, intent(in) :: numElem, numInt
   double precision, intent(in) :: S, Wac
   double precision, dimension(0:1), intent(in) :: x_ends, h_ends
   double precision, dimension(0:numElem), intent(in) :: Wf, &
        CT, alpha, CD, rho, v
-  double precision, dimension(0:numElem), intent(out) :: dhdx0, dhdx1, &
+  double precision, dimension(0:numElem), intent(out) :: dhdS, dhdWac, dhdx0, dhdx1, &
        dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2, dhdCT1, dhdCT2, &
        dhda1, dhda2, dhdCD1, dhdCD2
 
@@ -794,6 +794,8 @@ subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, r
      x(i) = i*delta_x+x_ends(0)
      delxTemp0(i) = -i/numElem+1
      delxTemp1(i) = i/numElem
+     dhdS(i) = 0.0
+     dhdWac(i) = 0.0
      dhdx0(i) = 0.0
      dhdx1(i) = 0.0
      dhdWf1(i) = 0.0
@@ -811,6 +813,8 @@ subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, r
   enddo
 
   do i=0,numElem-1
+     dhdS(i+1) = dhdS(i)
+     dhdWac(i+1) = dhdWac(i)
      dhdx0(i+1) = dhdx0(i)
      dhdx1(i+1) = dhdx1(i)
      dhdWf1(i+1) = dhdWf1(i)
@@ -845,6 +849,11 @@ subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, r
      do j=0,numInt-1
         cosa = COS(aTemp(j))
         
+        temp = ((xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac))
+        temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2)
+        temp = temp * (CTTemp(j)*cosa-CDTemp(j))
+        dhdS(i+1) = dhdS(i+1) + temp
+
         temp = dxTemp1(j+1)*delxTemp0(i+1)+dxTemp0(j+1)*delxTemp0(i)
         temp = temp - dxTemp1(j)*delxTemp0(i+1)-dxTemp0(j)*delxTemp0(i)
         temp = temp / (WfTemp(j)+Wac) * (0.5*rhoTemp(j)*vTemp(j)**2*S)
@@ -856,6 +865,11 @@ subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, r
         temp = temp / (WfTemp(j)+Wac) * (0.5*rhoTemp(j)*vTemp(j)**2*S)
         temp = temp * (CTTemp(j)*cosa - CDTemp(j))
         dhdx1(i+1) = dhdx1(i+1) + temp
+
+        temp = -(xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)**2
+        temp = temp * (0.5*rhoTemp(j)*vTemp(j)**2*S)
+        temp = temp * (CTTemp(j)*cosa - CDTemp(j))
+        dhdWac(i+1) = dhdWac(i+1) + temp
 
         temp = -(xTemp(j+1)-xTemp(j))/(WfTemp(j)+Wac)**2
         temp = temp * dWfTemp1(j)*(0.5*rhoTemp(j)*vTemp(j)**2*S)

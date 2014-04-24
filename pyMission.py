@@ -110,14 +110,18 @@ class Sys_h(ImplicitSystem):
             dv = dp('v')
             dWac = dp(['Wac',0])
 
-            [dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, dhdRho2, dhdV1, dhdV2,
+            [dhdS, dhdWac, dhdx0, dhdx1, dhdWf1, dhdWf2, dhdRho1, 
+             dhdRho2, dhdV1, dhdV2,
              dhdCT1, dhdCT2, dhdA1, dhdA2, dhdCD1, 
              dhdCD2] = mission.get_h_d(numElem, numInt, S, Wac,  x_ends, 
                                        h_ends, Wf, CT, alpha, CD, rho, v)
              
             if self.mode == 'fwd':
                 df('h')[:] = 0.0
-                
+                if self.get_id('S') in arguments:
+                    df('h')[:] += dhdS * dS * 1e2/1e3
+                if self.get_id('Wac') in arguments:
+                    df('h')[:] += dhdWac * dWac * 1e6/1e3
                 if self.get_id('x') in arguments:
                     df('h')[:] += (dhdx0*dx_ends[0] + 
                                    dhdx1*dx_ends[1]) * 1e6/1e3
@@ -1823,21 +1827,21 @@ class Trajectory(object):
                                      LN='LIN_GS',
                                      LN_ilimit=1, 
                                      NL_ilimit=1, 
+                                     output=True,
                                      subsystems=[
                                 IndVar('h_ends',pt,val=[self.hPts[pt],self.hPts[pt+1]],size=2),
                                 IndVar('v_ends',pt,val=[self.vPts[pt],self.vPts[pt+1]],size=2),
                                 IndVar('M_ends',pt,val=[self.MPts[pt],self.MPts[pt+1]],size=2),
                                 IndVar('h_dot',pt,val=self.hDotPts[pt],size=1),
                                 IndVar('tau_init',pt,val=self.tPts[pt],size=1),
-                                IndVar('numElem',pt,val=ne[pt],size=1),
                                 ]),
                         SerialSystem('seg_analysis', pt,
                                      NL='NLN_GS', 
                                      LN='KSP_PC',
                                      PC='LIN_GS',
                                      LN_ilimit=100, 
-                                     LN_rtol=1e-10, 
-                                     LN_atol=1e-12, 
+                                     LN_rtol=1e-12, 
+                                     LN_atol=1e-14, 
                                      NL_ilimit=100, 
                                      NL_rtol=1e-13,
                                      NL_atol=1e-13,
@@ -1881,6 +1885,7 @@ class Trajectory(object):
                              LN='LIN_GS',
                              LN_ilimit=1, 
                              NL_ilimit=1, 
+                             output=True,
                              subsystems=[
                         IndVar('S',val=self.S,size=1),
                         IndVar('Wac',val=self.Wac,size=1),
@@ -1892,7 +1897,7 @@ class Trajectory(object):
                         IndVar('e',val=self.e,size=1),
                         IndVar('g',val=self.g,size=1),
                         ]),
-                SerialSystem('mission_analysis', 0,
+                SerialSystem('mission_analysis',
                              NL='NLN_GS', 
                              LN='LIN_GS',
                              LN_ilimit=1, 
@@ -1985,27 +1990,30 @@ problemPtr = missionProblem.initialize()
 problemPtr.compute(True).array
 print
 print 'Computing derivatives'
-print problemPtr.compute_derivatives('fwd', 'v_ends', output=True)#.array
+#print problemPtr.compute_derivatives('fwd', 'v_ends', output=True)#.array
 #exit()
 '''
 problemPtr('segment').kwargs['NL'] = 'NLN_GS'
 problemPtr.compute(True).array
 '''
-#problemPtr.check_derivatives_all(fwd=True, rev=False)
+problemPtr.check_derivatives_all(fwd=True, rev=False)
 """
-print problemPtr.compute_derivatives('fwd', 'v_ends', output=True)#.array
-exit()
+#A = numpy.array(problemPtr.compute_derivatives('fwd', 'S', output=True).array)
+print problemPtr.compute_derivatives('fwd', 'S', output=True)
 h = 1e-3
 f0 = numpy.array(problemPtr.vec['u'].array)
-problemPtr('v_ends').value[:] += h
+problemPtr('S').value += h
 problemPtr.vec['du'].array[:] = 1.0
 problemPtr.compute(False)
 f = numpy.array(problemPtr.vec['u'].array)
 problemPtr.vec['du'].array[:] = (f-f0)/h
 #print '--------------------NOW COMPUTING DERIVATIVES'
+#B = numpy.array(problemPtr.vec['du'].array)
 print problemPtr.vec['du']
-exit()
+#print numpy.vstack([A,B]).T
 """
+exit()
+
 '''
 analytic_array = problemPtr.compute_derivatives('fwd','SFCSL').array[:]
 problemPtr.vec['u'](['SFCSL',0])[:] += 1e-5
