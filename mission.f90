@@ -500,9 +500,9 @@ subroutine get_gamma_d(numElem, h, x, dhgamma1, dhgamma2, dhgamma3, dhgamma4, &
   do i=0,1
      dhgamma1(i) = 0.0
      dhgamma2(i) = 0.0
-     dhgamma3(i) = -3.0/2.0
-     dhgamma4(i) = 2.0
-     dhgamma5(i) = -1.0/2.0
+     dhgamma3(i) = -3.0/2.0/dx
+     dhgamma4(i) = 2.0/dx
+     dhgamma5(i) = -1.0/2.0/dx
      dxgamma0(i) = (3.0/2.0)*h(i) - 2.0*h(i+1) + (1.0/2.0)*h(i+2)
      dxgamma0(i) = dxgamma0(i) / dx**2
      dxgamma1(i) = dxgamma0(i) * dx1
@@ -510,11 +510,11 @@ subroutine get_gamma_d(numElem, h, x, dhgamma1, dhgamma2, dhgamma3, dhgamma4, &
   enddo
 
   do i=2,numElem-2
-     dhgamma1(i) = 1.0/12.0
-     dhgamma2(i) = -2.0/3.0
+     dhgamma1(i) = 1.0/12.0/dx
+     dhgamma2(i) = -2.0/3.0/dx
      dhgamma3(i) = 0.0
-     dhgamma4(i) = 2.0/3.0
-     dhgamma5(i) = -1.0/12.0
+     dhgamma4(i) = 2.0/3.0/dx
+     dhgamma5(i) = -1.0/12.0/dx
      dxgamma0(i) = -(1.0/12.0)*h(i-2) + (2.0/3.0)*h(i-1) - (2.0/3.0)*h(i+1) + (1.0/12.0)*h(i+2)
      dxgamma0(i) = dxgamma0(i) / dx**2
      dxgamma1(i) = dxgamma0(i) * dx1
@@ -522,9 +522,9 @@ subroutine get_gamma_d(numElem, h, x, dhgamma1, dhgamma2, dhgamma3, dhgamma4, &
   enddo
 
   do i=numElem-2,numElem
-     dhgamma1(i) = 1.0/2.0
-     dhgamma2(i) = -2.0
-     dhgamma3(i) = 3.0/2.0
+     dhgamma1(i) = 1.0/2.0/dx
+     dhgamma2(i) = -2.0/dx
+     dhgamma3(i) = 3.0/2.0/dx
      dhgamma4(i) = 0.0
      dhgamma5(i) = 0.0
      dxgamma0(i) = -(1.0/2.0)*h(i-2) + 2.0*h(i-1) - (3.0/2.0)*h(i)
@@ -532,6 +532,7 @@ subroutine get_gamma_d(numElem, h, x, dhgamma1, dhgamma2, dhgamma3, dhgamma4, &
      dxgamma1(i) = dxgamma0(i) * dx1
      dxgamma0(i) = dxgamma0(i) * dx0
   enddo
+
 end subroutine get_gamma_d
 
 subroutine get_Temp(numElem, h, Temp)
@@ -760,6 +761,7 @@ subroutine get_h(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, rho
         h(i+1) = h(i+1)+dh
      enddo
   enddo
+
 end subroutine get_h
 
 subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, rho, &
@@ -813,22 +815,6 @@ subroutine get_h_d(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, r
   enddo
 
   do i=0,numElem-1
-     dhdS(i+1) = dhdS(i)
-     dhdWac(i+1) = dhdWac(i)
-     dhdx0(i+1) = dhdx0(i)
-     dhdx1(i+1) = dhdx1(i)
-     dhdWf1(i+1) = dhdWf1(i)
-     dhdWf2(i+1) = dhdWf2(i)
-     dhdRho1(i+1) = dhdRho1(i)
-     dhdRho2(i+1) = dhdRho2(i)
-     dhdV1(i+1) = dhdV1(i)
-     dhdV2(i+1) = dhdV2(i)
-     dhdCT1(i+1) = dhdCT1(i)
-     dhdCT2(i+1) = dhdCT2(i)
-     dhda1(i+1) = dhda1(i)
-     dhda2(i+1) = dhda2(i)
-     dhdCD1(i+1) = dhdCD1(i)
-     dhdCD2(i+1) = dhdCD2(i)
 
      call dlinspace(numInt+1,x(i),x(i+1),dxTemp0,dxTemp1)
      call dlinspace(numInt+1,Wf(i),Wf(i+1),dWfTemp1,dWfTemp2)
@@ -1071,10 +1057,11 @@ subroutine get_Wf(numInt, numElem, x, v, gamma, CT, SFC, rho, WfIn, g, WfSeg, S,
      call linspace(numInt, rho(j), rho(j+1), rhoTemp)
      QTemp = 0.5*rhoTemp*vTemp**2*S
      cosGamma = cos(gammaTemp)
-
+     
      do k = 0,numInt-1
         WfTemp = SFCTemp(k)*CTTemp(k)*QTemp(k)
         WfTemp = WfTemp*xTemp(k)/(vTemp(k)*cosGamma(k))
+        !WfTemp = vTemp(k)*1e4
         Wf(j) = Wf(j) + WfTemp*9.81
      enddo
   enddo
@@ -1175,7 +1162,7 @@ subroutine get_Wf_d(numElem, numInt, g, WfSeg, S, x, v, gamma, CT, SFC, rho, &
         dWfTempdSFC2 = dWfTempdSFC2*dSFCTemp2(k)
         dSFC1(j) = dSFC1(j)+dWfTempdSFC1*g
         dSFC2(j) = dSFC2(j)+dWfTempdSFC2*g
-        
+
         dWfTempdCT1 = (SFCTemp(k)*QTemp(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
         dWfTempdCT2 = dWfTempdCT1
         dWfTempdCT1 = dWfTempdCT1*dCTTemp1(k)
@@ -1189,7 +1176,7 @@ subroutine get_Wf_d(numElem, numInt, g, WfSeg, S, x, v, gamma, CT, SFC, rho, &
         dWfTempdRho2 = dWfTempdRho2*dQTempdRho2(k)
         dRho1(j) = dRho1(j)+dWfTempdRho1*g
         dRho2(j) = dRho2(j)+dWfTempdRho2*g
-
+        
         dWfTempdV1 = -(SFCTemp(k)*CTTemp(k)*QTemp(k)*xTemp(k))/(cosGamma(k)*vTemp(k)**2)
         dWfTempdV2 = dWfTempdV1
         dWfTempdV1 = dWfTempdV1*dVTemp1(k)
@@ -1205,25 +1192,10 @@ subroutine get_Wf_d(numElem, numInt, g, WfSeg, S, x, v, gamma, CT, SFC, rho, &
         dWfTempdGamma2 = dWfTempdGamma2*dCosGamma2(k)
         dGamma1(j) = dGamma1(j)+dWfTempdGamma1*g
         dGamma2(j) = dGamma2(j)+dWfTempdGamma2*g
-
+        
         dWfTempdS = (SFCTemp(k)*CTTemp(k)*dQTempdS(k)*xTemp(k))/(vTemp(k)*cosGamma(k))
         dS(j) = dS(j)+dWfTempdS*g
      enddo
-  enddo
-
-  do i = 0,numElem-1
-     j = numElem-1-i
-     dCT1(j) = dCT1(j) + dCT1(j+1)
-     dCT2(j) = dCT2(j) + dCT2(j+1)
-     dSFC1(j) = dSFC1(j) + dSFC1(j+1)
-     dSFC2(j) = dSFC2(j) + dSFC2(j+1)
-     dV1(j) = dV1(j) + dV1(j+1)
-     dV2(j) = dV2(j) + dV2(j+1)
-     dGamma1(j) = dGamma1(j) + dGamma1(j+1)
-     dGamma2(j) = dGamma2(j) + dGamma2(j+1)
-     dRho1(j) = dRho1(j) + dRho1(j+1)
-     dRho2(j) = dRho2(j) + dRho2(j+1)
-     dS(j) = dS(j) + dS(j+1)
   enddo
        
 end subroutine get_Wf_d
@@ -1295,41 +1267,45 @@ subroutine get_CL(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
              -sin(aTemp(j))*tTemp(j)*QTemp(j)
         temp = temp*R1(j)*xTemp(j)
         CLRes(i) = CLRes(i) + temp
-     enddo
-  enddo
-
-  do i = 0,numElem-1
-     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
-     call linspace(numInt, v(i), v(i+1), vTemp)
-     dx = (x(i+1)-x(i))/numInt
-     
-     do j = 0,numInt-1
-        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
-        xTemp(j) = dx
-     enddo
-
-     xTemp(0) = 0.5*dx
-     xTemp(numInt-1) = 0.5*dx
-
-     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
-     cosGamma = cos(gammaTemp)
-
-     call linspace(numInt, CL(i), CL(i+1), CLTemp)
-     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
-     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
-     call linspace(numInt, CT(i), CT(i+1), tTemp)
-     
-     do j = 0,numInt-1
-        WTemp(j) = WTemp(j) + Wac
-     enddo
-
-     do j = 0,numInt-1
         temp = -QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j) &
              -sin(aTemp(j))*tTemp(j)*QTemp(j)
         temp = temp*R2(j)*xTemp(j)
         CLRes(i+1) = CLRes(i+1) + temp
      enddo
   enddo
+
+!  do i = 0,numElem-1
+!     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
+!     call linspace(numInt, v(i), v(i+1), vTemp)
+!     dx = (x(i+1)-x(i))/numInt
+!     
+!     do j = 0,numInt-1
+!        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
+!        xTemp(j) = dx
+!     enddo
+!
+!     xTemp(0) = 0.5*dx
+!     xTemp(numInt-1) = 0.5*dx
+!
+!     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
+!     cosGamma = cos(gammaTemp)
+!
+!     call linspace(numInt, CL(i), CL(i+1), CLTemp)
+!     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
+!     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
+!     call linspace(numInt, CT(i), CT(i+1), tTemp)
+!     
+!     do j = 0,numInt-1
+!        WTemp(j) = WTemp(j) + Wac
+!     enddo
+!
+!     do j = 0,numInt-1
+!        temp = -QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j) &
+!             -sin(aTemp(j))*tTemp(j)*QTemp(j)
+!        temp = temp*R2(j)*xTemp(j)
+!        CLRes(i+1) = CLRes(i+1) + temp
+!     enddo
+!  enddo
 
 end subroutine get_CL
 
