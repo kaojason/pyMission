@@ -2160,7 +2160,10 @@ class Tmin(ExplicitSystem):
 
         deriv = dfmax_dtau + 1/self.rho * \
             1/numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * \
-            numpy.exp(self.rho*(self.min - tau - fmax)) * (-self.rho - self.rho*dfmax_dtau)
+            numpy.exp(self.rho*(self.min - tau - fmax)) * (-self.rho)
+        deriv[ind] -= 1/self.rho * \
+            1/numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * \
+            numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * (-self.rho)
         
         if self.mode == 'fwd':
             dTmin[0] = 0.0
@@ -2177,7 +2180,7 @@ class Tmax(ExplicitSystem):
         numElem = self.kwargs['numElem']
         self._declare_variable('Tmax')
         self._declare_argument('tau', indices=range(0,numElem+1))
-        self.max = 0.4
+        self.max = 1.0
         self.rho = 30
 
     def apply_G(self):
@@ -2201,8 +2204,11 @@ class Tmax(ExplicitSystem):
 
         deriv = dfmax_dtau + 1/self.rho * \
             1/numpy.sum(numpy.exp(self.rho*(tau - self.max - fmax))) * \
-            numpy.exp(self.rho*(tau - self.max - fmax)) * (self.rho - self.rho*dfmax_dtau)
-        
+            numpy.exp(self.rho*(tau - self.max - fmax)) * (self.rho)
+        deriv[ind] -= 1/self.rho * \
+            1/numpy.sum(numpy.exp(self.rho*(tau - self.max - fmax))) * \
+            numpy.sum(numpy.exp(self.rho*(tau - self.max - fmax))) * (self.rho)
+
         if self.mode == 'fwd':
             dTmax[0] = 0.0
             if self.get_id('tau') in args:
@@ -2210,7 +2216,7 @@ class Tmax(ExplicitSystem):
         if self.mode == 'rev':
             dtau[:] = 0.0
             if self.get_id('tau') in args:
-                dtau[:] += deriv * dTmax[0]
+                dtau[:] += deriv * dTmax[0]      
 
 
 class Trajectory(object):
@@ -2560,7 +2566,11 @@ class Trajectory(object):
                                             NL='NLN_GS', 
                                             LN='LIN_GS',
                                             LN_ilimit=1, 
-                                            NL_ilimit=1, 
+                                            NL_ilimit=2, 
+                                            NL_rtol=1e-6,
+                                            NL_atol=1e-10,
+                                            LN_rtol=1e-6,
+                                            LN_atol=1e-10,
                                             output=True,
                                             subsystems=[
                     SerialSystem('mission_param',
@@ -2584,13 +2594,13 @@ class Trajectory(object):
                                  NL='NLN_GS', 
                                  LN='KSP_PC',
                                  PC='LIN_GS',
-                                 LN_ilimit=200, 
-                                 NL_ilimit=200,
-                                 PC_ilimit=10,
-                                 NL_rtol=1e-10,
-                                 NL_atol=1e-10,
-                                 LN_rtol=1e-10,
-                                 LN_atol=1e-10,
+                                 LN_ilimit=30, 
+                                 NL_ilimit=30,
+                                 PC_ilimit=5,
+                                 #NL_rtol=1e-10,
+                                 #NL_atol=1e-10,
+                                 #LN_rtol=1e-10,
+                                 #LN_atol=1e-10,
                                  PC_rtol=1e-6,
                                  PC_atol=1e-10,
                                  output=True,

@@ -14,9 +14,9 @@ params = {
     }
 
 n = 1
-numElem = 50
+numElem = 10
 missionProblem = Trajectory(1, opt=True)
-missionProblem.set_opt(1300.0e3, numElem)
+missionProblem.set_opt(700.0e3, numElem)
 missionProblem.set_ingn_intl(100)
 missionProblem.set_params(params)
 missionProblem.set_range(1000.0e3)
@@ -24,9 +24,8 @@ missionProblem.set_final_Wf(0.0)
 missionProblem.set_IC()
 
 problemPtr = missionProblem.initialize()
-problemPtr.compute(True).array
+problemPtr.compute(True)
 #problemPtr.check_derivatives_all2()
-#exit()
 
 problemPtr.vec['du'].array[:] = 0.0
 
