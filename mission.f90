@@ -716,6 +716,242 @@ subroutine get_CT_Init_d(numElem, tau, S, cThrustSL, rho, v, h, &
   enddo
 end subroutine get_CT_Init_d
 
+subroutine get_CT(numElem, numInt, S, Wac, x, alpha, rho, v, CD, Wf, gamma, CT, CTRes)
+  !f2py intent(in) numElem, numInt
+  !f2py intent(in) S, Wac
+  !f2py intent(in) x, alpha, rho, v, CD, Wf, gamma, CT
+  !f2py intent(out) CTRes
+  !f2py depend(numElem) x, alpha, rho, v, CD, Wf, gamma, CT, CTRes
+
+  integer, intent(in) :: numElem, numInt
+  double precision, intent(in) :: S, Wac
+  double precision, dimension(0:numElem), intent(in) :: x, alpha, rho, v, CD, Wf, &
+       gamma, CT
+  double precision, dimension(0:numElem), intent(out) :: CTRes
+
+  integer :: i, j
+  double precision :: dx, temp
+  double precision, parameter :: param_zero = 0.0, param_one = 1.0
+  double precision, dimension(0:numInt-1) :: R1, R2
+  double precision, dimension(0:numInt-1) :: xTemp, vTemp, rhoTemp, QTemp
+  double precision, dimension(0:numInt-1) :: gammaTemp, sinGamma, cosAlpha
+  double precision, dimension(0:numInt-1) :: CTTemp, WTemp, aTemp, CDTemp
+
+  do i = 0, numElem
+     CTRes(i) = 0.0
+  enddo
+
+  call linspace(numInt, param_one, param_zero, R1)
+  call linspace(numInt, param_zero, param_one, R2)
+
+  do i = 0, numElem-1
+     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
+     call linspace(numInt, v(i), v(i+1), vTemp)
+     dx = (x(i+1)-x(i))/numInt
+     
+     do j = 0, numInt-1
+        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
+        xTemp(j) = dx
+     enddo
+
+     xTemp(0) = 0.5*dx
+     xTemp(numInt-1) = 0.5*dx
+     
+     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
+     sinGamma = sin(gammaTemp)
+     
+     call linspace(numInt, CD(i), CD(i+1), CDTemp)
+     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
+     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
+     call linspace(numInt, CT(i), CT(i+1), CTTemp)
+
+     cosAlpha = cos(aTemp)
+
+     do j = 0, numInt-1
+        WTemp(j) = WTemp(j) + Wac
+     enddo
+
+     do j = 0, numInt-1
+        temp = -QTemp(j)*CTTemp(j)*cosAlpha(j) + &
+             QTemp(j)*CDTemp(j) + WTemp(j)*sinGamma(j)
+        temp = temp*R1(j)*xTemp(j)
+        CTRes(i) = CTRes(i) + temp
+        temp = -QTemp(j)*CTTemp(j)*cosAlpha(j) + &
+             QTemp(j)*CDTemp(j) + WTemp(j)*sinGamma(j)
+        temp = temp*R2(j)*xTemp(j)
+        CTRes(i+1) = CTRes(i+1) + temp
+     enddo
+  enddo
+end subroutine get_CT
+
+subroutine get_CT_d(numElem, numInt, S, Wac, x, alpha, rho, v, CD, Wf, gamma, CT, &
+     dCTdS, dCTdWac, dCTdAlpha1, dCTdAlpha2, dCTdAlpha3, dCTdRho1, dCTdRho2, &
+     dCTdRho3, dCTdV1, dCTdV2, dCTdV3, dCTdCD1, dCTdCD2, dCTdCD3, dCTdWf1, &
+     dCTdWf2, dCTdWf3, dCTdGamma1, dCTdGamma2, dCTdGamma3, dCTdCT1, dCTdCT2, &
+     dCTdCT3)
+  !f2py intent(in) numElem, numInt
+  !f2py intent(in) S, Wac
+  !f2py intent(in) x, alpha, rho, v, CD, Wf, gamma, CT
+  !f2py intent(out) dCTdS, dCTdWac, dCTdAlpha1, dCTdAlpha2, dCTdAlpha3, dCTdRho1, dCTdRho2, dCTdRho3, dCTdV1, dCTdV2, dCTdV3, dCTdCD1, dCTdCD2, dCTdCD3, dCTdWf1, dCTdWf2, dCTdWf3, dCTdGamma1, dCTdGamma2, dCTdGamma3, dCTdCT1, dCTdCT2, dCTdCT3
+  !f2py depend(numElem) x, alpha, rho, v, CD, Wf, gamma, CT, dCTdS, dCTdWac, dCTdAlpha1, dCTdAlpha2, dCTdAlpha3, dCTdRho1, dCTdRho2, dCTdRho3, dCTdV1, dCTdV2, dCTdV3, dCTdCD1, dCTdCD2, dCTdCD3, dCTdWf1, dCTdWf2, dCTdWf3, dCTdGamma1, dCTdGamma2, dCTdGamma3, dCTdCT1, dCTdCT2, dCTdCT3
+
+  integer, intent(in) :: numElem, numInt
+  double precision, intent(in) :: S, Wac
+  double precision, dimension(0:numElem), intent(in) :: x, alpha, rho, v, CD, Wf, &
+       gamma, CT
+  double precision, dimension(0:numElem), intent(out) :: dCTdS, dCTdWac, dCTdAlpha1, & 
+       dCTdAlpha2, dCTdAlpha3, dCTdRho1, dCTdRho2, dCTdRho3, dCTdV1, dCTdV2, dCTdV3, &
+       dCTdCD1, dCTdCD2, dCTdCD3, dCTdWf1, dCTdWf2, dCTdWf3, dCTdGamma1, dCTdGamma2, &
+       dCTdGamma3, dCTdCT1, dCTdCT2, dCTdCT3
+
+  integer :: i, j
+  double precision :: temp, deltax
+  double precision, parameter :: param_zero = 0.0, param_one = 1.0
+  double precision, dimension(0:numInt-1) :: R1, R2
+  double precision, dimension(0:numInt-1) :: xTemp, aTemp, rhoTemp, vTemp, CDTemp, &
+       WTemp, gammaTemp, CTTemp, sinGamma, cosAlpha, QTemp, dQTempdRho1, &
+       dQTempdRho2, dQTempdV1, dQTempdV2, dQTempdS, dRhoTemp1, dRhoTemp2, dVTemp1, &
+       dVTemp2, dGammaTemp1, dGammaTemp2, dSinGamma1, dSinGamma2, dCDTemp1, &
+       dCDTemp2, dWTempdWf1, dWTempdWf2, dWTempdWac, dATemp1, dATemp2, dCTTemp1, &
+       dCTTemp2, dCosAlpha1, dCosAlpha2
+
+  call linspace(numInt, param_one, param_zero, R1)
+  call linspace(numInt, param_zero, param_one, R2)
+
+  do i = 0, numElem
+     dCTdWac(i) = 0.0
+     dCTdS(i) = 0.0
+     dCTdV1(i) = 0.0
+     dCTdV2(i) = 0.0
+     dCTdV3(i) = 0.0
+     dCTdRho1(i) = 0.0
+     dCTdRho2(i) = 0.0
+     dCTdRho3(i) = 0.0
+     dCTdCD1(i) = 0.0
+     dCTdCD2(i) = 0.0
+     dCTdCD3(i) = 0.0
+     dCTdWf1(i) = 0.0
+     dCTdWf2(i) = 0.0
+     dCTdWf3(i) = 0.0
+     dCTdGamma1(i) = 0.0
+     dCTdGamma2(i) = 0.0
+     dCTdGamma3(i) = 0.0
+     dCTdCT1(i) = 0.0
+     dCTdCT2(i) = 0.0
+     dCTdCT3(i) = 0.0
+     dCTdAlpha1(i) = 0.0
+     dCTdAlpha2(i) = 0.0
+     dCTdAlpha3(i) = 0.0
+  enddo
+
+  do i = 0, numElem-1
+     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
+     call linspace(numInt, v(i), v(i+1), vTemp)
+     call dlinspace(numInt, rho(i), rho(i+1), dRhoTemp1, dRhoTemp2)
+     call dlinspace(numInt, v(i), v(i+1), dVTemp1, dVTemp2)
+     deltax = (x(i+1)-x(i))/numInt
+     
+     do j = 0, numInt-1
+        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
+        dQTempdRho1(j) = 0.5*vTemp(j)**2*S*dRhoTemp1(j)
+        dQTempdRho2(j) = 0.5*vTemp(j)**2*S*dRhoTemp2(j)
+        dQTempdV1(j) = rhoTemp(j)*vTemp(j)*S*dVTemp1(j)
+        dQTempdV2(j) = rhoTemp(j)*vTemp(j)*S*dVTemp2(j)
+        dQTempdS(j) = 0.5*rhoTemp(j)*vTemp(j)**2
+        xTemp(j) = deltax
+     enddo
+
+     xTemp(0) = 0.5*deltax
+     xTemp(numInt-1) = 0.5*deltax
+     
+     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
+     call dlinspace(numInt, gamma(i), gamma(i+1), dGammaTemp1, dGammaTemp2)
+     sinGamma = sin(gammaTemp)
+     dSinGamma1 = cos(gammaTemp)*dGammaTemp1
+     dSinGamma2 = cos(gammaTemp)*dGammaTemp2
+     
+     call linspace(numInt, CD(i), CD(i+1), CDTemp)
+     call dlinspace(numInt, CD(i), CD(i+1), dCDTemp1, dCDTemp2)
+     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
+     call dlinspace(numInt, alpha(i), alpha(i+1), dATemp1, dATemp2)
+     call linspace(numInt, CT(i), CT(i+1), CTTemp)
+     call dlinspace(numInt, CT(i), CT(i+1), dCTTemp1, dCTTemp2)
+     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
+     call dlinspace(numInt, Wf(i), Wf(i+1), dWTempdWf1, dWTempdWf2)
+
+     cosAlpha = cos(aTemp)
+     dCosAlpha1 = -sin(aTemp)*dATemp1
+     dCosAlpha2 = -sin(aTemp)*dATemp2
+
+     do j = 0, numInt-1
+        WTemp(j) = WTemp(j) + Wac
+        dWTempdWac(j) = 1.0
+     enddo
+
+     do j = 0, numInt-1
+        dCTdWac(i) = dCTdWac(i) + R1(j)*xTemp(j)*(sinGamma(j))
+        dCTdS(i) = dCTdS(i) + R1(j)*xTemp(j)*(-dQTempdS(j)*CTTemp(j)* &
+             cosAlpha(j)+dQTempdS(j)*CDTemp(j))
+        dCTdV2(i) = dCTdV2(i) + R1(j)*xTemp(j)*(-dQTempdV1(j)*CTTemp(j)* &
+             cosAlpha(j)+dQTempdV1(j)*CDTemp(j))
+        dCTdV3(i) = dCTdV3(i) + R1(j)*xTemp(j)*(-dQTempdV2(j)*CTTemp(j)* &
+             cosAlpha(j)+dQTempdV2(j)*CDTemp(j))
+        dCTdRho2(i) = dCTdRho2(i) + R1(j)*xTemp(j)*(-dQTempdRho1(j)* &
+             CTTemp(j)*cosAlpha(j)+dQTempdRho1(j)*CDTemp(j))
+        dCTdRho3(i) = dCTdRho3(i) + R1(j)*xTemp(j)*(-dQTempdRho2(j)* &
+             CTTemp(j)*cosAlpha(j)+dQTempdRho2(j)*CDTemp(j))
+        dCTdCD2(i) = dCTdCD2(i) + R1(j)*xTemp(j)*(QTemp(j)*dCDTemp1(j))
+        dCTdCD3(i) = dCTdCD3(i) + R1(j)*xTemp(j)*(QTemp(j)*dCDTemp2(j))
+        dCTdWf2(i) = dCTdWf2(i) + R1(j)*xTemp(j)*(dWTempdWf1(j)* &
+             sinGamma(j))
+        dCTdWf3(i) = dCTdWf3(i) + R1(j)*xTemp(j)*(dWTempdWf2(j)* &
+             sinGamma(j))
+        dCTdGamma2(i) = dCTdGamma2(i) + R1(j)*xTemp(j)*(WTemp(j)* &
+             dSinGamma1(j))
+        dCTdGamma3(i) = dCTdGamma3(i) + R1(j)*xTemp(j)*(WTemp(j)* &
+             dSinGamma2(j))
+        dCTdCT2(i) = dCTdCT2(i) + R1(j)*xTemp(j)*(-QTemp(j)*cosAlpha(j)* &
+             dCTTemp1(j))
+        dCTdCT3(i) = dCTdCT3(i) + R1(j)*xTemp(j)*(-QTemp(j)*cosAlpha(j)* &
+             dCTTemp2(j))
+        dCTdAlpha2(i) = dCTdAlpha2(i) + R1(j)*xTemp(j)*(-QTemp(j)* &
+             CTTemp(j)*dCosAlpha1(j))
+        dCTdAlpha3(i) = dCTdAlpha3(i) + R1(j)*xTemp(j)*(-QTemp(j)* &
+             CTTemp(j)*dCosAlpha2(j))
+
+        dCTdWac(i+1) = dCTdWac(i+1) + R2(j)*xTemp(j)*(sinGamma(j))
+        dCTdS(i+1) = dCTdS(i+1) + R2(j)*xTemp(j)*(-dQTempdS(j)*CTTemp(j)* &
+             cosAlpha(j)+dQTempdS(j)*CDTemp(j))
+        dCTdV1(i+1) = dCTdV1(i+1) + R2(j)*xTemp(j)*(-dQTempdV1(j)* &
+             CTTemp(j)*cosAlpha(j)+dQTempdV1(j)*CDTemp(j))
+        dCTdV2(i+1) = dCTdV2(i+1) + R2(j)*xTemp(j)*(-dQTempdV2(j)* &
+             CTTemp(j)*cosAlpha(j)+dQTempdV2(j)*CDTemp(j))
+        dCTdRho1(i+1) = dCTdRho1(i+1) + R2(j)*xTemp(j)*(-dQTempdRho1(j)* &
+             CTTemp(j)*cosAlpha(j)+dQTempdRho1(j)*CDTemp(j))
+        dCTdRho2(i+1) = dCTdRho2(i+1) + R2(j)*xTemp(j)*(-dQTempdRho2(j)* &
+             CTTemp(j)*cosAlpha(j)+dQTempdRho2(j)*CDTemp(j))
+        dCTdCD1(i+1) = dCTdCD1(i+1) + R2(j)*xTemp(j)*(QTemp(j)*dCDTemp1(j))
+        dCTdCD2(i+1) = dCTdCD2(i+1) + R2(j)*xTemp(j)*(QTemp(j)*dCDTemp2(j))
+        dCTdWf1(i+1) = dCTdWf1(i+1) + R2(j)*xTemp(j)*(dWTempdWf1(j)* &
+             sinGamma(j))
+        dCTdWf2(i+1) = dCTdWf2(i+1) + R2(j)*xTemp(j)*(dWTempdWf2(j)* &
+             sinGamma(j))
+        dCTdGamma1(i+1) = dCTdGamma1(i+1) + R2(j)*xTemp(j)*(WTemp(j)* &
+             dSinGamma1(j))
+        dCTdGamma2(i+1) = dCTdGamma2(i+1) + R2(j)*xTemp(j)*(WTemp(j)* &
+             dSinGamma2(j))
+        dCTdCT1(i+1) = dCTdCT1(i+1) + R2(j)*xTemp(j)*(-QTemp(j)* &
+             cosAlpha(j)*dCTTemp1(j))
+        dCTdCT2(i+1) = dCTdCT2(i+1) + R2(j)*xTemp(j)*(-QTemp(j)* &
+             cosAlpha(j)* dCTTemp2(j))
+        dCTdAlpha1(i+1) = dCTdAlpha1(i+1) + R2(j)*xTemp(j)*(-QTemp(j)* &
+             CTTemp(j)*dCosAlpha1(j))
+        dCTdAlpha2(i+1) = dCTdAlpha2(i+1) + R2(j)*xTemp(j)*(-QTemp(j)* &
+             CTTemp(j)*dCosAlpha2(j))
+     enddo
+  enddo
+end subroutine get_CT_d
+
 subroutine get_h(numElem, numInt, S, Wac, x_ends, h_ends, Wf, CT, alpha, CD, rho, v, h)
   !f2py intent(in) numElem, numInt
   !f2py intent(in) S, Wac
@@ -1273,40 +1509,6 @@ subroutine get_CL(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
         CLRes(i+1) = CLRes(i+1) + temp
      enddo
   enddo
-
-!  do i = 0,numElem-1
-!     call linspace(numInt, rho(i), rho(i+1), rhoTemp)
-!     call linspace(numInt, v(i), v(i+1), vTemp)
-!     dx = (x(i+1)-x(i))/numInt
-!     
-!     do j = 0,numInt-1
-!        QTemp(j) = 0.5*rhoTemp(j)*vTemp(j)**2*S
-!        xTemp(j) = dx
-!     enddo
-!
-!     xTemp(0) = 0.5*dx
-!     xTemp(numInt-1) = 0.5*dx
-!
-!     call linspace(numInt, gamma(i), gamma(i+1), gammaTemp)
-!     cosGamma = cos(gammaTemp)
-!
-!     call linspace(numInt, CL(i), CL(i+1), CLTemp)
-!     call linspace(numInt, Wf(i), Wf(i+1), WTemp)
-!     call linspace(numInt, alpha(i), alpha(i+1), aTemp)
-!     call linspace(numInt, CT(i), CT(i+1), tTemp)
-!     
-!     do j = 0,numInt-1
-!        WTemp(j) = WTemp(j) + Wac
-!     enddo
-!
-!     do j = 0,numInt-1
-!        temp = -QTemp(j)*CLTemp(j)+WTemp(j)*cosGamma(j) &
-!             -sin(aTemp(j))*tTemp(j)*QTemp(j)
-!        temp = temp*R2(j)*xTemp(j)
-!        CLRes(i+1) = CLRes(i+1) + temp
-!     enddo
-!  enddo
-
 end subroutine get_CL
 
 subroutine get_CL_d(numElem, numInt, Wac, S, g, x, v, rho, CL, Wf, gamma, &
