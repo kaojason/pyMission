@@ -1,9 +1,8 @@
 from pyMission import *
 
-
 params = {
     'S': 427.8/1e2,#                  e2
-    'Wac': 185953*9.81/1e6,#     e6
+    'Wac': 185953*9.81/1e6*0.75,#     e6
     'cThrustSL': 1020000.0/1e6,#       e6
     'SFCSL': 8.951,#           e-6
     'chord': 8.15,
@@ -15,32 +14,32 @@ params = {
 
 n = 1
 numElem = 10
+
+v_init = 280.0 * numpy.ones(numElem+1)
+v_init[0] = 150.0
+v_init[-1] = 150.0
+
 missionProblem = Trajectory(1, opt=True)
 missionProblem.set_opt(700.0e3, numElem)
 missionProblem.set_ingn_intl(100)
 missionProblem.set_params(params)
 missionProblem.set_range(1000.0e3)
 missionProblem.set_final_Wf(0.0)
-missionProblem.set_IC()
+missionProblem.set_IC(v_IC=v_init)
 
 problemPtr = missionProblem.initialize()
 problemPtr.compute(True)
-#problemPtr.check_derivatives_all2()
 
 problemPtr.vec['du'].array[:] = 0.0
-
-print
-print 'Computing derivatives'
-#print problemPtr.compute_derivatives('fwd', 'v_ends', output=True)#.array
-#exit()
-'''
-problemPtr('segment').kwargs['NL'] = 'NLN_GS'
-problemPtr.compute(True).array
-'''
 
 h_init = 8 * numpy.ones(numElem+1)
 h_init[0] = 0
 h_init[-1] = 0
+
+if 0:
+    problemPtr.check_derivatives_all2()
+    problemPtr.vec['du'].array[:] = 0.0
+    exit()
 
 opt = Optimization(problemPtr)
 opt.add_design_variable('h', value=h_init, lower=0.0)
@@ -50,69 +49,6 @@ opt.add_constraint('h_f', lower=0.0, upper=0.0)
 opt.add_constraint('Tmin', upper=0.0)
 opt.add_constraint('Tmax', upper=0.0)
 opt('SNOPT')
-
-
-
-#problemPtr.check_derivatives_all2()
-#problemPtr.vec['du'].array[:] = 0.0
-#exit()
-'''
-problemPtr('segment').set_mode('fwd', True)
-problemPtr('segment').rhs_vec.array[:] = 1.0
-problemPtr('segment').solve_dFdu()
-'''
-#exit()
-
-#problemPtr.compute_derivatives('fwd', 'v_ends', output=True)
-#exit()
-'''
-A_new = problemPtr.compute_derivatives('fwd', 'v_ends', output=True)
-print 'ANALYTIC:-------------------------'
-print A_new
-A = numpy.array(A_new.array)
-#print problemPtr.compute_derivatives('fwd', 'S', output=True)
-h = 1.0e-3
-
-f0 = numpy.array(problemPtr.vec['u'].array)
-print "F0 HERE!"
-print problemPtr.vec['u']
-problemPtr('v_ends').value[0] += h
-#problemPtr('v_ends').value[1] += h
-problemPtr.compute(False)
-f = numpy.array(problemPtr.vec['u'].array)
-print "F HERE!"
-print problemPtr.vec['u']
-problemPtr.vec['du'].array[:] = (f-f0)/h
-#print '--------------------NOW COMPUTING DERIVATIVES'
-B = numpy.array(problemPtr.vec['du'].array)
-print 'FD:-------------------------------'
-#print B
-print problemPtr.vec['du']
-print numpy.vstack([A,B]).T
-#print A
-exit()
-'''
-'''
-analytic_array = problemPtr.compute_derivatives('fwd','SFCSL').array[:]
-problemPtr.vec['u'](['SFCSL',0])[:] += 1e-5
-new_array = problemPtr.compute(True).array
-diff_array = (new_array-old_array)/1e-10
-print analytic_array
-print diff_array
-print analytic_array-diff_array
-'''
-#problemPtr.vec['u'].array[:] *= problemPtr.vec['u0'].array[:]
-#print problemPtr.vec['u']
-#print problemPtr.vec['u0']
-'''
-print "---------------------------------------"
-for name in ['SFC', 'gamma', 'Temp', 'h', 'rho', 'CT', 'v', 'tau', 'CL',
-             'alpha', 'CD', 'Wf', 'CM', 'eta']:
-    result = problemPtr([name,0]).check_derivatives(problemPtr.variables.keys())
-    print 'check ' + name
-    print result[0]
-    print result[1]
-'''
 
 totalElem = 0
 total_x = numpy.array([])
@@ -125,7 +61,7 @@ total_w = numpy.array([])
 total_p = numpy.array([])
 for i in xrange(missionProblem.numSeg):
     totalElem += missionProblem.numElem[i]
-    x_ends = problemPtr.vec['u'](['x', 0]) #* 1e6
+    x_ends = problemPtr.vec['u'](['x', 0]) * 1e6
     x_int = numpy.linspace(x_ends[i], x_ends[i+1], missionProblem.numElem[i]+1)
     total_x = numpy.append(total_x, x_int)
     total_h = numpy.append(total_h, problemPtr.vec['u'](['h', i]))
@@ -153,46 +89,21 @@ numpy.append(total_e, numpy.array([problemPtr.vec['u'](['eta', numSeg-1])[-1]]))
 numpy.append(total_w, numpy.array([problemPtr.vec['u'](['Wf', numSeg-1])[-1]]))
 numpy.append(total_p, numpy.array([problemPtr.vec['u'](['rho', numSeg-1])[-1]]))
     
-pylab.figure
-pylab.subplot(711)
-pylab.plot(total_x/1000.0, total_h)
-pylab.ylabel('Altitude (km)')
-pylab.subplot(712)
-pylab.plot(total_x/1000.0, total_v*1e2)
-pylab.ylabel('Velocity (m/s)')
-pylab.subplot(713)
-pylab.plot(total_x/1000.0, total_a*1e-1*180.0/numpy.pi)
-pylab.ylabel('AoA (deg)')
-pylab.subplot(714)
-pylab.plot(total_x/1000.0, total_t)
-pylab.ylabel('Throttle')
-pylab.subplot(715)
-pylab.plot(total_x/1000.0, total_e*1e-1*180.0/numpy.pi)
-pylab.ylabel('Trim Angle (deg)')
-pylab.subplot(716)
-pylab.plot(total_x/1000.0, total_w*1e6/(9.81*0.804))
-pylab.ylabel('Fuel (L)')
-pylab.subplot(717)
-pylab.plot(total_x/1000.0, total_p)
-pylab.ylabel('rho')
-pylab.xlabel('Distance (km)')
-pylab.show()
+fig = matplotlib.pylab.figure(figsize=(12.0,10.0))
+fig.add_subplot(711).plot(total_x/1000.0, total_h)
+fig.add_subplot(711).set_ylabel('Altitude (km)')
+fig.add_subplot(712).plot(total_x/1000.0, total_v*1e2)
+fig.add_subplot(712).set_ylabel('Velocity (m/s)')
+fig.add_subplot(713).plot(total_x/1000.0, total_a*1e-1*180.0/numpy.pi)
+fig.add_subplot(713).set_ylabel('AoA (deg)')
+fig.add_subplot(714).plot(total_x/1000.0, total_t)
+fig.add_subplot(714).set_ylabel('Throttle')
+fig.add_subplot(715).plot(total_x/1000.0, total_e*1e-1*180.0/numpy.pi)
+fig.add_subplot(715).set_ylabel('Trim Angle (deg)')
+fig.add_subplot(716).plot(total_x/1000.0, total_w*1e6/(9.81*0.804))
+fig.add_subplot(716).set_ylabel('Fuel (L)')
+fig.add_subplot(717).plot(total_x/1000.0, total_p)
+fig.add_subplot(717).set_ylabel('rho')
+fig.add_subplot(717).set_xlabel('Distance (km)')
+fig.savefig("OptFig.pdf")
 
-'''
-name = 'v'
-result = problemPtr(['CL',0]).check_derivatives()
-print 'checking CL-' + name
-print result[0]
-print result[1]
-'''
-"""
-print problemPtr.vec['u']['h',0]
-print problemPtr.vec['p']['SFC',0]['h',0]
-
-main = problemPtr
-if main(['h2',0]).comm is not None:
-    print 'h2-derv:', main(['h2',0]).check_derivatives('fwd')
-if main(['SFC',0]).comm is not None:
-    print 'SFC-derv:'
-    print main(['SFC',0]).check_derivatives('fwd')
-"""

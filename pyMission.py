@@ -6,8 +6,9 @@ import copy
 from framework import *
 from optimization import *
 import mission
-import pylab
-
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pylab
 
 class Sys_h(ImplicitSystem):
     def _declare(self):
@@ -1679,9 +1680,7 @@ class Sys_Wf(ImplicitSystem):
 
         Wf = mission.get_wf(self.numInt, self.numElem, xInt, v, gamma,
                             CT, SFC, rho, WfIn, g, WfSeg, S)
-        
-        #print "current Wf: ", WfIn
-        #print "current WfRes: ", Wf-WfIn
+
         f('Wf')[:] = (WfIn-Wf) / 1e6
         self._nln_final()
 
@@ -2286,7 +2285,8 @@ class Trajectory(object):
         self.g = kw['g']
 
     def set_IC(self, h_IC=None, a_IC=None, t_IC=None, e_IC=None, CT_IC=None,
-                   CL_IC=None, CD_IC=None, CM_IC=None, Wf_IC=None, x_IC=None):
+               CL_IC=None, CD_IC=None, CM_IC=None, Wf_IC=None, x_IC=None,
+               v_IC=None):
         # initial condition given at all element control points, total
         # of sum(numElem[i]) + 1 initial values for a given mission
         
@@ -2377,18 +2377,21 @@ class Trajectory(object):
         temp = numpy.array(self.Temp_IC) * 1e2
         self.rho_IC = mission.get_rho(totalElem, self.g, temp)
         
-        v_ends = numpy.zeros(self.numSeg+1)
-        self.v_IC = []
-        for seg in xrange(self.numSeg+1):
-            if self.vPts[seg] == -1:
-                v_ends[seg] = self.MPts[seg]*numpy.sqrt(1.4*288*self.Temp_IC[seg]*1e2)
-            else:
-                v_ends[seg] = self.vPts[seg]*1e2
+        if v_IC == None:
+            v_ends = numpy.zeros(self.numSeg+1)
+            self.v_IC = []
+            for seg in xrange(self.numSeg+1):
+                if self.vPts[seg] == -1:
+                    v_ends[seg] = self.MPts[seg]*numpy.sqrt(1.4*288*self.Temp_IC[seg]*1e2)
+                else:
+                    v_ends[seg] = self.vPts[seg]*1e2
 
-        for seg in xrange(self.numSeg):
-            self.v_IC.extend(mission.get_v(self.numElem[seg], [v_ends[seg], v_ends[seg+1]])/1e2)
-            self.v_IC.pop()
-        self.v_IC.append(v_ends[self.numSeg]/1e2)
+            for seg in xrange(self.numSeg):
+                self.v_IC.extend(mission.get_v(self.numElem[seg], [v_ends[seg], v_ends[seg+1]])/1e2)
+                self.v_IC.pop()
+            self.v_IC.append(v_ends[self.numSeg]/1e2)
+        else:
+            self.v_IC = v_IC/1e2
 
 
         self.t_IC = []
@@ -2421,8 +2424,8 @@ class Trajectory(object):
         self.numInt = numInt
 
     def set_opt(self, dist, numElem):
-        self.add_seg_point(0.0,0.0,v=200.0)
-        self.add_seg_point(0.0,dist,v=200.0,tau=0.5,numElem=numElem)
+        self.add_seg_point(0.0,0.0,v=150.0)
+        self.add_seg_point(0.0,dist,v=150.0,tau=0.5,numElem=numElem)
 
     def initialize(self):
         ones = numpy.ones
