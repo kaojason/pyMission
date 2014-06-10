@@ -984,8 +984,8 @@ subroutine get_tau(numElem, cThrustSL, S, CT, rho, v, h, tau)
   do i = 0,numElem
      cThrust(i) = cThrustSL - 0.072*h(i)
      Thrust(i) = 0.5*rho(i)*v(i)**2*S*CT(i)
-     !tau(i) = Thrust(i)/cThrust(i)
-     tau(i) = 1 - (1/a)*LOG((1-EXP(a))*Thrust(i)/cThrust(i)+EXP(a))
+     tau(i) = Thrust(i)/cThrust(i)
+     !tau(i) = 1 - (1/a)*LOG((1-EXP(a))*Thrust(i)/cThrust(i)+EXP(a))
   enddo
 
 end subroutine get_tau
@@ -1013,25 +1013,25 @@ subroutine get_tau_d(numElem, cThrustSL, S, h, CT, rho, v, dCThrustSL, dh, dCT, 
   a = 2.0
 
   do i = 0,numElem
-     !dRho(i) = (0.5*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))
-     !dV(i) = (rho(i)*v(i)*S*CT(i))/(cThrustSL-0.072*h(i))
-     !dS(i) = (0.5*rho(i)*v(i)**2*CT(i))/(cThrustSL-0.072*h(i))
-     !dCT(i) = (0.5*rho(i)*v(i)**2*S)/(cThrustSL-0.072*h(i))
-     !dCThrustSL(i) = -(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
-     !dh(i) = 0.072*(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
-     cThrust(i) = cThrustSL - 0.072*h(i)
-     dRho(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
-          (0.5*(1-EXP(a))*v(i)**2*S*CT(i)/cThrust(i))
-     dV(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
-          ((1-EXP(a))*rho(i)*v(i)*S*CT(i)/cThrust(i))
-     dS(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
-          (0.5*(1-EXP(a))*rho(i)*v(i)**2*CT(i)/cThrust(i))
-     dCT(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
-          (0.5*(1-EXP(a))*rho(i)*v(i)**2*S/cThrust(i))
-     dCThrustSL(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
-          (-0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)**2)
-     dh(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
-          (-0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)*(-0.072)/cThrust(i)**2)
+     dRho(i) = (0.5*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))
+     dV(i) = (rho(i)*v(i)*S*CT(i))/(cThrustSL-0.072*h(i))
+     dS(i) = (0.5*rho(i)*v(i)**2*CT(i))/(cThrustSL-0.072*h(i))
+     dCT(i) = (0.5*rho(i)*v(i)**2*S)/(cThrustSL-0.072*h(i))
+     dCThrustSL(i) = -(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
+     dh(i) = 0.072*(0.5*rho(i)*v(i)**2*S*CT(i))/(cThrustSL-0.072*h(i))**2
+     !cThrust(i) = cThrustSL - 0.072*h(i)
+     !dRho(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
+     !     (0.5*(1-EXP(a))*v(i)**2*S*CT(i)/cThrust(i))
+     !dV(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
+     !     ((1-EXP(a))*rho(i)*v(i)*S*CT(i)/cThrust(i))
+     !dS(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
+     !     (0.5*(1-EXP(a))*rho(i)*v(i)**2*CT(i)/cThrust(i))
+     !dCT(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
+     !     (0.5*(1-EXP(a))*rho(i)*v(i)**2*S/cThrust(i))
+     !dCThrustSL(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
+     !     (-0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)**2)
+     !dh(i) = -(1/a)*(1/(0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)/cThrust(i)+EXP(a)))* &
+     !     (-0.5*(1-EXP(a))*rho(i)*v(i)**2*S*CT(i)*(-0.072)/cThrust(i)**2)
   enddo
 
 end subroutine get_tau_d
