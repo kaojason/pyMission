@@ -13,17 +13,17 @@ params = {
     }
 
 n = 1
-numElem = 10
+numElem = 30
+numCP = 10
 
 v_init = 280.0 * numpy.ones(numElem+1)
 v_init[0] = 150.0
 v_init[-1] = 150.0
 
 missionProblem = Trajectory(1, opt=True)
-missionProblem.set_opt(700.0e3, numElem)
+missionProblem.set_opt(700.0e3, numElem, numCP)
 missionProblem.set_ingn_intl(100)
 missionProblem.set_params(params)
-missionProblem.set_range(1000.0e3)
 missionProblem.set_final_Wf(0.0)
 missionProblem.set_IC(v_IC=v_init)
 
@@ -32,7 +32,7 @@ problemPtr.compute(True)
 
 problemPtr.vec['du'].array[:] = 0.0
 
-h_init = 8 * numpy.ones(numElem+1)
+h_init =  numpy.ones(numCP)
 h_init[0] = 0
 h_init[-1] = 0
 
@@ -42,7 +42,7 @@ if 0:
     exit()
 
 opt = Optimization(problemPtr)
-opt.add_design_variable('h', value=h_init, lower=0.0)
+opt.add_design_variable('h_CP', value=h_init, lower=0.0)
 opt.add_objective('Wf_obj')
 opt.add_constraint('h_i', lower=0.0, upper=0.0)
 opt.add_constraint('h_f', lower=0.0, upper=0.0)
