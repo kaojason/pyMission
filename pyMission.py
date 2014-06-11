@@ -24,8 +24,8 @@ class Sys_v_bspline(ExplicitSystem):
 
     def apply_G(self):
         u = self.vec['u']('v')
-        p = self.vec['p']('v_CP') * 1e2
-        u[:] = self.jac.dot(p[:]) / 1e2
+        p = self.vec['p']('v_CP')
+        u[:] = self.jac.dot(p[:])
 
     def apply_dGdp(self, args):
         dg = self.vec['dg']('v')
@@ -112,7 +112,7 @@ class Sys_gamma_bspline(ExplicitSystem):
     def apply_G(self):
         u = self.vec['u']('gamma')
         p = self.vec['p']('h_CP')
-        u[:] = self.jac.dot(p[:])*1e6/1e3 / 1e-1
+        u[:] = self.jac.dot(p[:]) * 1e3/1e-1
 
     def apply_dGdp(self, args):
         dg = self.vec['dg']('gamma')
@@ -394,9 +394,8 @@ class Sys_SFC(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
         numPts = self.numElem+1
-        dSFC_dh = numpy.zeros(numPts)        
+
         dSFC_dh = mission.get_sfc_d(self.numElem)
 
         dh = dp('h')
@@ -412,7 +411,6 @@ class Sys_SFC(ExplicitSystem):
         if self.mode == 'rev':
             dh[:] = 0.0
             dSFCSL[:] = 0.0
-            du('SFC')[:] = 0.0
             
             if self.get_id('h') in arguments:
                 dh[:] += dSFC_dh * dg('SFC') * 1e3/1e-6
@@ -445,7 +443,6 @@ class Sys_Temp(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
         numPts = self.numElem+1
         dTemp_dh = numpy.zeros(numPts)
         h = p('h') * 1e3
@@ -461,7 +458,6 @@ class Sys_Temp(ExplicitSystem):
                     1e3/1e2
         if self.mode == 'rev':
             dh[:] = 0.0
-            du('Temp')[:] = 0.0
             if self.get_id('h') in arguments:
                 dh[:] = dTemp_dh * dg('Temp') * 1e3/1e2
     
@@ -496,7 +492,6 @@ class Sys_rho(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
         g = 9.81
         Temp = p('Temp') * 1e2
         numPts = self.numElem+1
@@ -512,9 +507,8 @@ class Sys_rho(ExplicitSystem):
                 dg('rho')[:] += (drho_dTemp * dTemp) * 1e2
         if self.mode == 'rev':
             dTemp[:] = 0.0
-            du('rho')[:] = 0.0
             if self.get_id('Temp') in arguments:
-                dTemp[:] = drho_dTemp * dg('rho') * 1e2
+                dTemp[:] += drho_dTemp * dg('rho') * 1e2
     
 class Sys_v(ExplicitSystem):
     def _declare(self):
@@ -567,7 +561,6 @@ class Sys_v(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
         numPts = self.numElem+1
         dv_dvEnds0 = numpy.zeros(numPts)
         dv_dvEnds1 = numpy.zeros(numPts)
@@ -612,14 +605,13 @@ class Sys_v(ExplicitSystem):
             dM[:] = 0.0
             dv[:] = 0.0
             dT[:] = 0.0
-            du('v')[:] = 0.0
             
             if self.get_id('v_ends') in arguments:
-                dv[0] = numpy.sum(dv_dvEnds0 * dg('v'))
-                dv[1] = numpy.sum(dv_dvEnds1 * dg('v'))
+                dv[0] += numpy.sum(dv_dvEnds0 * dg('v'))
+                dv[1] += numpy.sum(dv_dvEnds1 * dg('v'))
             if self.get_id('M_ends') in arguments:
-                dM[0] = numpy.sum(dv_dMEnds0 * dg('v'))
-                dM[1] = numpy.sum(dv_dMEnds1 * dg('v'))
+                dM[0] += numpy.sum(dv_dMEnds0 * dg('v'))
+                dM[1] += numpy.sum(dv_dMEnds1 * dg('v'))
 
 class Sys_CT(ExplicitSystem):
     def _declare(self):
@@ -673,7 +665,6 @@ class Sys_CT(ExplicitSystem):
             p = self.vec['p']
             dp = self.vec['dp']
             dg = self.vec['dg']
-            du = self.vec['du']
         
             tau = p('tau_init')
             S = p(['S',0]) * 1e2
@@ -715,20 +706,19 @@ class Sys_CT(ExplicitSystem):
                 drho[:] = 0.0
                 dv[:] = 0.0
                 dh[:] = 0.0
-                du('CT')[:] = 0.0
                 
                 if self.get_id('cThrustSL') in arguments:
-                    dcThrustSL[:] = numpy.sum(dCTdcThrustSL * dg('CT')) * 1e6/1e-1
+                    dcThrustSL[:] += numpy.sum(dCTdcThrustSL * dg('CT')) * 1e6/1e-1
                 if self.get_id('h') in arguments:
-                    dh[:] = dCTdH * dg('CT') * 1e3/1e-1
+                    dh[:] += dCTdH * dg('CT') * 1e3/1e-1
                 if self.get_id('rho') in arguments:
-                    drho[:] = dCTdRho * dg('CT') /1e-1
+                    drho[:] += dCTdRho * dg('CT') /1e-1
                 if self.get_id('v') in arguments:
-                    dv[:] = dCTdV * dg('CT') * 1e2/1e-1
+                    dv[:] += dCTdV * dg('CT') * 1e2/1e-1
                 if self.get_id('S') in arguments:
-                    dS[:] = numpy.sum(dCTdS * dg('CT')) * 1e2/1e-1
+                    dS[:] += numpy.sum(dCTdS * dg('CT')) * 1e2/1e-1
                 if self.get_id('tau_init') in arguments:
-                    dtau[:] = numpy.sum(dCTdTau * dg('CT')) /1e-1
+                    dtau[:] += numpy.sum(dCTdTau * dg('CT')) /1e-1
                 
 class Sys_CT_opt(ImplicitSystem):
     def _declare(self):
@@ -1034,7 +1024,6 @@ class Sys_tau(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
 
         cThrustSL = p(['cThrustSL',0]) * 1e6
         S = p(['S',0]) * 1e2
@@ -1076,20 +1065,19 @@ class Sys_tau(ExplicitSystem):
             drho[:] = 0.0
             dv[:] = 0.0
             dS[:] = 0.0
-            du('tau')[:] = 0.0
             
             if self.get_id('cThrustSL') in arguments:
-                dcThrustSL[:] = numpy.sum(dtdcThrustSL * dg('tau')) * 1e6
+                dcThrustSL[:] += numpy.sum(dtdcThrustSL * dg('tau')) * 1e6
             if self.get_id('h') in arguments:
-                dh[:] = dtdh * dg('tau') * 1e3
+                dh[:] += dtdh * dg('tau') * 1e3
             if self.get_id('CT') in arguments:
-                dCT[:] = dtdCT * dg('tau') * 1e-1
+                dCT[:] += dtdCT * dg('tau') * 1e-1
             if self.get_id('rho') in arguments:
-                drho[:] = dtdRho * dg('tau')
+                drho[:] += dtdRho * dg('tau')
             if self.get_id('v') in arguments:
-                dv[:] = dtdV * dg('tau') * 1e2
+                dv[:] += dtdV * dg('tau') * 1e2
             if self.get_id('S') in arguments:
-                dS[:] = numpy.sum(dtdS * dg('tau')) * 1e2
+                dS[:] += numpy.sum(dtdS * dg('tau')) * 1e2
 
 class Sys_CL(ImplicitSystem):
     def _declare(self):
@@ -1314,25 +1302,25 @@ class Sys_CL(ImplicitSystem):
                     if self.get_id('S') in arguments:
                         dS += dCLdS[i] * df('CL')[i] * 1e2/1e7
                     if self.get_id('v') in arguments:
-                        dv[i] = (dCLdV2[i] * df('CL')[i] +
+                        dv[i] += (dCLdV2[i] * df('CL')[i] +
                                  dCLdV1[i+1] * df('CL')[i+1]) * 1e2/1e7
                     if self.get_id('rho') in arguments:
-                        drho[i] = (dCLdRho2[i] * df('CL')[i] +
+                        drho[i] += (dCLdRho2[i] * df('CL')[i] +
                                    dCLdRho1[i+1] * df('CL')[i+1]) /1e7
                     if self.get_id('Wf') in arguments:
-                        dWf[i] = (dCLdWf2[i] * df('CL')[i] +
+                        dWf[i] += (dCLdWf2[i] * df('CL')[i] +
                                   dCLdWf1[i+1] * df('CL')[i+1]) * 1e6/1e7
                     if self.get_id('gamma') in arguments:
-                        dgamma[i] = (dCLdGamma2[i] * df('CL')[i] +
+                        dgamma[i] += (dCLdGamma2[i] * df('CL')[i] +
                                      dCLdGamma1[i+1] * df('CL')[i+1]) * 1e-1/1e7
                     if self.get_id('CT') in arguments:
-                        dCT[i] = (dCLdThrust2[i] * df('CL')[i] +
+                        dCT[i] += (dCLdThrust2[i] * df('CL')[i] +
                                   dCLdThrust1[i+1] * df('CL')[i+1]) * 1e-1/1e7
                     if self.get_id('alpha') in arguments:
-                        dalpha[i] = (dCLdAlpha2[i] * df('CL')[i] +
+                        dalpha[i] += (dCLdAlpha2[i] * df('CL')[i] +
                                      dCLdAlpha1[i+1] * df('CL')[i+1]) * 1e-1/1e7
                     if self.get_id('CL') in arguments:
-                        du('CL')[i] = (dCLdCL2[i] * df('CL')[i] +
+                        du('CL')[i] += (dCLdCL2[i] * df('CL')[i] +
                                        dCLdCL1[i+1] * df('CL')[i+1]) /1e7
                 elif i == self.numElem:
                     if self.get_id('Wac') in arguments:
@@ -1340,25 +1328,25 @@ class Sys_CL(ImplicitSystem):
                     if self.get_id('S') in arguments:
                         dS += dCLdS[i] * df('CL')[i] * 1e2/1e7
                     if self.get_id('v') in arguments:
-                        dv[i] = (dCLdV3[i-1] * df('CL')[i-1] +
+                        dv[i] += (dCLdV3[i-1] * df('CL')[i-1] +
                                  dCLdV2[i] * df('CL')[i]) * 1e2/1e7
                     if self.get_id('rho') in arguments:
-                        drho[i] = (dCLdRho3[i-1] * df('CL')[i-1] +
+                        drho[i] += (dCLdRho3[i-1] * df('CL')[i-1] +
                                    dCLdRho2[i] * df('CL')[i]) /1e7
                     if self.get_id('Wf') in arguments:
-                        dWf[i] = (dCLdWf3[i-1] * df('CL')[i-1] +
+                        dWf[i] += (dCLdWf3[i-1] * df('CL')[i-1] +
                                   dCLdWf2[i] * df('CL')[i]) * 1e6/1e7
                     if self.get_id('gamma') in arguments:
-                        dgamma[i] = (dCLdGamma3[i-1] * df('CL')[i-1] +
+                        dgamma[i] += (dCLdGamma3[i-1] * df('CL')[i-1] +
                                      dCLdGamma2[i] * df('CL')[i]) * 1e-1/1e7
                     if self.get_id('CT') in arguments:
-                        dCT[i] = (dCLdThrust3[i-1] * df('CL')[i-1] +
+                        dCT[i] += (dCLdThrust3[i-1] * df('CL')[i-1] +
                                   dCLdThrust2[i] * df('CL')[i]) * 1e-1/1e7
                     if self.get_id('alpha') in arguments:
-                        dalpha[i] = (dCLdAlpha3[i-1] * df('CL')[i-1] +
+                        dalpha[i] += (dCLdAlpha3[i-1] * df('CL')[i-1] +
                                      dCLdAlpha2[i] * df('CL')[i]) * 1e-1/1e7
                     if self.get_id('CL') in arguments:
-                        du('CL')[i] = (dCLdCL3[i-1] * df('CL')[i-1] +
+                        du('CL')[i] += (dCLdCL3[i-1] * df('CL')[i-1] +
                                        dCLdCL2[i] * df('CL')[i]) /1e7
                 else:
                     if self.get_id('Wac') in arguments:
@@ -1366,31 +1354,31 @@ class Sys_CL(ImplicitSystem):
                     if self.get_id('S') in arguments:
                         dS += dCLdS[i] * df('CL')[i] * 1e2/1e7
                     if self.get_id('v') in arguments:
-                        dv[i] = (dCLdV3[i-1] * df('CL')[i-1] +
+                        dv[i] += (dCLdV3[i-1] * df('CL')[i-1] +
                                  dCLdV2[i] * df('CL')[i] +
                                  dCLdV1[i+1] * df('CL')[i+1]) * 1e2/1e7
                     if self.get_id('rho') in arguments:
-                        drho[i] = (dCLdRho3[i-1] * df('CL')[i-1] +
+                        drho[i] += (dCLdRho3[i-1] * df('CL')[i-1] +
                                    dCLdRho2[i] * df('CL')[i] +
                                    dCLdRho1[i+1] * df('CL')[i+1]) /1e7
                     if self.get_id('Wf') in arguments:
-                        dWf[i] = (dCLdWf3[i-1] * df('CL')[i-1] +
+                        dWf[i] += (dCLdWf3[i-1] * df('CL')[i-1] +
                                   dCLdWf2[i] * df('CL')[i] +
                                   dCLdWf1[i+1] * df('CL')[i+1]) * 1e6/1e7
                     if self.get_id('gamma') in arguments:
-                        dgamma[i] = (dCLdGamma3[i-1] * df('CL')[i-1] +
+                        dgamma[i] += (dCLdGamma3[i-1] * df('CL')[i-1] +
                                      dCLdGamma2[i] * df('CL')[i] +
                                      dCLdGamma1[i+1] * df('CL')[i+1]) * 1e-1/1e7
                     if self.get_id('CT') in arguments:
-                        dCT[i] = (dCLdThrust3[i-1] * df('CL')[i-1] +
+                        dCT[i] += (dCLdThrust3[i-1] * df('CL')[i-1] +
                                   dCLdThrust2[i] * df('CL')[i] +
                                   dCLdThrust1[i+1] * df('CL')[i+1]) * 1e-1/1e7
                     if self.get_id('alpha') in arguments:
-                        dalpha[i] = (dCLdAlpha3[i-1] * df('CL')[i-1] +
+                        dalpha[i] += (dCLdAlpha3[i-1] * df('CL')[i-1] +
                                      dCLdAlpha2[i] * df('CL')[i] +
                                      dCLdAlpha1[i+1] * df('CL')[i+1]) * 1e-1/1e7
                     if self.get_id('CL') in arguments:
-                        du('CL')[i] = (dCLdCL3[i-1] * df('CL')[i-1] +
+                        du('CL')[i] += (dCLdCL3[i-1] * df('CL')[i-1] +
                                        dCLdCL2[i] * df('CL')[i] +
                                        dCLdCL1[i+1] * df('CL')[i+1]) /1e7
                 
@@ -1425,7 +1413,6 @@ class Sys_alpha(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
 
         CL = p('CL')
         eta = p('eta') * 1e-1
@@ -1444,11 +1431,10 @@ class Sys_alpha(ExplicitSystem):
         if self.mode == 'rev':
             dCL[:] = 0.0
             deta[:] = 0.0
-            du('alpha')[:] = 0.0
             if self.get_id('eta') in arguments:
-                deta[:] = dAdEta * dg('alpha')
+                deta[:] += dAdEta * dg('alpha')
             if self.get_id('CL') in arguments:
-                dCL[:] = dAdCL * dg('alpha') /1e-1
+                dCL[:] += dAdCL * dg('alpha') /1e-1
 
 class Sys_CD(ExplicitSystem):
     def _declare(self):
@@ -1481,7 +1467,6 @@ class Sys_CD(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
 
         AR = p(['AR',0])
         e = p(['e',0])
@@ -1506,14 +1491,13 @@ class Sys_CD(ExplicitSystem):
             dAR[:] = 0.0
             de[:] = 0.0
             dCL[:] = 0.0
-            du('CD')[:] = 0.0
 
             if self.get_id('AR') in arguments:
-                dAR[:] = numpy.sum(dCDdAR * dg('CD')) /1e-1
+                dAR[:] += numpy.sum(dCDdAR * dg('CD')) /1e-1
             if self.get_id('e') in arguments:
-                de[:] = numpy.sum(dCDde * dg('CD')) /1e-1
+                de[:] += numpy.sum(dCDde * dg('CD')) /1e-1
             if self.get_id('CL') in arguments:
-                dCL[:] = dCDdCL * dg('CD') /1e-1
+                dCL[:] += dCDdCL * dg('CD') /1e-1
 
 class Sys_Wf(ImplicitSystem):
     def _declare(self):
@@ -1893,7 +1877,6 @@ class Sys_eta(ExplicitSystem):
         p = self.vec['p']
         dp = self.vec['dp']
         dg = self.vec['dg']
-        du = self.vec['du']
 
         CM = p('CM')
         alpha = p('alpha') * 1e-1
@@ -1913,11 +1896,10 @@ class Sys_eta(ExplicitSystem):
         if self.mode == 'rev':
             dCM[:] = 0.0
             dalpha[:] = 0.0
-            du('eta')[:] = 0.0
             if self.get_id('CM') in arguments:
-                dCM[:] = dEdCM * dg('eta') /1e-1
+                dCM[:] += dEdCM * dg('eta') /1e-1
             if self.get_id('alpha') in arguments:
-                dalpha[:] = dEdAlpha * dg('eta')
+                dalpha[:] += dEdAlpha * dg('eta')
 
 class Sys_Wf_obj(ExplicitSystem):
     def _declare(self):
@@ -1956,17 +1938,17 @@ class Sys_h_i(ExplicitSystem):
         u[0] = p[0]
 
     def apply_dGdp(self, args):
-        du = self.vec['dg']('h_i')
+        dg = self.vec['dg']('h_i')
         dp = self.vec['dp']('h')
         
         if self.mode == 'fwd':
-            du[0] = 0.0
+            dg[0] = 0.0
             if self.get_id('h') in args:
-                du[0] += dp[0]
+                dg[0] += dp[0]
         if self.mode == 'rev':
             dp[0] = 0.0
             if self.get_id('h') in args:
-                dp[0] += du[0]
+                dp[0] += dg[0]
 
 class Sys_h_f(ExplicitSystem):
     def _declare(self):
@@ -1981,17 +1963,17 @@ class Sys_h_f(ExplicitSystem):
         u[0] = p[0]
 
     def apply_dGdp(self, args):
-        du = self.vec['dg']('h_f')
+        dg = self.vec['dg']('h_f')
         dp = self.vec['dp']('h')
-        
+
         if self.mode == 'fwd':
-            du[0] = 0.0
+            dg[0] = 0.0
             if self.get_id('h') in args:
-                du[0] += dp[0]
+                dg[0] += dp[0]
         if self.mode == 'rev':
             dp[0] = 0.0
             if self.get_id('h') in args:
-                dp[0] += du[0]
+                dp[0] += dg[0]
 
 class Tmin(ExplicitSystem):
 
@@ -2460,7 +2442,7 @@ class Trajectory(object):
             v_IC = self.v_IC
             CT_IC = self.CT_IC
             
-            self.mainMission = Top('mission',
+            self.mainMission = SerialSystem('mission',
                                    NL='NLN_GS', 
                                    LN='LIN_GS',
                                    LN_ilimit=5, 
@@ -2503,37 +2485,41 @@ class Trajectory(object):
                                  PC_atol=1e-10,
                                  output=True,
                                  subsystems=[
-                            #IndVar('x', val=numpy.linspace(0.0,self.range,self.numElem[pt]+1)/1e6),
                             IndVar('x_CP', val=Cx, lower=0),
-                            #IndVar('h', val=numpy.zeros(self.numElem+1)),
                             IndVar('h_CP', val=h_CP_IC, lower=0),
                             IndVar('v_CP', val=200/1e2, size=numCP, lower=0),
                             Sys_h_bspline('h', numPts=self.numElem[pt]+1, numCP=numCP, jac=jac_h),
                             Sys_x_bspline('x', numPts=self.numElem[pt]+1, numCP=numCP, jac=jac_h),
                             Sys_v_bspline('v', numPts=self.numElem[pt]+1, numCP=numCP, jac=jac_h),
-                            Sys_SFC('SFC', numElem=self.numElem[pt], SFC_IC=SFC_IC),
                             Sys_gamma_bspline('gamma', numPts=self.numElem[pt]+1, numCP=numCP, jac=jac_gamma),
-                            #Sys_gamma('gamma', numElem=self.numElem[pt], gamma_IC=gamma_IC),
+                            Sys_SFC('SFC', numElem=self.numElem[pt], SFC_IC=SFC_IC),
                             Sys_Temp('Temp', numElem=self.numElem[pt], Temp_IC=Temp_IC),
                             Sys_rho('rho', numElem=self.numElem[pt], rho_IC=rho_IC),
-                            Sys_CL('CL', numElem=self.numElem[pt], numInt=self.numInt, CL_IC=CL_IC),
+                            #Sys_CL('CL', numElem=self.numElem[pt], numInt=self.numInt, CL_IC=CL_IC, output=True),
+                            IndVar('CL', pt, val=numpy.ones(self.numElem[pt])),
                             Sys_alpha('alpha', numElem=self.numElem[pt], a_IC=a_IC),
+                            #IndVar('alpha', pt, val=numpy.ones(self.numElem[pt])*0.5*numpy.pi/180.0/1e-1),
                             Sys_CD('CD', numElem=self.numElem[pt], CD_IC=CD_IC),
-                            Sys_CT_opt('CT', numElem=self.numElem[pt], numInt=self.numInt, CT_IC=CT_IC),
+                            #IndVar('CD', pt, val=numpy.ones(self.numElem[pt])*0.01/1e-1),
+                            #Sys_CT_opt('CT', numElem=self.numElem[pt], numInt=self.numInt, CT_IC=CT_IC),
+                            IndVar('CT', pt, val=numpy.ones(self.numElem[pt])*0.1/1e-1),
                             Sys_tau('tau', numElem=self.numElem[pt]),
+                            #IndVar('tau', pt, val=numpy.ones(self.numElem[pt])),
                             Sys_Wf('Wf', numElem=self.numElem[pt], numInt=self.numInt, numSeg=self.numSeg, Wf_IC=Wf_IC),
+                            #IndVar('Wf', pt, val=numpy.linspace(1e6, 0.0, self.numElem[pt])/1e6),
                             Sys_CM('CM', numElem=self.numElem[pt], numInt=self.numInt, CM_IC=CM_IC),
+                            #IndVar('CM', pt, val=numpy.zeros(self.numElem[pt])),
                             Sys_eta('eta', numElem=self.numElem[pt], e_IC=e_IC),
+                            #IndVar('eta', pt, val=numpy.zeros(self.numElem[pt])/1e-1),
                             Sys_Wf_obj('Wf_obj')
                             
-                            ]
-                                 ),
+                            ]),
                     Sys_h_i('h_i'),
                     Sys_h_f('h_f', numElem=self.numElem[pt]),
                     Tmin('Tmin', numElem=self.numElem[pt]),
                     Tmax('Tmax', numElem=self.numElem[pt]),
                     ]).setup()
-            self.mainMission.reset_counter()
+            #self.mainMission.reset_counter()
         
         return self.mainMission
 

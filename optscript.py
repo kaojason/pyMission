@@ -39,6 +39,17 @@ h_init[-1] = 0
 if 0:
     problemPtr.check_derivatives_all2()
     problemPtr.vec['du'].array[:] = 0.0
+    print problemPtr.vec['u'].array.shape[0]
+    exit()
+if 1:
+    print '---------------------FWD'
+    problemPtr.compute_derivatives('fwd', 'h_CP', output=True)
+    exit()
+    
+    print '---------------------REV1'
+    problemPtr.compute_derivatives('rev', 'Wf_obj', output=True)
+    print '---------------------REV2'
+    problemPtr.compute_derivatives('rev', 'Wf_obj', output=True)
     exit()
 
 opt = Optimization(problemPtr)
