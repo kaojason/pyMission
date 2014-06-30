@@ -15,6 +15,21 @@ matplotlib.use('Agg')
 import matplotlib.pylab
 import MBI, scipy.sparse
 
+class GlobalizedSystem(SerialSystem):
+    ''' doc string '''
+    
+    def solve_F(self):
+        """ Solve f for u, p |-> u """
+
+        kwargs = self.kwargs
+        self.solvers['NL']['NLN_GS'](ilimit=kwargs['GL_GS_ilimit'],
+                                     atol=kwargs['GL_GS_atol'],
+                                     rtol=kwargs['GL_GS_rtol'])
+        return self.solvers['NL']['NEWTON'](ilimit=kwargs['GL_NT_ilimit'],
+                                            atol=kwargs['GL_NT_atol'],
+                                            rtol=kwargs['GL_NT_rtol'])
+    
+    
 class OptTrajectory(object):
     """ class used to define and setup trajectory optimization problem """
 
@@ -116,21 +131,23 @@ class OptTrajectory(object):
                                 SysRho('rho', num_elem=self.num_elem),
                                 SysSpeed('v', num_elem=self.num_elem),
                                 ]),
-                        SerialSystem('coupled_analysis',
-                                     NL='NLN_GS',
-                                     LN='KSP_PC',
-                                     PC='LIN_GS',
-                                     LN_ilimit=30,
-                                     NL_ilimit=30,
-                                     PC_ilimit=2,
-                                     NL_rtol=1e-10,
-                                     NL_atol=1e-12,
-                                     LN_rtol=1e-10,
-                                     LN_atol=1e-10,
-                                     PC_rtol=1e-6,
-                                     PC_atol=1e-10,
-                                     output=True,
-                                     subsystems=[
+                        GlobalizedSystem('coupled_analysis',
+                                         LN='KSP_PC',
+                                         PC='LIN_GS',
+                                         LN_ilimit=30,
+                                         GL_GS_ilimit=5,
+                                         GL_NT_ilimit=30,
+                                         PC_ilimit=2,
+                                         GL_GS_rtol=1e-6,
+                                         GL_GS_atol=1e-10,
+                                         GL_NT_rtol=1e-10,
+                                         GL_NT_atol=1e-10,
+                                         LN_rtol=1e-10,
+                                         LN_atol=1e-10,
+                                         PC_rtol=1e-6,
+                                         PC_atol=1e-10,
+                                         output=True,
+                                         subsystems=[
                                 SerialSystem('vert_eqlm',
                                              NL='NLN_GS',
                                              LN='LIN_GS',

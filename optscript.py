@@ -27,8 +27,19 @@ traj.set_init_x(x_init)
 traj.set_params(params)
 main = traj.initialize()
 
-#main.compute(True)
+main.compute(True)
+'''
+print
+print
 main.vec['du'].array[:] = 0.0
+main.compute(True)
+print
+print
+main.compute_derivatives('rev', 'wf_obj', output=True)
+print
+print
+main.compute_derivatives('rev', 'wf_obj', output=True)
+'''
 
 if 0:
     # print figure option #
@@ -66,7 +77,7 @@ if 0:
 
     exit()
 
-if 0:
+if 1:
     # derivatives check #
     main.check_derivatives_all2()
     exit()
