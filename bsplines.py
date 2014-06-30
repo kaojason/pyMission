@@ -53,9 +53,10 @@ class SysXBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']
+        self.range = self.kwargs['x_range']*1e6
+        x_0 = self.kwargs['x_0']
 
-        self._declare_variable('x', size=self.num_pts)
+        self._declare_variable('x', size=self.num_pts, val=x_0)
         self._declare_argument('x_pt', indices=range(self.num_pt))
         self.MBI_setup()
 
@@ -95,7 +96,7 @@ class SysHBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']
+        self.range = self.kwargs['x_range']*1e6
 
         self._declare_variable('h', size=self.num_pts)
         self._declare_argument('h_pt', indices=range(self.num_pt))
@@ -138,7 +139,7 @@ class SysVBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']
+        self.range = self.kwargs['x_range']*1e6
 
         self._declare_variable('v', size=self.num_pts)
         self._declare_argument('v_pt', indices=range(self.num_pt))
@@ -179,7 +180,7 @@ class SysMBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']
+        self.range = self.kwargs['x_range']*1e6
 
         self._declare_variable('M', size=self.num_pts)
         self._declare_argument('M_pt', indices=range(self.num_pt))
@@ -219,9 +220,9 @@ class SysGammaBspline(BSplineSystem):
             dependencies: h_pt (altitude control points)
         """
 
-        self.num_pts = self.kwargs['num_elem']
+        self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']
+        self.range = self.kwargs['x_range']*1e6
 
         self._declare_variable('gamma', size=self.num_pts)
         self._declare_argument('h_pt', indices=range(self.num_pt))
