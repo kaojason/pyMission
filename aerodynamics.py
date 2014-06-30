@@ -11,21 +11,6 @@ sys.path.insert(0, '/home/jason/github/CMF')
 from framework import *
 import numpy
 
-class CLLin(object):
-    def get_CLLin(alpha, eta):
-        lift_c0 = 0.26
-        lift_ca = 4.24
-        lift_ce = 0.27
-
-        lift_c = lift_c0 + lift_ca * alpha + lift_ce*eta
-        return lift_c
-
-    def get_CLLin_d(alpha, eta):
-        lift_ca = 4.24
-        lift_ce = 0.27
-
-        return lift_ca, lift_ce
-
 class SysCLLin(ExplicitSystem):
     """ linear aerodynamic model for CL """
     

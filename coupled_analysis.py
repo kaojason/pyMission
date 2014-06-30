@@ -536,9 +536,8 @@ class SysAlpha(ImplicitSystem):
         ind_pts = range(num_pts)
 
         self._declare_variable('alpha', size=num_pts)
-        self._declare_argument('eta', indices=ind_pts)
+        self._declare_argument('CL', indices=ind_pts)
         self._declare_argument('CL_tar', indices=ind_pts)
-        self.cl_model = CLLin()
 
     def apply_F(self):
         """ the residual of the system is simply the difference between
@@ -546,15 +545,11 @@ class SysAlpha(ImplicitSystem):
         """
 
         pvec = self.vec['p']
-        uvec = self.vec['u']
         fvec = self.vec['f']
 
-        eta = pvec('eta') * 1e-1
+        lift_c = pvec('CL')
         lift_c_tar = pvec('CL_tar')
-        alpha = uvec('alpha') * 1e-1
         alpha_res = fvec('alpha')
-
-        lift_c = self.cl_model.get_CLLin(alpha, eta)
 
         alpha_res[:] = lift_c - lift_c_tar
 
@@ -562,34 +557,24 @@ class SysAlpha(ImplicitSystem):
         """ compute the trivial derivatives of the system """
 
         dpvec = self.vec['dp']
-        duvec = self.vec['du']
         dfvec = self.vec['df']
 
-        deta = dpvec('eta')
+        dlift_c = dpvec('CL')
         dlift_c_tar = dpvec('CL_tar')
-        dalpha = duvec('alpha')
         dalpha_res = dfvec('alpha')
-
-        [dlift_c_dalpha,
-         dlift_c_deta] = self.cl_model.get_CLLin_d(alpha, eta)
 
         if self.mode == 'fwd':
             dalpha_res[:] = 0.0
-            if self.get_id('eta') in args:
-                dalpha_res[:] += d_lift_c_deta * deta * 1e-1
-            if self.get_id('alpha') in args:
-                dalpha_res[:] += d_lift_c_dalpha * dalpha * 1e-1
+            if self.get_id('CL') in args:
+                dalpha_res[:] += dlift_c
             if self.get_id('CL_tar') in args:
                 dalpha_res[:] -= dlift_c_tar
 
         elif self.mode == 'rev':
-            deta[:] = 0.0
-            dalpha[:] = 0.0
+            dlift_c[:] = 0.0
             dlift_c_tar[:] = 0.0
-            if self.get_id('eta') in args:
-                deta[:] += d_lift_c_deta * dalpha_res * 1e-1
-            if self.get_id('alpha') in args:
-                dalpha[:] += d_lift_c_dalpha * dalpha_res * 1e-1
+            if self.get_id('CL') in args:
+                dlift_c[:] += dalpha_res
             if self.get_id('CL_tar') in args:
                 dlift_c_tar[:] -= dalpha_res
 

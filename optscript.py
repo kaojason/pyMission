@@ -29,11 +29,12 @@ main = traj.initialize()
 
 main.compute(True)
 
-print main.vec['u']
-
 main.vec['du'].array[:] = 0.0
 
 if 1:
+    exit()
+
+if 0:
     main.check_derivatives_all2()
     exit()
 
