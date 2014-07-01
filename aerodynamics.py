@@ -75,6 +75,169 @@ class SysCLLin(ExplicitSystem):
             if self.get_id('eta') in args:
                 deta[:] += lift_ce * dlift_c
 
+class SysAlpha1(ExplicitSystem):
+    def _declare(self):
+        self.num_elem = self.kwargs['num_elem']
+        ind_pts = range(self.num_elem+1)
+
+        self._declare_variable('alpha', size=self.num_elem+1)
+        self._declare_argument('eta', indices=ind_pts)
+        self._declare_argument('CL_tar', indices=ind_pts)
+
+    def apply_G(self):
+        pvec = self.vec['p']
+        uvec = self.vec['u']
+
+        eta = pvec('eta') * 1e-1
+        lift_c = pvec('CL_tar')
+        alpha = uvec('alpha')
+
+        lift_c0 = 0.26
+        lift_ca = 4.24
+        lift_ce = 0.27
+
+        alpha[:] = (lift_c - lift_c0 - lift_ce * eta)/lift_ca / 1e-1
+
+    def apply_dGdp(self, args):
+        dpvec = self.vec['dp']
+        dgvec = self.vec['dg']
+
+        deta = dpvec('eta')
+        dlift_c = dpvec('CL_tar')
+        dalpha = dgvec('alpha')
+
+        lift_c0 = 0.26
+        lift_ca = 4.24
+        lift_ce = 0.27
+
+        if self.mode == 'fwd':
+            dalpha[:] = 0.0
+            if self.get_id('eta') in args:
+                dalpha[:] -= lift_ce / lift_ca * deta
+            if self.get_id('CL_tar') in args:
+                dalpha[:] += 1/lift_ca * dlift_c / 1e-1
+        elif self.mode == 'rev':
+            deta[:] = 0.0
+            dlift_c[:] = 0.0
+            if self.get_id('eta') in args:
+                deta[:] -= lift_ce / lift_ca * dalpha
+            if self.get_id('CL_tar') in args:
+                dlift_c[:] += 1/lift_ca * dalpha
+
+class SysAeroSurrogate(ExplicitSystem):
+    """ simulates the presence of an aero surrogate mode using
+        linear aerodynamic model
+    """
+
+    def _declare(self):
+        """ owned variables: CL (lift coefficient),
+                             CD (drag coefficient),
+            dependencies: alpha (angle of attack),
+                          eta (tail rotation angle),
+                          AR (aspect ratio),
+                          e (Oswald's efficiency)
+        """
+
+        self.num_elem = self.kwargs['num_elem']
+        ind_pts = range(self.num_elem+1)
+
+        self._declare_variable('CL', size=self.num_elem+1)
+        self._declare_variable('CD', size=self.num_elem+1)
+        self._declare_argument('alpha', indices=ind_pts)
+        self._declare_argument('eta', indices=ind_pts)
+        self._declare_argument('AR', indices=[0])
+        self._declare_argument('e', indices=[0])
+
+    def apply_G(self):
+        """ compute lift and drag coefficient using angle of attack
+            and tail rotation angles. linear aerodynamics assumed
+        """
+
+        pvec = self.vec['p']
+        uvec = self.vec['u']
+
+        alpha = pvec('alpha') * 1e-1
+        eta = pvec('eta') * 1e-1
+        aspect_ratio = pvec(['AR', 0])
+        oswald = pvec(['e', 0])
+        lift_c = uvec('CL')
+        drag_c = uvec('CD')
+
+        lift_c0 = 0.26
+        lift_ca = 4.24
+        lift_ce = 0.27
+        drag_c0 = 0.018
+
+        lift_c[:] = lift_c0 + lift_ca * alpha + lift_ce * eta
+        drag_c[:] = (drag_c0 + lift_c[:]**2 / 
+                     (numpy.pi * aspect_ratio * oswald)) / 1e-1
+
+    def apply_dGdp(self, args):
+        """ compute the derivatives of lift and drag coefficient wrt
+            alpha, eta, aspect ratio, and osawlds efficiency
+        """
+
+        dpvec = self.vec['dp']
+        dgvec = self.vec['dg']
+        pvec = self.vec['p']
+        uvec = self.vec['u']
+
+        dalpha = dpvec('alpha')
+        deta = dpvec('eta')
+        daspect_ratio = dpvec('AR')
+        doswald = dpvec('e')
+        dlift_c = dgvec('CL')
+        ddrag_c = dgvec('CD')
+
+        aspect_ratio = pvec('AR')
+        oswald = pvec('e')
+        lift_c = uvec('CL')
+
+        lift_ca = 4.24
+        lift_ce = 0.27
+
+        if self.mode == 'fwd':
+            dlift_c[:] = 0.0
+            ddrag_c[:] = 0.0
+            if self.get_id('alpha') in args:
+                dlift_c[:] += lift_ca * dalpha * 1e-1
+                ddrag_c[:] += 2 * lift_c * lift_ca / (numpy.pi * oswald *
+                                                     aspect_ratio) * dalpha
+            if self.get_id('eta') in args:
+                dlift_c[:] += lift_ce * deta * 1e-1
+                ddrag_c[:] += 2 * lift_c * lift_ce / (numpy.pi * oswald *
+                                                      aspect_ratio) * deta
+            if self.get_id('AR') in args:
+                ddrag_c[:] -= lift_c**2 / (numpy.pi * aspect_ratio**2 *
+                                           oswald) * daspect_ratio / 1e-1
+            if self.get_id('e') in args:
+                ddrag_c[:] -= lift_c**2 / (numpy.pi * aspect_ratio *
+                                           oswald**2) * doswald / 1e-1
+
+        elif self.mode == 'rev':
+            dalpha[:] = 0.0
+            deta[:] = 0.0
+            daspect_ratio[:] = 0.0
+            doswald[:] = 0.0
+            if self.get_id('alpha') in args:
+                dalpha[:] += lift_ca * dlift_c * 1e-1
+                dalpha[:] += 2 * lift_c * lift_ca / (numpy.pi * oswald *
+                                                     aspect_ratio) * ddrag_c
+            if self.get_id('eta') in args:
+                deta[:] += lift_ce * dlift_c * 1e-1
+                deta[:] += 2 * lift_c * lift_ce / (numpy.pi * oswald *
+                                                   aspect_ratio) * ddrag_c
+            if self.get_id('AR') in args:
+                daspect_ratio[:] -= numpy.sum((lift_c**2 / 
+                                               (numpy.pi * oswald *
+                                                aspect_ratio**2) *
+                                               ddrag_c)) / 1e-1
+            if self.get_id('e') in args:
+                doswald[:] -= numpy.sum((lift_c**2 /
+                                         (numpy.pi * oswald**2 *
+                                          aspect_ratio) *
+                                         ddrag_c)) / 1e-1
+
 class SysCM(ImplicitSystem):
     """ compute the tail rotation angle necessary to maintain pitch moment
         equilibrium
@@ -150,7 +313,8 @@ class SysCD(ExplicitSystem):
         ind_pts = range(num_pts)
 
         self._declare_variable('CD', size=num_pts)
-        self._declare_argument('CL', indices=ind_pts)
+        #self._declare_argument('CL', indices=ind_pts)
+        self._declare_argument('CL_tar', indices=ind_pts)
         self._declare_argument(['AR', 0], indices=[0])
         self._declare_argument(['e', 0], indices=[0])
 
@@ -160,7 +324,8 @@ class SysCD(ExplicitSystem):
         pvec = self.vec['p']
         uvec = self.vec['u']
 
-        lift_c = pvec('CL')
+        #lift_c = pvec('CL')
+        lift_c = pvec('CL_tar')
         aspect_ratio = pvec(['AR', 0])
         oswald = pvec(['e', 0])
         drag_c = uvec('CD')
@@ -178,11 +343,11 @@ class SysCD(ExplicitSystem):
 
         aspect_ratio = pvec(['AR', 0])
         oswald = pvec(['e', 0])
-        lift_c = pvec('CL')
+        lift_c = pvec('CL_tar')
 
         daspect_ratio = dpvec(['AR', 0])
         doswald = dpvec(['e', 0])
-        dlift_c = dpvec('CL')
+        dlift_c = dpvec('CL_tar')
         ddrag_c = dgvec('CD')
 
         ddrag_c_dar = -lift_c**2 / (numpy.pi*oswald*aspect_ratio**2)
@@ -195,7 +360,7 @@ class SysCD(ExplicitSystem):
                 ddrag_c[:] += ddrag_c_dar * daspect_ratio / 1e-1
             if self.get_id('e') in arguments:
                 ddrag_c[:] += ddrag_c_doswald * doswald / 1e-1
-            if self.get_id('CL') in arguments:
+            if self.get_id('CL_tar') in arguments:
                 ddrag_c[:] += ddrag_c_dlift_c * dlift_c / 1e-1
 
         if self.mode == 'rev':
@@ -207,7 +372,7 @@ class SysCD(ExplicitSystem):
                 daspect_ratio[:] += numpy.sum(ddrag_c_dar * ddrag_c) /1e-1
             if self.get_id('e') in arguments:
                 doswald[:] += numpy.sum(ddrag_c_doswald * ddrag_c) /1e-1
-            if self.get_id('CL') in arguments:
+            if self.get_id('CL_tar') in arguments:
                 dlift_c[:] += ddrag_c_dlift_c * ddrag_c /1e-1
 
 class SysTau(ExplicitSystem):

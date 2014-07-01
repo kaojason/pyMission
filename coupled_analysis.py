@@ -210,10 +210,10 @@ class SysCTTar(ExplicitSystem):
         ac_w = pvec(['ac_w', 0]) * 1e6
         thrust_c = uvec('CT_tar')
 
-        thrust_c[:] = drag_c[:]/numpy.cos(alpha[:]) + \
-                      (ac_w + fuel_w[:])*numpy.sin(gamma[:]) /\
-                      (0.5*rho[:]*speed[:]**2*wing_area*numpy.cos(alpha[:])) /\
-                      1e-1
+        thrust_c[:] = (drag_c[:]/numpy.cos(alpha[:]) +
+                       (ac_w + fuel_w[:])*numpy.sin(gamma[:]) /
+                       (0.5*rho[:]*speed[:]**2*wing_area*numpy.cos(alpha[:]))) /\
+                       1e-1
 
     def apply_dGdp(self, args):
         """ compute thrust coefficient derivatives wrt weight of aircraft,
@@ -352,7 +352,7 @@ class SysFuelWeight(ExplicitSystem):
         x_dist = pvec('x') * 1e6
         speed = pvec('v') * 1e2
         gamma = pvec('gamma') * 1e-1
-        thrust_c = pvec('CT_tar') * 1e-1
+        thrust_c = numpy.abs(pvec('CT_tar')) * 1e-1
         SFC = pvec('SFC') * 1e-6
         rho = pvec('rho')
         fuel_w_end = 0.0
@@ -378,9 +378,7 @@ class SysFuelWeight(ExplicitSystem):
                        thrust_c[1:] * q_int[1:] / (speed[1:] * cos_gamma[1:]))
                       * x_int/2)
 
-        fuel_delta = numpy.abs(fuel_delta)
         fuel_cumul = numpy.cumsum(fuel_delta[::-1])[::-1]
-
         fuel_w[0:-1] = (fuel_cumul + fuel_w_end) / 1e6
         fuel_w[-1] = fuel_w_end / 1e6
         #print 'fuel', fuel_w[:]
@@ -396,7 +394,7 @@ class SysFuelWeight(ExplicitSystem):
         x_dist = pvec('x') * 1e6
         speed = pvec('v') * 1e2
         gamma = pvec('gamma') * 1e-1
-        thrust_c = pvec('CT_tar') * 1e-1
+        thrust_c_orig = pvec('CT_tar') * 1e-1
         SFC = pvec('SFC') * 1e-6
         rho = pvec('rho')
         wing_area = pvec(['S', 0]) * 1e2
@@ -405,15 +403,19 @@ class SysFuelWeight(ExplicitSystem):
         q_int = 0.5*rho*speed**2*wing_area
         cos_gamma = numpy.cos(gamma)
         sin_gamma = numpy.sin(gamma)
+        thrust_c = numpy.abs(thrust_c_orig)
+        thrust_sign = thrust_c_orig/thrust_c
 
         self.dfuel_dSFC1 = (thrust_c[0:-1] * q_int[0:-1] /
                             (speed[0:-1] * cos_gamma[0:-1]) * x_int/2)
         self.dfuel_dSFC2 = (thrust_c[1:] * q_int[1:] /
                             (speed[1:] * cos_gamma[1:])) * x_int/2
         self.dfuel_dthrust1 = (SFC[0:-1] * q_int[0:-1] /
-                               (speed[0:-1] * cos_gamma[0:-1]) * x_int/2)
+                               (speed[0:-1] * cos_gamma[0:-1]) * x_int/2 *
+                               thrust_sign[0:-1])
         self.dfuel_dthrust2 = (SFC[1:] * q_int[1:] /
-                               (speed[1:] * cos_gamma[1:]) * x_int/2)
+                               (speed[1:] * cos_gamma[1:]) * x_int/2 *
+                               thrust_sign[1:])
         self.dfuel_drho1 = (SFC[0:-1] * thrust_c[0:-1] *
                             0.5 * speed[0:-1] * wing_area /
                             cos_gamma[0:-1]) * x_int/2
@@ -428,10 +430,10 @@ class SysFuelWeight(ExplicitSystem):
                           cos_gamma[1:]) * x_int/2
         self.dfuel_dgamma1 = (SFC[0:-1] * thrust_c[0:-1] * q_int[0:-1] /
                               (speed[0:-1] * cos_gamma[0:-1]**2) *
-                              (-sin_gamma[0:-1]) * x_int/2)
+                              (sin_gamma[0:-1]) * x_int/2)
         self.dfuel_dgamma2 = (SFC[1:] * thrust_c[1:] * q_int[1:] /
                               (speed[1:] * cos_gamma[1:]**2) *
-                              (-sin_gamma[1:]) * x_int/2)
+                              (sin_gamma[1:]) * x_int/2)
 
     def apply_dGdp(self, args):
         """ apply the pre-computed derivatives to the directional
@@ -468,7 +470,6 @@ class SysFuelWeight(ExplicitSystem):
                 dfuel_temp[:] = 0.0
                 dfuel_temp[0:-1] += dfuel_dv1 * dspeed[0:-1]
                 dfuel_temp[0:-1] += dfuel_dv2 * dspeed[1:]
-                dfuel_temp = numpy.abs(dfuel_temp)
                 dfuel_temp = numpy.cumsum(dfuel_temp[::-1])
                 dfuel_temp = dfuel_temp[::-1]
                 dfuel_w[:] += dfuel_temp * 1e2/1e6
@@ -476,7 +477,6 @@ class SysFuelWeight(ExplicitSystem):
                 dfuel_temp[:] = 0.0
                 dfuel_temp[0:-1] += dfuel_dgamma1 * dgamma[0:-1]
                 dfuel_temp[0:-1] += dfuel_dgamma2 * dgamma[1:]
-                dfuel_temp = numpy.abs(dfuel_temp)
                 dfuel_temp = numpy.cumsum(dfuel_temp[::-1])
                 dfuel_temp = dfuel_temp[::-1]
                 dfuel_w[:] += dfuel_temp * 1e-1/1e6
@@ -484,7 +484,6 @@ class SysFuelWeight(ExplicitSystem):
                 dfuel_temp[:] = 0.0
                 dfuel_temp[0:-1] += dfuel_dthrust1 * dthrust_c[0:-1]
                 dfuel_temp[0:-1] += dfuel_dthrust2 * dthrust_c[1:]
-                dfuel_temp = numpy.abs(dfuel_temp)
                 dfuel_temp = numpy.cumsum(dfuel_temp[::-1])
                 dfuel_temp = dfuel_temp[::-1]
                 dfuel_w[:] += dfuel_temp * 1e-1/1e6
@@ -492,7 +491,6 @@ class SysFuelWeight(ExplicitSystem):
                 dfuel_temp[:] = 0.0
                 dfuel_temp[0:-1] += dfuel_dSFC1 * dSFC[0:-1]
                 dfuel_temp[0:-1] += dfuel_dSFC2 * dSFC[1:]
-                dfuel_temp = numpy.abs(dfuel_temp)
                 dfuel_temp = numpy.cumsum(dfuel_temp[::-1])
                 dfuel_temp = dfuel_temp[::-1]
                 dfuel_w[:] += dfuel_temp * 1e-6/1e6
@@ -500,7 +498,6 @@ class SysFuelWeight(ExplicitSystem):
                 dfuel_temp[:] = 0.0
                 dfuel_temp[0:-1] += dfuel_drho1 * drho[0:-1]
                 dfuel_temp[0:-1] += dfuel_drho2 * drho[1:]
-                dfuel_temp = numpy.abs(dfuel_temp)
                 dfuel_temp = numpy.cumsum(dfuel_temp[::-1])
                 dfuel_temp = dfuel_temp[::-1]
                 dfuel_w[:] += dfuel_temp / 1e6
@@ -514,32 +511,32 @@ class SysFuelWeight(ExplicitSystem):
             if self.get_id('v') in args:
                 dfuel_temp[:] = 0.0
                 fuel_cumul = numpy.cumsum(dfuel_w[0:-1])
-                dfuel_temp[0:-1] += numpy.abs(dfuel_dv1) * fuel_cumul
-                dfuel_temp[1:] += numpy.abs(dfuel_dv2) * fuel_cumul
+                dfuel_temp[0:-1] += dfuel_dv1 * fuel_cumul
+                dfuel_temp[1:] += dfuel_dv2 * fuel_cumul
                 dspeed[:] += dfuel_temp * 1e2/1e6
             if self.get_id('gamma') in args:
                 dfuel_temp[:] = 0.0
                 fuel_cumul = numpy.cumsum(dfuel_w[0:-1])
-                dfuel_temp[0:-1] += numpy.abs(dfuel_dgamma1) * fuel_cumul
-                dfuel_temp[1:] += numpy.abs(dfuel_dgamma2) * fuel_cumul
+                dfuel_temp[0:-1] += dfuel_dgamma1 * fuel_cumul
+                dfuel_temp[1:] += dfuel_dgamma2 * fuel_cumul
                 dgamma[:] += dfuel_temp * 1e-1/1e6
             if self.get_id('CT_tar') in args:
                 dfuel_temp[:] = 0.0
                 fuel_cumul = numpy.cumsum(dfuel_w[0:-1])
-                dfuel_temp[0:-1] += numpy.abs(dfuel_dthrust1) * fuel_cumul
-                dfuel_temp[1:] += numpy.abs(dfuel_dthrust2) * fuel_cumul
+                dfuel_temp[0:-1] += dfuel_dthrust1 * fuel_cumul
+                dfuel_temp[1:] += dfuel_dthrust2 * fuel_cumul
                 dthrust_c[:] += dfuel_temp * 1e-1/1e6
             if self.get_id('SFC') in args:
                 dfuel_temp[:] = 0.0
                 fuel_cumul = numpy.cumsum(dfuel_w[0:-1])
-                dfuel_temp[0:-1] += numpy.abs(dfuel_dSFC1) * fuel_cumul
-                dfuel_temp[1:] += numpy.abs(dfuel_dSFC2) * fuel_cumul
+                dfuel_temp[0:-1] += dfuel_dSFC1 * fuel_cumul
+                dfuel_temp[1:] += dfuel_dSFC2 * fuel_cumul
                 dSFC[:] += dfuel_temp * 1e-6/1e6
             if self.get_id('rho') in args:
                 dfuel_temp[:] = 0.0
                 fuel_cumul = numpy.cumsum(dfuel_w[0:-1])
-                dfuel_temp[0:-1] += numpy.abs(dfuel_drho1) * fuel_cumul
-                dfuel_temp[1:] += numpy.abs(dfuel_drho2) * fuel_cumul
+                dfuel_temp[0:-1] += dfuel_drho1 * fuel_cumul
+                dfuel_temp[1:] += dfuel_drho2 * fuel_cumul
                 drho[:] += dfuel_temp / 1e6
 
 class SysAlpha(ImplicitSystem):

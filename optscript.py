@@ -33,9 +33,14 @@ print
 print
 main.vec['du'].array[:] = 0.0
 main.compute(True)
+'''
 print
 print
+#main.compute_derivatives('fwd', 'h_pt', output=True)
 main.compute_derivatives('rev', 'wf_obj', output=True)
+exit()
+
+'''
 print
 print
 main.compute_derivatives('rev', 'wf_obj', output=True)
@@ -110,7 +115,7 @@ fig.add_subplot(nr,nc,6).plot(v('x')*1000.0, v('fuel_w')*1e6/(9.81*0.804))
 fig.add_subplot(nr,nc,6).set_ylabel('Fuel (L)')
 fig.add_subplot(nr,nc,7).plot(v('x')*1000.0, v('rho'))
 fig.add_subplot(nr,nc,7).set_ylabel('rho')
-fig.add_subplot(nr,nc,8).plot(v('x')*1000.0, v('CL'))
+fig.add_subplot(nr,nc,8).plot(v('x')*1000.0, v('CL_tar'))
 fig.add_subplot(nr,nc,8).set_ylabel('CL')
 fig.add_subplot(nr,nc,9).plot(v('x')*1000.0, v('CD')*0.1)
 fig.add_subplot(nr,nc,9).set_ylabel('CD')
