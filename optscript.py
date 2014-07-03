@@ -13,7 +13,7 @@ num_elem = 100
 num_cp = 30
 x_range = 700.0e3
 
-h_init = numpy.ones(num_cp)*8
+h_init = numpy.ones(num_cp)*0.5
 h_init[0] = 0.0
 h_init[-1] = 0.0
 
