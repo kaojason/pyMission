@@ -32,9 +32,14 @@ class GlobalizedSystem(SerialSystem):
 
 class Top(SerialSystem):
 
+    def initialize_plotting(self):
+        self.fig = matplotlib.pylab.figure(figsize=(12.0,12.0))
+        self.counter = 0
+
     def compute(self, output=False):
+        fig = self.fig
+        fig.clf()
         temp, success = super(Top, self).compute(output)
-        fig = matplotlib.pylab.figure(figsize=(12.0,12.0))
         v = self.vec['u']
         nr, nc = 6, 2
         fig.add_subplot(nr,nc,1).plot(v('x')*1000.0, v('h'))
@@ -66,11 +71,9 @@ class Top(SerialSystem):
         fig.savefig("plots/OptFig_%i.pdf"%(self.counter))
         fig.savefig("plots/OptFig_%i.png"%(self.counter))
         self.counter += 1
+        #del fig
 
         return temp, success
-
-    def reset_counter(self):
-        self.counter = 0
     
     
 class OptTrajectory(object):
@@ -281,6 +284,6 @@ class OptTrajectory(object):
                                 ]),
                         ]),
                  ]).setup()
-        self.main.reset_counter()
+        self.main.initialize_plotting()
 
         return self.main
