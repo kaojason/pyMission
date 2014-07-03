@@ -82,6 +82,7 @@ class OptTrajectory(object):
         self.num_pt = num_cp
         self.h_pts = numpy.zeros(num_elem+1)
         self.M_pts = numpy.zeros(num_elem+1)
+        self.v_pts = numpy.zeros(num_elem+1)
         self.x_pts = numpy.zeros(num_elem+1)
         self.wing_area = 0.0
         self.ac_w = 0.0
@@ -89,6 +90,7 @@ class OptTrajectory(object):
         self.sfc_sl = 0.0
         self.aspect_ratio = 0.0
         self.oswald = 0.0
+        self.v_specified = 0
 
     def set_init_h(self, h_init):
         self.h_pts = h_init
@@ -98,6 +100,10 @@ class OptTrajectory(object):
 
     def set_init_x(self, x_init):
         self.x_pts = x_init
+
+    def set_init_v(self, v_init):
+        self.v_pts = v_init
+        self.v_specified = 1
 
     def set_params(self, kw):
         self.wing_area = kw['S']
@@ -109,17 +115,17 @@ class OptTrajectory(object):
 
     def initialize(self):
 
-        self.main = Top('mission',
-                        NL='NLN_GS',
-                        LN='LIN_GS',
-                        LN_ilimit=1,
-                        NL_ilimit=1,
-                        NL_rtol=1e-6,
-                        NL_atol=1e-10,
-                        LN_rtol=1e-6,
-                        LN_atol=1e-10,
-                        output=True,
-                        subsystems=[
+        self.main = SerialSystem('mission',
+                                 NL='NLN_GS',
+                                 LN='LIN_GS',
+                                 LN_ilimit=1,
+                                 NL_ilimit=1,
+                                 NL_rtol=1e-6,
+                                 NL_atol=1e-10,
+                                 LN_rtol=1e-6,
+                                 LN_atol=1e-10,
+                                 output=True,
+                                 subsystems=[
                 SerialSystem('mission_param',
                              NL='NLN_GS',
                              LN='LIN_GS',
@@ -151,6 +157,7 @@ class OptTrajectory(object):
                                 IndVar('x_pt', val=self.x_pts, lower=0),
                                 IndVar('h_pt', val=self.h_pts, lower=0),
                                 IndVar('M_pt', val=self.M_pts, lower=0),
+                                IndVar('v_pt', val=self.v_pts, lower=0),
                                 SysXBspline('x', num_elem=self.num_elem,
                                             num_pt=self.num_pt,
                                             x_range=self.x_pts[-1],
@@ -158,14 +165,15 @@ class OptTrajectory(object):
                                 SysHBspline('h', num_elem=self.num_elem,
                                             num_pt=self.num_pt,
                                             x_range=self.x_pts[-1]),
-                                SysMBspline('M', num_elem=self.num_elem,
-                                            num_pt=self.num_pt,
-                                            x_range=self.x_pts[-1]),
-                                SysGammaBspline('gamma', num_elem=self.num_elem,
+                                SysMVBspline('M', num_elem=self.num_elem,
+                                             num_pt=self.num_pt,
+                                             x_range=self.x_pts[-1]),
+                                SysGammaBspline('gamma',
+                                                num_elem=self.num_elem,
                                                 num_pt=self.num_pt,
                                                 x_range=self.x_pts[-1]),
                                 ]),
-                        SerialSystem('atmosphere',
+                        SerialSystem('atmospherics',
                                      NL='NLN_GS',
                                      LN='LIN_GS',
                                      LN_ilimit=1,
@@ -175,7 +183,8 @@ class OptTrajectory(object):
                                 SysSFC('SFC', num_elem=self.num_elem),
                                 SysTemp('Temp', num_elem=self.num_elem),
                                 SysRho('rho', num_elem=self.num_elem),
-                                SysSpeed('v', num_elem=self.num_elem),
+                                SysSpeed('v', num_elem=self.num_elem,
+                                         v_specified=self.v_specified),
                                 ]),
                         GlobalizedSystem('coupled_analysis',
                                          LN='KSP_PC',
@@ -282,6 +291,6 @@ class OptTrajectory(object):
                                 ]),
                         ]),
                  ]).setup()
-        self.main.initialize_plotting()
+        #self.main.initialize_plotting()
 
         return self.main

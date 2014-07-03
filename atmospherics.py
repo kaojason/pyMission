@@ -184,10 +184,12 @@ class SysSpeed(ExplicitSystem):
         """
 
         self.num_elem = self.kwargs['num_elem']
+        self.v_specified = self.kwargs['v_specified']
         num_pts = self.num_elem+1
         ind_pts = range(num_pts)
 
         self._declare_variable('v', size=num_pts)
+        self._declare_argument('v_spline', indices=ind_pts)
         self._declare_argument('M', indices=ind_pts)
         self._declare_argument('Temp', indices=ind_pts)
 
@@ -200,12 +202,16 @@ class SysSpeed(ExplicitSystem):
         uvec = self.vec['u']
         temp = pvec('Temp') * 1e2
         mach = pvec('M')
+        speed_spline = pvec('v_spline')
         speed = uvec('v')
 
         gamma = 1.4
         gas_c = 287
 
-        speed[:] = mach * numpy.sqrt(gamma*gas_c*temp) / 1e2
+        if self.v_specified:
+            speed[:] = speed_spline
+        else:
+            speed[:] = mach * numpy.sqrt(gamma*gas_c*temp) / 1e2
 
     def apply_dGdp(self, args):
         """ compute speed derivatives wrt temperature and Mach number """
@@ -219,6 +225,7 @@ class SysSpeed(ExplicitSystem):
 
         dtemp = dpvec('Temp')
         dmach = dpvec('M')
+        dspeed_spline = dpvec('v_spline')
         dspeed = dgvec('v')
 
         gamma = 1.4
@@ -229,15 +236,24 @@ class SysSpeed(ExplicitSystem):
 
         if self.mode == 'fwd':
             dspeed[:] = 0.0
-            if self.get_id('Temp') in args:
-                dspeed[:] += ds_dT * dtemp
-            if self.get_id('M') in args:
-                dspeed[:] += ds_dM * dmach / 1e2
+            if self.v_specified:
+                if self.get_id('v_spline') in args:
+                    dspeed[:] += dspeed_spline
+            else:
+                if self.get_id('Temp') in args:
+                    dspeed[:] += ds_dT * dtemp
+                if self.get_id('M') in args:
+                    dspeed[:] += ds_dM * dmach / 1e2
         
         elif self.mode == 'rev':
             dtemp[:] = 0.0
             dmach[:] = 0.0
-            if self.get_id('Temp') in args:
-                dtemp[:] += ds_dT * dspeed
-            if self.get_id('M') in args:
-                dmach[:] += ds_dM * dspeed / 1e2
+            dspeed_spline[:] = 0.0
+            if self.v_specified:
+                if self.get_id('v_spline') in args:
+                    dspeed_spline[:] += dspeed
+            else:
+                if self.get_id('Temp') in args:
+                    dtemp[:] += ds_dT * dspeed
+                if self.get_id('M') in args:
+                    dmach[:] += ds_dM * dspeed / 1e2

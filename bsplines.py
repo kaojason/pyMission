@@ -128,7 +128,6 @@ class SysHBspline(BSplineSystem):
             if self.get_id('h_pt') in args:
                 dalt_pt[:] += self.jac_h.T.dot(dalt[:])
 
-
 class SysVBspline(BSplineSystem):
     """ a b-spline parameterization of velocity """
 
@@ -170,7 +169,7 @@ class SysVBspline(BSplineSystem):
             if self.get_id('v_pt') in args:
                 dspeed_pt[:] += self.jac_h.T.dot(dspeed[:])
 
-class SysMBspline(BSplineSystem):
+class SysMVBspline(BSplineSystem):
     """ a b-spline parameterization of Mach number """
 
     def _declare(self):
@@ -183,7 +182,9 @@ class SysMBspline(BSplineSystem):
         self.range = self.kwargs['x_range']*1e6
 
         self._declare_variable('M', size=self.num_pts)
+        self._declare_variable('v_spline', size=self.num_pts)
         self._declare_argument('M_pt', indices=range(self.num_pt))
+        self._declare_argument('v_pt', indices=range(self.num_pt))
         self.MBI_setup()
 
     def apply_G(self):
@@ -193,7 +194,10 @@ class SysMBspline(BSplineSystem):
 
         mach = self.vec['u']('M')
         mach_pt = self.vec['p']('M_pt')
+        speed = self.vec['u']('v_spline')
+        speed_pt = self.vec['p']('v_pt')
         mach[:] = self.jac_h.dot(mach_pt[:])
+        speed[:] = self.jac_h.dot(speed_pt[:])
 
     def apply_dGdp(self, args):
         """ compute M b-spline derivatives wrt M control points
@@ -201,15 +205,23 @@ class SysMBspline(BSplineSystem):
         """
         dmach = self.vec['dg']('M')
         dmach_pt = self.vec['dp']('M_pt')
+        dspeed = self.vec['dg']('v_spline')
+        dspeed_pt = self.vec['dp']('v_pt')
 
         if self.mode == 'fwd':
             dmach[:] = 0.0
+            dspeed[:] = 0.0
             if self.get_id('M_pt') in args:
                 dmach[:] += self.jac_h.dot(dmach_pt[:])
+            if self.get_id('v_pt') in args:
+                dspeed[:] += self.jac_h.dot(dspeed_pt[:])
         if self.mode == 'rev':
             dmach_pt[:] = 0.0
+            dspeed_pt[:] = 0.0
             if self.get_id('M_pt') in args:
                 dmach_pt[:] += self.jac_h.T.dot(dmach[:])
+            if self.get_id('v_pt') in args:
+                dspeed_pt[:] += self.jac_h.T.dot(dspeed[:])
 
 class SysGammaBspline(BSplineSystem):
     """ dh/dx obtained from b-spline parameterization of altitude """
