@@ -1,3 +1,0 @@
-# Fortran Compiler
-FC = gfortran
-FFLAGS = -02 -fPIC
