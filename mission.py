@@ -10,6 +10,7 @@ from atmospherics import *
 from coupled_analysis import *
 from functionals import *
 from aerodynamics import *
+from propulsion import *
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pylab
@@ -120,10 +121,6 @@ class OptTrajectory(object):
                                 SysGammaBspline('gamma', num_elem=self.num_elem,
                                                 num_pt=self.num_pt,
                                                 x_range=self.x_pts[-1]),
-                                #IndVar('x', val=numpy.linspace(0.0, self.x_pts[-1], self.num_elem+1)),
-                                #IndVar('h', val=numpy.ones(self.num_elem+1)*8),
-                                #IndVar('M', val=numpy.ones(self.num_elem+1)*0.8),
-                                #IndVar('gamma', val=numpy.zeros(self.num_elem+1)),
                                 ]),
                         SerialSystem('atmosphere',
                                      NL='NLN_GS',
@@ -136,29 +133,24 @@ class OptTrajectory(object):
                                 SysTemp('Temp', num_elem=self.num_elem),
                                 SysRho('rho', num_elem=self.num_elem),
                                 SysSpeed('v', num_elem=self.num_elem),
-                                #IndVar('SFC', val=numpy.ones(self.num_elem)*8e-6),
-                                #IndVar('Temp', val=numpy.ones(self.num_elem)*270),
-                                #IndVar('rho', val=numpy.ones(self.num_elem)),
-                                #IndVar('v', val=numpy.ones(self.num_elem)*200),
                                 ]),
                         SerialSystem('coupled_analysis',
                                      NL='NEWTON',   
-                                     #LN='LIN_GS', 
                                      LN='KSP_PC',
                                      PC='LIN_GS',
                                      LN_ilimit=30,
                                      NL_ilimit=30,
                                      #GL_GS_ilimit=5,
                                      #GL_NT_ilimit=30,
-                                     PC_ilimit=2,
+                                     PC_ilimit=3,
                                      NL_rtol=1e-10,
                                      NL_atol=1e-10,
                                      #GL_GS_rtol=1e-6,
                                      #GL_GS_atol=1e-10,
                                      #GL_NT_rtol=1e-10,
                                      #GL_NT_atol=1e-10,
-                                     LN_rtol=1e-10,
-                                     LN_atol=1e-10,
+                                     LN_rtol=1e-14,
+                                     LN_atol=1e-14,
                                      PC_rtol=1e-6,
                                      PC_atol=1e-10,
                                      output=True,
@@ -175,7 +167,6 @@ class OptTrajectory(object):
                                              subsystems=[
                                         SysCLTar('CL_tar',
                                                  num_elem=self.num_elem),
-                                        #IndVar('CL_tar', val=numpy.ones(self.num_elem)),
                                         ]),
                                 SerialSystem('drag',
                                              NL='NEWTON',
@@ -188,11 +179,6 @@ class OptTrajectory(object):
                                              LN_rtol=1e-10,
                                              LN_atol=1e-10,
                                              subsystems=[
-                                        #SysCLLin('CL',
-                                        #         num_elem=self.num_elem),
-                                        #SysAlpha1('alpha', num_elem=self.num_elem),
-                                        #SysCD('CD', num_elem=self.num_elem),
-                                        #IndVar('CD', val=numpy.ones(self.num_elem)*0.05),
                                         SysAeroSurrogate('CL', num_elem=self.num_elem),
                                         SysAlpha('alpha',
                                                  num_elem=self.num_elem),
@@ -209,9 +195,7 @@ class OptTrajectory(object):
                                              subsystems=[
                                         SysCTTar('CT_tar',
                                                  num_elem=self.num_elem),
-                                        #IndVar('CT_tar', val=numpy.ones(self.num_elem+1)*0.05),
                                         ]),
-                                #IndVar('fuel_w', val=numpy.linspace(1.0, 0.0, self.num_elem+1)),
                                 SerialSystem('mmt_eqlm',
                                              NL='NLN_GS',
                                              LN='KSP_PC',
@@ -223,7 +207,6 @@ class OptTrajectory(object):
                                              LN_atol=1e-10,
                                              subsystems=[
                                         SysCM('eta', num_elem=self.num_elem),
-                                        #IndVar('eta', val=numpy.zeros(self.num_elem+1)),
                                         ]),
                                 SerialSystem('weight',
                                              NL='NLN_GS',
@@ -235,7 +218,6 @@ class OptTrajectory(object):
                                              LN_rtol=1e-10,
                                              LN_atol=1e-10,
                                              subsystems=[
-                                        #IndVar('fuel_w', val=numpy.linspace(1.0, 0.0, self.num_elem)),
                                         SysFuelWeight('fuel_w',
                                                       num_elem=self.num_elem,
                                                       fuel_w_0=numpy.linspace(1.0, 0.0, self.num_elem+1)),

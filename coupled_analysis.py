@@ -365,14 +365,6 @@ class SysFuelWeight(ExplicitSystem):
         q_int = 0.5*rho*speed**2*wing_area
         cos_gamma = numpy.cos(gamma)
 
-        #print 'x', x_int
-        #print 'sfc', SFC
-        #print 'thrust', thrust_c
-        #print 'q', q_int
-        #print 'speed', speed
-        #print 'cosgamma', cos_gamma
-        #print 'gamma', gamma
-
         fuel_delta = ((SFC[0:-1] * thrust_c[0:-1] * q_int[0:-1] /
                        (speed[0:-1] * cos_gamma[0:-1]) + SFC[1:] *
                        thrust_c[1:] * q_int[1:] / (speed[1:] * cos_gamma[1:]))
@@ -381,7 +373,6 @@ class SysFuelWeight(ExplicitSystem):
         fuel_cumul = numpy.cumsum(fuel_delta[::-1])[::-1]
         fuel_w[0:-1] = (fuel_cumul + fuel_w_end) / 1e6
         fuel_w[-1] = fuel_w_end / 1e6
-        #print 'fuel', fuel_w[:]
 
     def linearize(self):
         """ pre-compute the derivatives of fuel weight wrt speed (v),
@@ -574,11 +565,13 @@ class SysAlpha(ImplicitSystem):
         """ compute the trivial derivatives of the system """
 
         dpvec = self.vec['dp']
+        duvec = self.vec['du']
         dfvec = self.vec['df']
 
         dlift_c = dpvec('CL')
         dlift_c_tar = dpvec('CL_tar')
         dalpha_res = dfvec('alpha')
+        dalpha = duvec('alpha')
 
         if self.mode == 'fwd':
             dalpha_res[:] = 0.0
@@ -590,6 +583,7 @@ class SysAlpha(ImplicitSystem):
         elif self.mode == 'rev':
             dlift_c[:] = 0.0
             dlift_c_tar[:] = 0.0
+            dalpha[:] = 0.0
             if self.get_id('CL') in args:
                 dlift_c[:] += dalpha_res
             if self.get_id('CL_tar') in args:

@@ -9,8 +9,8 @@ params = {
     'e': 0.8,
     }
 
-num_elem = 30
-num_cp = 10
+num_elem = 100
+num_cp = 30
 x_range = 700.0e3
 
 h_init = numpy.ones(num_cp)*8
@@ -82,7 +82,7 @@ if 0:
 
     exit()
 
-if 1:
+if 0:
     # derivatives check #
     main.check_derivatives_all2()
     exit()
