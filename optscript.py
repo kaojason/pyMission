@@ -11,11 +11,14 @@ params = {
 
 num_elem = 100
 num_cp = 30
-x_range = 700.0e3
+x_range = 7000.0e3
 
 h_init = numpy.ones(num_cp)*0.5
 h_init[0] = 0.0
 h_init[-1] = 0.0
+
+h_con = numpy.zeros(num_elem+1)
+
 
 M_init = numpy.ones(num_cp)*0.8
 x_init = numpy.linspace(0.0, x_range, num_cp)/1e6
