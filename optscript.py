@@ -37,8 +37,8 @@ main.compute(True)
 print
 print
 #main.compute_derivatives('fwd', 'h_pt', output=True)
-main.compute_derivatives('rev', 'wf_obj', output=True)
-exit()
+#main.compute_derivatives('rev', 'wf_obj', output=True)
+#exit()
 
 '''
 print

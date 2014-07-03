@@ -29,6 +29,48 @@ class GlobalizedSystem(SerialSystem):
         return self.solvers['NL']['NEWTON'](ilimit=kwargs['GL_NT_ilimit'],
                                             atol=kwargs['GL_NT_atol'],
                                             rtol=kwargs['GL_NT_rtol'])
+
+class Top(SerialSystem):
+
+    def compute(self, output=False):
+        temp, success = super(Top, self).compute(output)
+        fig = matplotlib.pylab.figure(figsize=(12.0,12.0))
+        v = self.vec['u']
+        nr, nc = 6, 2
+        fig.add_subplot(nr,nc,1).plot(v('x')*1000.0, v('h'))
+        fig.add_subplot(nr,nc,1).set_ylabel('Altitude (km)')
+        fig.add_subplot(nr,nc,2).plot(v('x')*1000.0, v('v')*1e2)
+        fig.add_subplot(nr,nc,2).set_ylabel('Velocity (m/s)')
+        fig.add_subplot(nr,nc,3).plot(v('x')*1000.0, v('alpha')*1e-1*180.0/numpy.pi)
+        fig.add_subplot(nr,nc,3).set_ylabel('AoA (deg)')
+        fig.add_subplot(nr,nc,4).plot(v('x')*1000.0, v('tau'))
+        fig.add_subplot(nr,nc,4).set_ylabel('Throttle')
+        fig.add_subplot(nr,nc,5).plot(v('x')*1000.0, v('eta')*1e-1*180.0/numpy.pi)
+        fig.add_subplot(nr,nc,5).set_ylabel('Trim Angle (deg)')
+        fig.add_subplot(nr,nc,6).plot(v('x')*1000.0, v('fuel_w')*1e6/(9.81*0.804))
+        fig.add_subplot(nr,nc,6).set_ylabel('Fuel (L)')
+        fig.add_subplot(nr,nc,7).plot(v('x')*1000.0, v('rho'))
+        fig.add_subplot(nr,nc,7).set_ylabel('rho')
+        fig.add_subplot(nr,nc,8).plot(v('x')*1000.0, v('CL_tar'))
+        fig.add_subplot(nr,nc,8).set_ylabel('CL_tar')
+        fig.add_subplot(nr,nc,9).plot(v('x')*1000.0, v('CD')*0.1)
+        fig.add_subplot(nr,nc,9).set_ylabel('CD')
+        fig.add_subplot(nr,nc,10).plot(v('x')*1000.0, v('CT_tar')*0.1)
+        fig.add_subplot(nr,nc,10).set_ylabel('CT_tar')
+        fig.add_subplot(nr,nc,11).plot(v('x')*1000.0, v('gamma')*0.1)
+        fig.add_subplot(nr,nc,11).set_ylabel('gamma')
+        fig.add_subplot(nr,nc,12).plot(v('x')*1000.0, (v('fuel_w')+v('ac_w'))*1e6/9.81*2.2)
+        fig.add_subplot(nr,nc,12).set_ylabel('W (lb)')
+        fig.add_subplot(nr,nc,6).set_xlabel('Distance (km)')
+        fig.add_subplot(nr,nc,12).set_xlabel('Distance (km)')
+        fig.savefig("plots/OptFig_%i.pdf"%(self.counter))
+        fig.savefig("plots/OptFig_%i.png"%(self.counter))
+        self.counter += 1
+
+        return temp, success
+
+    def reset_counter(self):
+        self.counter = 0
     
     
 class OptTrajectory(object):
@@ -66,22 +108,22 @@ class OptTrajectory(object):
 
     def initialize(self):
 
-        self.main = SerialSystem('mission',
-                                 NL='NLN_GS',
-                                 LN='LIN_GS',
-                                 LN_ilimit=2,
-                                 NL_ilimit=2,
-                                 NL_rtol=1e-6,
-                                 NL_atol=1e-10,
-                                 LN_rtol=1e-6,
-                                 LN_atol=1e-10,
-                                 output=True,
-                                 subsystems=[
+        self.main = Top('mission',
+                        NL='NLN_GS',
+                        LN='LIN_GS',
+                        LN_ilimit=1,
+                        NL_ilimit=1,
+                        NL_rtol=1e-6,
+                        NL_atol=1e-10,
+                        LN_rtol=1e-6,
+                        LN_atol=1e-10,
+                        output=True,
+                        subsystems=[
                 SerialSystem('mission_param',
                              NL='NLN_GS',
                              LN='LIN_GS',
-                             LN_ilimit=2,
-                             NL_ilimit=2,
+                             LN_ilimit=1,
+                             NL_ilimit=1,
                              output=True,
                              subsystems=[
                         IndVar('S', val=self.wing_area, size=1),
@@ -94,15 +136,15 @@ class OptTrajectory(object):
                 SerialSystem('segment',
                              NL='NLN_GS',
                              LN='LIN_GS',
-                             LN_ilimit=2,
-                             NL_ilimit=2,
+                             LN_ilimit=1,
+                             NL_ilimit=1,
                              output=True,
                              subsystems=[
                         SerialSystem('bsplines',
                                      NL='NLN_GS',
                                      LN='LIN_GS',
-                                     LN_ilimit=2,
-                                     NL_ilimit=2,
+                                     LN_ilimit=1,
+                                     NL_ilimit=1,
                                      output=True,
                                      subsystems=[
                                 IndVar('x_pt', val=self.x_pts, lower=0),
@@ -125,8 +167,8 @@ class OptTrajectory(object):
                         SerialSystem('atmosphere',
                                      NL='NLN_GS',
                                      LN='LIN_GS',
-                                     LN_ilimit=2,
-                                     NL_ilimit=2,
+                                     LN_ilimit=1,
+                                     NL_ilimit=1,
                                      output=True,
                                      subsystems=[
                                 SysSFC('SFC', num_elem=self.num_elem),
@@ -135,16 +177,12 @@ class OptTrajectory(object):
                                 SysSpeed('v', num_elem=self.num_elem),
                                 ]),
                         GlobalizedSystem('coupled_analysis',
-                                         #NL='NEWTON',   
                                          LN='KSP_PC',
                                          PC='LIN_GS',
-                                         LN_ilimit=30,
-                                         #NL_ilimit=30,
+                                         LN_ilimit=8,
                                          GL_GS_ilimit=5,
-                                         GL_NT_ilimit=30,
+                                         GL_NT_ilimit=8,
                                          PC_ilimit=3,
-                                         #NL_rtol=1e-10,
-                                         #NL_atol=1e-10,
                                          GL_GS_rtol=1e-6,
                                          GL_GS_atol=1e-10,
                                          GL_NT_rtol=1e-14,
@@ -158,8 +196,8 @@ class OptTrajectory(object):
                                 SerialSystem('vert_eqlm',
                                              NL='NLN_GS',
                                              LN='KSP_PC',
-                                             LN_ilimit=2,
-                                             NL_ilimit=2,
+                                             LN_ilimit=1,
+                                             NL_ilimit=1,
                                              NL_rtol=1e-10,
                                              NL_atol=1e-10,
                                              LN_rtol=1e-10,
@@ -171,8 +209,8 @@ class OptTrajectory(object):
                                 SerialSystem('drag',
                                              NL='NEWTON',
                                              LN='KSP_PC',
-                                             LN_ilimit=30,
-                                             NL_ilimit=30,
+                                             LN_ilimit=15,
+                                             NL_ilimit=15,
                                              PC_ilimit=2,
                                              NL_rtol=1e-10,
                                              NL_atol=1e-10,
@@ -186,8 +224,8 @@ class OptTrajectory(object):
                                 SerialSystem('hor_eqlm',
                                              NL='NLN_GS',
                                              LN='KSP_PC',
-                                             LN_ilimit=2,
-                                             NL_ilimit=2,
+                                             LN_ilimit=1,
+                                             NL_ilimit=1,
                                              NL_rtol=1e-10,
                                              NL_atol=1e-10,
                                              LN_rtol=1e-10,
@@ -199,8 +237,8 @@ class OptTrajectory(object):
                                 SerialSystem('mmt_eqlm',
                                              NL='NLN_GS',
                                              LN='KSP_PC',
-                                             LN_ilimit=2,
-                                             NL_ilimit=2,
+                                             LN_ilimit=1,
+                                             NL_ilimit=1,
                                              NL_rtol=1e-10,
                                              NL_atol=1e-10,
                                              LN_rtol=1e-10,
@@ -211,8 +249,8 @@ class OptTrajectory(object):
                                 SerialSystem('weight',
                                              NL='NLN_GS',
                                              LN='KSP_PC',
-                                             LN_ilimit=2,
-                                             NL_ilimit=2,
+                                             LN_ilimit=1,
+                                             NL_ilimit=1,
                                              NL_rtol=1e-10,
                                              NL_atol=1e-10,
                                              LN_rtol=1e-10,
@@ -226,8 +264,8 @@ class OptTrajectory(object):
                         SerialSystem('functionals',
                                      NL='NLN_GS',
                                      LN='LIN_GS',
-                                     NL_ilimit=2,
-                                     LN_ilimit=2,
+                                     NL_ilimit=1,
+                                     LN_ilimit=1,
                                      NL_rtol=1e-10,
                                      NL_atol=1e-10,
                                      LN_rtol=1e-10,
@@ -243,5 +281,6 @@ class OptTrajectory(object):
                                 ]),
                         ]),
                  ]).setup()
+        self.main.reset_counter()
 
         return self.main

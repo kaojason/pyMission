@@ -352,7 +352,7 @@ class SysFuelWeight(ExplicitSystem):
         x_dist = pvec('x') * 1e6
         speed = pvec('v') * 1e2
         gamma = pvec('gamma') * 1e-1
-        thrust_c = numpy.abs(pvec('CT_tar')) * 1e-1
+        thrust_c = pvec('CT_tar') * 1e-1
         SFC = pvec('SFC') * 1e-6
         rho = pvec('rho')
         fuel_w_end = 0.0
@@ -385,7 +385,7 @@ class SysFuelWeight(ExplicitSystem):
         x_dist = pvec('x') * 1e6
         speed = pvec('v') * 1e2
         gamma = pvec('gamma') * 1e-1
-        thrust_c_orig = pvec('CT_tar') * 1e-1
+        thrust_c = pvec('CT_tar') * 1e-1
         SFC = pvec('SFC') * 1e-6
         rho = pvec('rho')
         wing_area = pvec(['S', 0]) * 1e2
@@ -394,19 +394,15 @@ class SysFuelWeight(ExplicitSystem):
         q_int = 0.5*rho*speed**2*wing_area
         cos_gamma = numpy.cos(gamma)
         sin_gamma = numpy.sin(gamma)
-        thrust_c = numpy.abs(thrust_c_orig)
-        thrust_sign = thrust_c_orig/thrust_c
 
         self.dfuel_dSFC1 = (thrust_c[0:-1] * q_int[0:-1] /
                             (speed[0:-1] * cos_gamma[0:-1]) * x_int/2)
         self.dfuel_dSFC2 = (thrust_c[1:] * q_int[1:] /
                             (speed[1:] * cos_gamma[1:])) * x_int/2
         self.dfuel_dthrust1 = (SFC[0:-1] * q_int[0:-1] /
-                               (speed[0:-1] * cos_gamma[0:-1]) * x_int/2 *
-                               thrust_sign[0:-1])
+                               (speed[0:-1] * cos_gamma[0:-1]) * x_int/2)
         self.dfuel_dthrust2 = (SFC[1:] * q_int[1:] /
-                               (speed[1:] * cos_gamma[1:]) * x_int/2 *
-                               thrust_sign[1:])
+                               (speed[1:] * cos_gamma[1:]) * x_int/2)
         self.dfuel_drho1 = (SFC[0:-1] * thrust_c[0:-1] *
                             0.5 * speed[0:-1] * wing_area /
                             cos_gamma[0:-1]) * x_int/2
