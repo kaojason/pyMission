@@ -128,47 +128,6 @@ class SysHBspline(BSplineSystem):
             if self.get_id('h_pt') in args:
                 dalt_pt[:] += self.jac_h.T.dot(dalt[:])
 
-class SysVBspline(BSplineSystem):
-    """ a b-spline parameterization of velocity """
-
-    def _declare(self):
-        """ owned variable: v (speed with b-spline parameterization)
-            dependencies: v_pt (control points)
-        """
-
-        self.num_pts = self.kwargs['num_elem']+1
-        self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']*1e6
-
-        self._declare_variable('v', size=self.num_pts)
-        self._declare_argument('v_pt', indices=range(self.num_pt))
-        self.MBI_setup()
-
-    def apply_G(self):
-        """ compute v b-spline values using v control point values
-            using pre-calculated MBI jacobian
-        """
-
-        speed = self.vec['u']('v')
-        speed_pt = self.vec['p']('v_pt')
-        speed[:] = self.jac_h.dot(speed_pt[:])
-
-    def apply_dGdp(self, args):
-        """ compute v b-spline derivatives wrt v control points
-            using pre-calculated MBI jacobian
-        """
-        dspeed = self.vec['dg']('v')
-        dspeed_pt = self.vec['dp']('v_pt')
-
-        if self.mode == 'fwd':
-            dspeed[:] = 0.0
-            if self.get_id('v_pt') in args:
-                dspeed[:] += self.jac_h.dot(dspeed_pt[:])
-        if self.mode == 'rev':
-            dspeed_pt[:] = 0.0
-            if self.get_id('v_pt') in args:
-                dspeed_pt[:] += self.jac_h.T.dot(dspeed[:])
-
 class SysMVBspline(BSplineSystem):
     """ a b-spline parameterization of Mach number """
 

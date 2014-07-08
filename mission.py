@@ -69,7 +69,6 @@ class Top(SerialSystem):
         fig.savefig("plots/OptFig_%i.pdf"%(self.counter))
         fig.savefig("plots/OptFig_%i.png"%(self.counter))
         self.counter += 1
-        #del fig
 
         return temp, success
     

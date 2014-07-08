@@ -97,9 +97,12 @@ class SysTau(ExplicitSystem):
         dt_dthrust_c = self.dt_dthrust_c
         dt_drho = self.dt_drho
         dt_dspeed = self.dt_dspeed
+        dt_dS = self.dt_dS
 
         if self.mode == 'fwd':
             dtau[:] = 0.0
+            if self.get_id('S') in arguments:
+                dtau[:] += (dt_dS * dwing_area) * 1e2
             if self.get_id('thrust_sl') in arguments:
                 dtau[:] += (dt_dthrust_sl *
                             dthrust_sl) * 1e6
@@ -118,7 +121,8 @@ class SysTau(ExplicitSystem):
             drho[:] = 0.0
             dspeed[:] = 0.0
             dwing_area[:] = 0.0
-
+            if self.get_id('S') in arguments:
+                dwing_area[:] += numpy.sum(dt_dS * dtau) * 1e2
             if self.get_id('thrust_sl') in arguments:
                 dthrust_sl[:] += numpy.sum(dt_dthrust_sl * dtau) * 1e6
             if self.get_id('h') in arguments:
