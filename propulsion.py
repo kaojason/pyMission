@@ -1,11 +1,11 @@
 """
-comments
+INTENDED FOR MISSION ANALYSIS USE
+provides propulsion models for the use of mission analysis.
 """
 
 # pylint: disable=E1101
 from __future__ import division
 import sys
-sys.path.insert(0, '/home/jason/github/CMF')
 from framework import *
 import numpy
 
@@ -134,3 +134,68 @@ class SysTau(ExplicitSystem):
             if self.get_id('v') in arguments:
                 dspeed[:] += dt_dspeed * dtau * 1e2
 
+class SysTauSurrogate(ExplicitSystem):
+    """ compute the throttle setting from target CT by using existing
+        engine data
+    """
+
+    def _declare(self):
+        """ owned variables: tau (throttle setting)
+            dependencies: h (altitude)
+                          temp (temperature)
+                          v (speed)
+                          CT (coefficient of thrust)
+                          rho (density of air)
+                          S (wing area)
+        """
+
+        self.num_elem = self.kwargs['num_elem']
+        num_pts = self.num_elem+1
+        ind_pts = self.range(num_pts)
+
+        self._declare_variable('tau', size=num_pts)
+        self._declare_argument('h', indices=ind_pts)
+        self._declare_argument('Temp', indices=ind_pts)
+        self._declare_argument('v', indices=ind_pts)
+        self._declare_argument('CT_tar', indices=ind_pts)
+        self._declare_argument('rho', indices=ind_pts)
+        self._declare_argument(['S', 0], indices=[0])
+
+        self.build_surrogate('UHB.outputFLOPS')
+
+    def build_surrogate(self, file_name):
+        """ builds the surrogate model from the data stored in the file name
+            given in the input arguments
+        """
+
+        data_file = open(file_name, 'r')
+
+        for i, l in enumerate(data_file):
+            pass
+
+        file_len = i+1
+        mach = numpy.zeros(file_len)
+        altitude = numpy.zeros(file_len)
+        power_code = numpy.zeros(file_len)
+        thrust = numpy.zeros(file_len)
+        drag = numpy.zeros(file_len)
+        TSFC = numpy.zeros(file_len)
+        i = 0
+
+        data_file = open(file_name, 'r')
+
+        for line in data_file:
+            [mach[i], altitude[i], power_code[i], thrust[i], drag[i], fuel_burn,
+             TSFC[i], Nox, area] = line.split()
+            i += 1
+
+        mach = [float(i) for i in mach]
+        altitude = [float(i) for i in altitude]
+        power_code = [float(i) for i in power_code]
+        thrust = [float(i) for i in thrust]
+        drag = [float(i) for i in drag]
+        TSFC = [float(i) for i in TSFC]
+
+
+
+#    def apply_G(self):

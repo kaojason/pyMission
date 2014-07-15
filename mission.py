@@ -1,6 +1,7 @@
 from __future__ import division
 import numpy
 import copy
+import os
 from framework import *
 from optimization import *
 from bsplines import *
@@ -31,10 +32,14 @@ class GlobalizedSystem(SerialSystem):
 class Top(SerialSystem):
 
     def initialize_plotting(self):
-        self.fig = matplotlib.pylab.figure(figsize=(12.0,12.0))
+        #self.fig = matplotlib.pylab.figure(figsize=(12.0,12.0))
         self.counter = 0
 
-    def compute(self, output=False):
+    def initialize_history(self, num_elem, num_cp, x_range):
+        self.history = history(num_elem, num_cp, x_range)
+        self.hist_counter = 0
+
+    def compute0(self, output=False):
         fig = self.fig
         fig.clf()
         temp, success = super(Top, self).compute(output)
@@ -60,7 +65,7 @@ class Top(SerialSystem):
         fig.add_subplot(nr,nc,9).set_ylabel('CD')
         fig.add_subplot(nr,nc,10).plot(v('x')*1000.0, v('CT_tar')*0.1)
         fig.add_subplot(nr,nc,10).set_ylabel('CT_tar')
-        fig.add_subplot(nr,nc,11).plot(v('x')*1000.0, v('gamma')*0.1)
+        fig.add_subplot(nr,nc,11).plot(v('x')*1000.0, v('gamma')*0.1*180/numpy.pi)
         fig.add_subplot(nr,nc,11).set_ylabel('gamma')
         fig.add_subplot(nr,nc,12).plot(v('x')*1000.0, (v('fuel_w')+v('ac_w'))*1e6/9.81*2.2)
         fig.add_subplot(nr,nc,12).set_ylabel('W (lb)')
@@ -71,8 +76,60 @@ class Top(SerialSystem):
         self.counter += 1
 
         return temp, success
-    
-    
+
+    def compute(self, output=False):
+        temp, success = super(Top, self).compute(output)
+        self.history.save_history(self.vec['u'])
+
+        return temp, success
+
+class history(object):
+
+    def __init__(self, num_elem, num_cp, x_range):
+
+        self.num_elem = num_elem
+        self.num_cp = num_cp
+        self.x_range = x_range
+        self.folder_name = './dist'+str(int(self.x_range*1e3))+'km-'\
+            +str(self.num_cp)+'-'+str(self.num_elem)
+        index = 0
+        while os.path.exists(self.folder_name+'-'+str(index)):
+            index += 1
+        self.folder_name = self.folder_name+'-'+str(index)+'/'
+        os.makedirs(self.folder_name)
+
+        self.hist_counter = 0
+
+    def save_history(self, vecu):
+
+        dist = vecu('x') * 1e6
+        altitude = vecu('h') * 1e3
+        speed = vecu('v') * 1e2
+        alpha = vecu('alpha') * 1e-1 * 180/numpy.pi
+        throttle = vecu('tau')
+        eta = vecu('eta') * 1e-1 * 180/numpy.pi
+        fuel = vecu('fuel_w') * 1e6
+        rho = vecu('rho')
+        thrust_c = vecu('CT_tar') * 1e-1
+        drag_c = vecu('CD') * 1e-1
+        lift_c = vecu('CL')
+        gamma = vecu('gamma') * 1e-1 * 180/numpy.pi
+        weight = (vecu('ac_w') + vecu('fuel_w')) * 1e6
+        temp = vecu('Temp') * 1e2
+        SFC = vecu('SFC') * 1e-6
+
+        file_name = str(int(self.x_range*1e3))+'km-'+str(self.num_cp)+'-'\
+            +str(self.num_elem)+'-'+str(self.hist_counter)
+
+        output_file = open(self.folder_name+file_name, 'w')
+
+        file_array = [dist, altitude, speed, alpha, throttle, eta, fuel,
+                      rho, lift_c, drag_c, thrust_c, gamma, weight,
+                      temp, SFC]
+        numpy.savetxt(output_file, file_array)
+
+        self.hist_counter += 1
+
 class OptTrajectory(object):
     """ class used to define and setup trajectory optimization problem """
 
@@ -114,17 +171,17 @@ class OptTrajectory(object):
 
     def initialize(self):
 
-        self.main = SerialSystem('mission',
-                                 NL='NLN_GS',
-                                 LN='LIN_GS',
-                                 LN_ilimit=1,
-                                 NL_ilimit=1,
-                                 NL_rtol=1e-6,
-                                 NL_atol=1e-10,
-                                 LN_rtol=1e-6,
-                                 LN_atol=1e-10,
-                                 output=True,
-                                 subsystems=[
+        self.main = Top('mission',
+                        NL='NLN_GS',
+                        LN='LIN_GS',
+                        LN_ilimit=1,
+                        NL_ilimit=1,
+                        NL_rtol=1e-6,
+                        NL_atol=1e-10,
+                        LN_rtol=1e-6,
+                        LN_atol=1e-10,
+                        output=True,
+                        subsystems=[
                 SerialSystem('mission_param',
                              NL='NLN_GS',
                              LN='LIN_GS',
@@ -159,18 +216,18 @@ class OptTrajectory(object):
                                 IndVar('v_pt', val=self.v_pts, lower=0),
                                 SysXBspline('x', num_elem=self.num_elem,
                                             num_pt=self.num_pt,
-                                            x_range=self.x_pts[-1],
+                                            x_init=self.x_pts,
                                             x_0=numpy.linspace(0.0, self.x_pts[-1], self.num_elem+1)),
                                 SysHBspline('h', num_elem=self.num_elem,
                                             num_pt=self.num_pt,
-                                            x_range=self.x_pts[-1]),
+                                            x_init=self.x_pts),
                                 SysMVBspline('M', num_elem=self.num_elem,
                                              num_pt=self.num_pt,
-                                             x_range=self.x_pts[-1]),
+                                             x_init=self.x_pts),
                                 SysGammaBspline('gamma',
                                                 num_elem=self.num_elem,
                                                 num_pt=self.num_pt,
-                                                x_range=self.x_pts[-1]),
+                                                x_init=self.x_pts),
                                 ]),
                         SerialSystem('atmospherics',
                                      NL='NLN_GS',
@@ -287,9 +344,15 @@ class OptTrajectory(object):
                                 SysHf('h_f', num_elem=self.num_elem),
                                 SysTmin('Tmin', num_elem=self.num_elem),
                                 SysTmax('Tmax', num_elem=self.num_elem),
+                                SysSlopeMin('gamma_min',
+                                            num_elem=self.num_elem),
+                                SysSlopeMax('gamma_max',
+                                            num_elem=self.num_elem),
                                 ]),
                         ]),
                  ]).setup()
         #self.main.initialize_plotting()
+        self.main.initialize_history(self.num_elem, self.num_pt,
+                                     self.x_pts[-1])
 
         return self.main

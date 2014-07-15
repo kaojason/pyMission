@@ -97,15 +97,25 @@ class Optimization(object):
         sens_dict = {}
         for func_name in variables['func'].keys():
             func_id = variables['func'][func_name]['ID']
+            nfunc = system.vec['u'][func_id].shape[0]
 
-            for ind in xrange(system.vec['u'][func_id].shape[0]):
-                temp, success = system.compute_derivatives('rev', func_id, ind, True)#False)
+            sens_dict[func_name] = {}
+            for dv_name in variables['dv'].keys():
+                dv_id = variables['dv'][dv_name]['ID']
+                ndv = system.vec['u'][dv_id].shape[0]
+
+                sens_dict[func_name][dv_name] \
+                    = numpy.zeros((nfunc, ndv))
+
+            for ind in xrange(nfunc):
+                temp, success = system.compute_derivatives('rev', func_id, ind, False)#True)#False)
                 fail = fail or not success
 
-                sens_dict[func_name] = {}
                 for dv_name in variables['dv'].keys():
                     dv_id = variables['dv'][dv_name]['ID']
-                    sens_dict[func_name][dv_name] = numpy.array(system.vec['df'][dv_id])
+
+                    sens_dict[func_name][dv_name][ind, :] \
+                        = system.vec['df'][dv_id]
 
         print 'DVs:'
         print dv_dict
@@ -136,17 +146,20 @@ class Optimization(object):
             value = variables['dv'][dv_name]['value']
             lower = variables['dv'][dv_name]['lower']
             upper = variables['dv'][dv_name]['upper']
-            size = system(dv_id).size
+            size = system.vec['u'](dv_id).shape[0]
             opt_prob.addVarGroup(dv_name, size, value=value,
                                  lower=lower, upper=upper)
         opt_prob.finalizeDesignVariables()
         for func_name in variables['func'].keys():
+            func_id = variables['func'][func_name]['ID']
             lower = variables['func'][func_name]['lower']
             upper = variables['func'][func_name]['upper']
+            size = system.vec['u'](func_id).shape[0]
             if lower is None and upper is None:
                 opt_prob.addObj(func_name)
             else:
-                opt_prob.addCon(func_name, lower=lower, upper=upper)
+                opt_prob.addConGroup(func_name, size,
+                                     lower=lower, upper=upper)
 
         if options is None:
             options = {}

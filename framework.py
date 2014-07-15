@@ -507,12 +507,17 @@ class System(object):
         print
 
         self.sol_vec.array[:] = jac[:,-2]
-        
+
+    def set_initial_var_values(self):
+        for var in self.variables:
+            self.vec['u'][var][:] = self.variables[var]['u']
 
     def compute(self, output=False):
         """ Solves system """
         self.set_mode('fwd', output)
-        success = self.solve_F()   
+        success = self.solve_F()
+        if not success:
+            self.set_initial_var_values()
         self.linearize()
         return self.vec['u'], success
 
@@ -537,6 +542,8 @@ class System(object):
         self.rhs_vec.petsc.setValue(ind, 1.0, addv=False)
 
         success = self.solve_dFdu()
+        if not success:
+            self.sol_vec.array[:] = 0.0
         
         return self.sol_vec, success
 

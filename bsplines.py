@@ -9,7 +9,6 @@ parameterization
 # pylint: disable=E1101
 from __future__ import division
 import sys
-sys.path.insert(0, '/home/jason/github/CMF')
 from framework import *
 import numpy
 import MBI, scipy.sparse
@@ -21,17 +20,16 @@ class BSplineSystem(ExplicitSystem):
         """ generate jacobians for b-splines using MBI package """
 
         num_pts = self.num_pts
-        num_pt = self.num_pt
+        num_cp = self.num_pt
 
-        alt = numpy.linspace(0, 13, num_pts)
-        x_dist = numpy.linspace(0, self.range, num_pts)/1e6
+        alt = numpy.linspace(0, 16, num_pts)
+        x_dist = numpy.linspace(0, self.x_init[-1], num_pts)/1e6
 
-        arr = MBI.MBI(alt, [x_dist], [num_pt], [4])
+        arr = MBI.MBI(alt, [x_dist], [num_cp], [4])
         jac = arr.getJacobian(0, 0)
         jacd = arr.getJacobian(1, 0)
 
-        c_arryx = self.range/1e6 * 0.5*\
-            (1-numpy.cos(numpy.pi*numpy.linspace(0, 1, num_pt)))
+        c_arryx = self.x_init
         d_arryx = jacd.dot(c_arryx)*1e6
 
         lins = numpy.linspace(0, num_pts-1, num_pts).astype(int)
@@ -41,7 +39,6 @@ class BSplineSystem(ExplicitSystem):
 
         self.jac_h = jac
         self.jac_gamma = jace
-        self.c_arryx = c_arryx
 
 class SysXBspline(BSplineSystem):
     """ a b-spline parameterization of distance """
@@ -53,7 +50,7 @@ class SysXBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']*1e6
+        self.x_init = self.kwargs['x_init']
         x_0 = self.kwargs['x_0']
 
         self._declare_variable('x', size=self.num_pts, val=x_0)
@@ -96,7 +93,7 @@ class SysHBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']*1e6
+        self.x_init = self.kwargs['x_init']
 
         self._declare_variable('h', size=self.num_pts)
         self._declare_argument('h_pt', indices=range(self.num_pt))
@@ -138,7 +135,7 @@ class SysMVBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']*1e6
+        self.x_init = self.kwargs['x_init']
 
         self._declare_variable('M', size=self.num_pts)
         self._declare_variable('v_spline', size=self.num_pts)
@@ -193,7 +190,7 @@ class SysGammaBspline(BSplineSystem):
 
         self.num_pts = self.kwargs['num_elem']+1
         self.num_pt = self.kwargs['num_pt']
-        self.range = self.kwargs['x_range']*1e6
+        self.x_init = self.kwargs['x_init']
 
         self._declare_variable('gamma', size=self.num_pts)
         self._declare_argument('h_pt', indices=range(self.num_pt))

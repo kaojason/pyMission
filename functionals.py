@@ -8,7 +8,6 @@ the trajectory optimization case
 # pylint: disable=E1101
 from __future__ import division
 import sys
-sys.path.insert(0, '/home/jason/github/CMF')
 from framework import *
 import numpy
 
@@ -124,8 +123,9 @@ class SysTmin(ExplicitSystem):
             1/numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * \
             numpy.exp(self.rho*(self.min - tau - fmax)) * (-self.rho)
         deriv[ind] -= 1/self.rho * \
-            1/numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * \
-            numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * (-self.rho)
+            (-self.rho)
+        #    1/numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * \
+        #    numpy.sum(numpy.exp(self.rho*(self.min - tau - fmax))) * (-self.rho)
 
         if self.mode == 'fwd':
             dtmin[0] = 0.0
@@ -188,6 +188,125 @@ class SysTmax(ExplicitSystem):
             dtau[:] = 0.0
             if self.get_id('tau') in args:
                 dtau[:] += deriv * dtmax[0]
+
+class SysSlopeMin(ExplicitSystem):
+    """ KS-constraint used to limit min slope to prevent
+        unrealistic trajectories stalling optimization
+    """
+
+    def _declare(self):
+        """ owned variable: gamma_min (flight path angle constraint)
+            dependencies: gamma (flight path angle)
+        """
+
+        num_elem = self.kwargs['num_elem']
+
+        self._declare_variable('gamma_min')
+        self._declare_argument('gamma', indices=range(num_elem+1))
+        # FIX HARD CODED MIN SLOPE!!!
+        self.min = numpy.tan(-20.0*(numpy.pi/180.0))
+        self.rho = 30
+
+    def apply_G(self):
+        """ compute the KS function of minimum slope """
+
+        gmin = self.vec['u']('gamma_min')
+        gamma = self.vec['p']('gamma') * 1e-1
+
+        fmax = numpy.max(self.min - gamma)
+        gmin[0] = (fmax + 1/self.rho *\
+                       numpy.log(numpy.sum(numpy.exp(self.rho*(self.min-gamma-fmax)))))\
+                       *1e3
+
+    def apply_dGdp(self, args):
+        """ compute min slope KS function derivatives wrt flight
+            path angle
+        """
+
+        gamma = self.vec['p']('gamma')*1e-1
+
+        dgmin = self.vec['dg']('gamma_min')
+        dgamma = self.vec['dp']('gamma')
+
+        ind = numpy.argmax(self.min-gamma)
+        fmax = self.min - gamma[ind]
+        dfmax_dgamma = numpy.zeros(gamma.shape[0])
+        dfmax_dgamma[ind] = -1.0
+
+        deriv = dfmax_dgamma + 1/self.rho *\
+            1/numpy.sum(numpy.exp(self.rho*(self.min-gamma-fmax))) *\
+            numpy.exp(self.rho*(self.min-gamma-fmax))*(-self.rho)
+        deriv[ind] -= 1/self.rho *\
+            1/numpy.sum(numpy.exp(self.rho*(self.min-gamma-fmax))) *\
+            numpy.sum(numpy.exp(self.rho*(self.min-gamma-fmax)))*(-self.rho)
+
+        if self.mode == 'fwd':
+            dgmin[0] = 0.0
+            if self.get_id('gamma') in args:
+                dgmin[0] += numpy.sum(deriv * dgamma[:]) * 1e3 * 1e-1
+        if self.mode == 'rev':
+            dgamma[:] = 0.0
+            if self.get_id('gamma') in args:
+                dgamma[:] += deriv * dgmin[0] * 1e3 * 1e-1
+
+class SysSlopeMax(ExplicitSystem):
+    """ KS-constraint used to limit max slope to prevent
+        unrealistic trajectories stalling optimization
+    """
+
+    def _declare(self):
+        """ owned variable: gamma_max (flight path angle constraint)
+            dependencies: gamma (flight path angle)
+        """
+
+        num_elem = self.kwargs['num_elem']
+        self._declare_variable('gamma_max')
+        self._declare_argument('gamma', indices=range(num_elem+1))
+        # FIX HARDCODING OF MAX GAMMA!!!!!!
+        self.max = numpy.tan(20.0*(numpy.pi/180.0))
+        self.rho = 30
+
+    def apply_G(self):
+        """ compute KS function for max slope """
+
+        gmax = self.vec['u']('gamma_max')
+        gamma = self.vec['p']('gamma') * 1e-1
+
+        fmax = numpy.max(gamma - self.max)
+        gmax[0] = (fmax + 1/self.rho * \
+                       numpy.log(numpy.sum(numpy.exp(self.rho*(gamma-self.max-fmax)))))\
+                       * 1000
+
+    def apply_dGdp(self, args):
+        """ compute max slope KS function derivatives wrt flight
+            path angle
+        """
+
+        gamma = self.vec['p']('gamma') * 1e-1
+
+        dgmax = self.vec['dg']('gamma_max')
+        dgamma = self.vec['dp']('gamma')
+
+        ind = numpy.argmax(gamma - self.max)
+        fmax = gamma[ind] - self.max
+        dfmax_dgamma = numpy.zeros(gamma.shape[0])
+        dfmax_dgamma[ind] = 1.0
+
+        deriv = dfmax_dgamma + 1/self.rho *\
+            1/numpy.sum(numpy.exp(self.rho*(gamma-self.max-fmax))) *\
+            numpy.exp(self.rho*(gamma-self.max-fmax))*self.rho
+        deriv[ind] -= 1/self.rho *\
+            1/numpy.sum(numpy.exp(self.rho*(gamma-self.max-fmax))) *\
+            numpy.sum(numpy.exp(self.rho*(gamma-self.max-fmax)))*self.rho
+
+        if self.mode == 'fwd':
+            dgmax[0] = 0.0
+            if self.get_id('gamma') in args:
+                dgmax[0] += numpy.sum(deriv * dgamma[:]) * 1e3 * 1e-1
+        if self.mode == 'rev':
+            dgamma[:] = 0.0
+            if self.get_id('gamma') in args:
+                dgamma[:] += deriv * dgmax[0] * 1e3 * 1e-1
 
 class SysFuelObj(ExplicitSystem):
     """ objective function used for the optimization problem """
