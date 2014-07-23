@@ -15,7 +15,7 @@ import matplotlib.pylab
 class History(object):
     """ class used to write optimization history onto disk """
 
-    def __init__(self, num_elem, num_cp, x_range):
+    def __init__(self, num_elem, num_cp, x_range, folder_name):
         """ initialize variables, set folder name to 
             distxxxxkm-yyyy-zzzz-nnn/
             where xxxx is the distance of the mission
@@ -28,9 +28,9 @@ class History(object):
         self.num_elem = num_elem
         self.num_cp = num_cp
         self.x_range = x_range
-        self.folder_name = '/home/jason/Documents/Results/dist'+\
-            str(int(self.x_range*1e3))+'km-'\
-            +str(self.num_cp)+'-'+str(self.num_elem)
+        self.folder_name = folder_name + 'dist'+\
+            str(int(x_range*1e3))+'km-'\
+            +str(num_cp)+'-'+str(num_elem)
         index = 0
         while os.path.exists(self.folder_name+'-'+str(index)):
             index += 1
@@ -135,13 +135,13 @@ class Plotting(object):
         history class, NOTE: made obsolete by pltscript.py
     """
 
-    def __init__(self, num_elem, num_cp, x_range, index=0):
+    def __init__(self, num_elem, num_cp, x_range, folder_name, index=0):
 
         self.num_elem = num_elem
         self.num_cp = num_cp
         self.x_range = x_range/1e3
 
-        self.folder_name = '/home/jason/Documents/Results/dist'+\
+        self.folder_name = folder_name+'dist'+\
             str(int(self.x_range))+'km-'\
             +str(self.num_cp)+'-'+str(self.num_elem)+'-'+str(index)+'/'
 
