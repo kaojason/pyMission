@@ -9,25 +9,15 @@ import matplotlib.pylab
 
 # USER SPECIFIED INPUTS:
 
-<<<<<<< HEAD
-num_elem = 2000
+num_elem = 100
 num_cp = 20
-x_range = 150.0
-=======
-num_elem = 75
-num_cp = 15
-x_range = 1000.0
->>>>>>> 15c005eeda4eba2592dcdbd461ece4dae5c3c392
+x_range = 18000.0
 step = 1
 initial_ind = 0
 file_index = 0
 video = True
-<<<<<<< HEAD
 folder_name = '/home/jason/Documents/Results/test-'
 fuel_guess = 10000.0
-=======
-folder_name = '/home/jason/Documents/Results/'
->>>>>>> 15c005eeda4eba2592dcdbd461ece4dae5c3c392
 
 # END USER SPECIFIED INPUTS
 
@@ -101,17 +91,14 @@ while ((not os.path.isfile(folder_name+max_name))
             fplot(nr, nc, 3).set_ylabel('Trim Angle (deg)')
             fplot(nr, nc, 3).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 3).set_ylim([-10, 10])
-<<<<<<< HEAD
             fplot(nr, nc, 10).plot(dist, fuel/1e3)
             fplot(nr, nc, 10).set_ylabel('Fuel Weight (10^3 lb)')
             fplot(nr, nc, 10).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 10).set_ylim([-100.0/1e3, fuel_guess/1e3])
-=======
             fplot(nr, nc, 10).plot(dist, fuel)
             fplot(nr, nc, 10).set_ylabel('Fuel Weight (lb)')
             fplot(nr, nc, 10).set_xlim([-100.0, rnd(x_range, -3)+100.0])
             fplot(nr, nc, 10).set_ylim([-100.0, 80000.0])
->>>>>>> 15c005eeda4eba2592dcdbd461ece4dae5c3c392
             fplot(nr, nc, 7).plot(dist, rho)
             fplot(nr, nc, 7).set_ylabel('Density (kg/m^3)')
             fplot(nr, nc, 7).set_xlim([-100.0, rnd(x_range, -2)+100.0])
