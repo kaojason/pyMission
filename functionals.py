@@ -94,7 +94,7 @@ class SysTmin(ExplicitSystem):
         self._declare_variable('Tmin')
         self._declare_argument('tau', indices=range(0, num_elem+1))
         self.min = 0.01
-        self.rho = 30
+        self.rho = 100
 
     def apply_G(self):
         """ compute the KS function of minimum throttle """
@@ -148,7 +148,7 @@ class SysTmax(ExplicitSystem):
         self._declare_variable('Tmax')
         self._declare_argument('tau', indices=range(0, num_elem+1))
         self.max = 1.0
-        self.rho = 30
+        self.rho = 100
 
     def apply_G(self):
         """ compute KS function for max throttle setting """

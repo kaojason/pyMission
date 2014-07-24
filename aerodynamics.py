@@ -56,7 +56,7 @@ class SysAeroSurrogate(ExplicitSystem):
 
         lift_c[:] = lift_c0 + lift_ca * alpha + lift_ce * eta
         drag_c[:] = (drag_c0 + lift_c[:]**2 / 
-                     (numpy.pi * aspect_ratio * oswald)) / 1e-1
+                     (numpy.pi * aspect_ratio * oswald)) / 1e-1 * 3
 
     def apply_dGdp(self, args):
         """ compute the derivatives of lift and drag coefficient wrt
@@ -88,17 +88,17 @@ class SysAeroSurrogate(ExplicitSystem):
             if self.get_id('alpha') in args:
                 dlift_c[:] += lift_ca * dalpha * 1e-1
                 ddrag_c[:] += 2 * lift_c * lift_ca / (numpy.pi * oswald *
-                                                     aspect_ratio) * dalpha
+                                                     aspect_ratio) * dalpha * 3
             if self.get_id('eta') in args:
                 dlift_c[:] += lift_ce * deta * 1e-1
                 ddrag_c[:] += 2 * lift_c * lift_ce / (numpy.pi * oswald *
-                                                      aspect_ratio) * deta
+                                                      aspect_ratio) * deta * 3
             if self.get_id('AR') in args:
                 ddrag_c[:] -= lift_c**2 / (numpy.pi * aspect_ratio**2 *
-                                           oswald) * daspect_ratio / 1e-1
+                                           oswald) * daspect_ratio / 1e-1 * 3
             if self.get_id('e') in args:
                 ddrag_c[:] -= lift_c**2 / (numpy.pi * aspect_ratio *
-                                           oswald**2) * doswald / 1e-1
+                                           oswald**2) * doswald / 1e-1 * 3
 
         elif self.mode == 'rev':
             dalpha[:] = 0.0
@@ -108,21 +108,21 @@ class SysAeroSurrogate(ExplicitSystem):
             if self.get_id('alpha') in args:
                 dalpha[:] += lift_ca * dlift_c * 1e-1
                 dalpha[:] += 2 * lift_c * lift_ca / (numpy.pi * oswald *
-                                                     aspect_ratio) * ddrag_c
+                                                     aspect_ratio) * ddrag_c * 3
             if self.get_id('eta') in args:
                 deta[:] += lift_ce * dlift_c * 1e-1
                 deta[:] += 2 * lift_c * lift_ce / (numpy.pi * oswald *
-                                                   aspect_ratio) * ddrag_c
+                                                   aspect_ratio) * ddrag_c * 3
             if self.get_id('AR') in args:
                 daspect_ratio[:] -= numpy.sum((lift_c**2 / 
                                                (numpy.pi * oswald *
                                                 aspect_ratio**2) *
-                                               ddrag_c)) / 1e-1
+                                               ddrag_c)) / 1e-1 * 3
             if self.get_id('e') in args:
                 doswald[:] -= numpy.sum((lift_c**2 /
                                          (numpy.pi * oswald**2 *
                                           aspect_ratio) *
-                                         ddrag_c)) / 1e-1
+                                         ddrag_c)) / 1e-1 * 3
 
 class SysCM(ImplicitSystem):
     """ compute the tail rotation angle necessary to maintain pitch moment

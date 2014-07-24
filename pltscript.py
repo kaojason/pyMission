@@ -9,14 +9,25 @@ import matplotlib.pylab
 
 # USER SPECIFIED INPUTS:
 
+<<<<<<< HEAD
+num_elem = 2000
+num_cp = 20
+x_range = 150.0
+=======
 num_elem = 75
 num_cp = 15
 x_range = 1000.0
+>>>>>>> 15c005eeda4eba2592dcdbd461ece4dae5c3c392
 step = 1
 initial_ind = 0
 file_index = 0
 video = True
+<<<<<<< HEAD
+folder_name = '/home/jason/Documents/Results/test-'
+fuel_guess = 10000.0
+=======
 folder_name = '/home/jason/Documents/Results/'
+>>>>>>> 15c005eeda4eba2592dcdbd461ece4dae5c3c392
 
 # END USER SPECIFIED INPUTS
 
@@ -35,6 +46,7 @@ file_name = '%ikm-%i-%i-%04i' % (int(x_range),
                                  num_cp,
                                  num_elem,
                                  index)
+sleep = False
 
 while ((not os.path.isfile(folder_name+max_name))
        or (os.path.isfile(folder_name+file_name+'.dat'))):
@@ -46,6 +58,9 @@ while ((not os.path.isfile(folder_name+max_name))
                                          index)
     else:
         if os.path.isfile(folder_name+file_name+'.dat'):
+            if sleep == True:
+                time.sleep(0.1)
+                sleep = False
 
             [dist, altitude, speed, alpha, throttle, eta, fuel,
              rho, lift_c, drag_c, thrust, gamma, weight, temp,
@@ -64,54 +79,61 @@ while ((not os.path.isfile(folder_name+max_name))
             fplot = fig.add_subplot
             fplot(nr, nc, 1).plot(dist, altitude/1e3)
             fplot(nr, nc, 1).set_ylabel('Altitude (*10^3 ft)')
-            fplot(nr, nc, 1).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 1).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 1).set_ylim([-1, 51])
             fplot(nr, nc, 2).plot(dist, speed)
             fplot(nr, nc, 2).set_ylabel('Airspeed (knots)')
-            fplot(nr, nc, 2).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 2).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 2).set_ylim([100, 600])
             fplot(nr, nc, 6).plot(dist, alpha)
             fplot(nr, nc, 6).set_ylabel('AoA (deg)')
-            fplot(nr, nc, 6).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 6).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 6).set_ylim([-5, 10])
             fplot(nr, nc, 5).plot(dist, mach)
             fplot(nr, nc, 5).set_ylabel('Mach Number')
-            fplot(nr, nc, 5).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 5).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 5).set_ylim([0.05, 1.2])
             fplot(nr, nc, 8).plot(dist, throttle)
             fplot(nr, nc, 8).set_ylabel('Throttle')
-            fplot(nr, nc, 8).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 8).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 8).set_ylim([-0.1, 1.1])
             fplot(nr, nc, 3).plot(dist, eta)
             fplot(nr, nc, 3).set_ylabel('Trim Angle (deg)')
-            fplot(nr, nc, 3).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 3).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 3).set_ylim([-10, 10])
+<<<<<<< HEAD
+            fplot(nr, nc, 10).plot(dist, fuel/1e3)
+            fplot(nr, nc, 10).set_ylabel('Fuel Weight (10^3 lb)')
+            fplot(nr, nc, 10).set_xlim([-100.0, rnd(x_range, -2)+100.0])
+            fplot(nr, nc, 10).set_ylim([-100.0/1e3, fuel_guess/1e3])
+=======
             fplot(nr, nc, 10).plot(dist, fuel)
             fplot(nr, nc, 10).set_ylabel('Fuel Weight (lb)')
             fplot(nr, nc, 10).set_xlim([-100.0, rnd(x_range, -3)+100.0])
             fplot(nr, nc, 10).set_ylim([-100.0, 80000.0])
+>>>>>>> 15c005eeda4eba2592dcdbd461ece4dae5c3c392
             fplot(nr, nc, 7).plot(dist, rho)
             fplot(nr, nc, 7).set_ylabel('Density (kg/m^3)')
-            fplot(nr, nc, 7).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 7).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 7).set_ylim([0.0, 1.3])
             fplot(nr, nc, 9).plot(dist, lift_c)
             fplot(nr, nc, 9).set_ylabel('Lift Coef')
-            fplot(nr, nc, 9).set_xlim([-100.0, rnd(x_range, -3)+100.0])
+            fplot(nr, nc, 9).set_xlim([-100.0, rnd(x_range, -2)+100.0])
             fplot(nr, nc, 9).set_ylim([0.0, 0.8])
             fplot(nr, nc, 12).plot(dist, drag_c)
             fplot(nr, nc, 12).set_ylabel('Drag Coef')
-            fplot(nr, nc, 12).set_xlim([-100.0, rnd(x_range, -3)+100.0])
-            fplot(nr, nc, 12).set_ylim([0.01, 0.05])
+            fplot(nr, nc, 12).set_xlim([-100.0, rnd(x_range, -2)+100.0])
+            fplot(nr, nc, 12).set_ylim([0.01*3, 0.05*3])
             fplot(nr, nc, 10).set_xlabel('Distance (km)')
             fplot(nr, nc, 11).plot(dist, thrust/1e3)
             fplot(nr, nc, 11).set_ylabel('Thrust (10^3 lb)')
-            fplot(nr, nc, 11).set_xlim([-100.0, rnd(x_range, -3)+100.0])
-            fplot(nr, nc, 11).set_ylim([0.0, 100.0])
+            fplot(nr, nc, 11).set_xlim([-100.0, rnd(x_range, -2)+100.0])
+            fplot(nr, nc, 11).set_ylim([0.0, 250.0])
             fplot(nr, nc, 11).set_xlabel('Distance (km)')
             fplot(nr, nc, 4).plot(dist, gamma)
             fplot(nr, nc, 4).set_ylabel('Path Angle (deg)')
-            fplot(nr, nc, 4).set_xlim([-100.0, rnd(x_range, -3)+100.0])
-            fplot(nr, nc, 4).set_ylim([-10.0, 10.0])
+            fplot(nr, nc, 4).set_xlim([-100.0, rnd(x_range, -2)+100.0])
+            fplot(nr, nc, 4).set_ylim([-12.0, 12.0])
             fplot(nr, nc, 12).set_xlabel('Distance (km)')
             fig.savefig(folder_name+'fig-'+file_name+'.png')
 
@@ -122,6 +144,7 @@ while ((not os.path.isfile(folder_name+max_name))
                                              index)
 
         else:
+            sleep = True
             time.sleep(0.1)
 
 if video == True:

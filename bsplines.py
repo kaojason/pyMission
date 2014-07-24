@@ -221,3 +221,6 @@ class SysGammaBspline(BSplineSystem):
             dh_pt[:] = 0.0
             if self.get_id('h_pt') in args:
                 dh_pt[:] += self.jac_gamma.T.dot(dgamma[:]) * 1e3/1e-1
+
+    def get_jacs(self):
+        return {'h_pt': self.jac_gamma * 1e3/1e-1}
