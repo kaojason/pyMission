@@ -31,13 +31,19 @@ params = {
     'e': 0.8,
     }
 
-num_elem = 2000
-num_cp = 200
-x_range = 150.0
-folder_name = '/home/jason/Documents/Results/test-'
+num_elem = 100
+num_cp_init = 10
+num_cp_max = 200
+num_cp_step = 10
+x_range = 1000.0
+folder_name = '/home/jason/Documents/Results/committest-'
 
 # END USER SPECIFIED DATA
 ##########################
+
+num_cp = num_cp_init
+if ((num_cp_max - num_cp_init)%num_cp_step) != 0:
+    raise Exception('Specified max control pts and step do not agree!')
 
 # define initial altitude profile, as well as fixed profile for
 # x-distance and airspeed
@@ -63,7 +69,7 @@ main.compute(True)
 # initialize the trajectory optimization problem using the framework
 # instance initialized before with Optimization.py
 traj.set_gamma_bound(gamma_lb, gamma_ub)
-traj.initialize_opt(main, h_init)
+opt = traj.initialize_opt(main, h_init)
 
 # start timing, and perform optimization
 start = time.time()
