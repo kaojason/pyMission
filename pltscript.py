@@ -1,3 +1,20 @@
+"""
+MISSION ANALYSIS/TRAJECTORY OPTIMIZATION
+This is the runscript used for plotting the history of the trajectory 
+optimization problem. The history plotting can be done simultaneously as
+the trajectory optimization runscript is being ran. At the end of the
+figure generation, a video of the history is also produced.
+The mission analysis and trajectory optimization tool was developed by:
+    Jason Kao*
+    John Hwang*
+
+* University of Michigan Department of Aerospace Engineering,
+  Multidisciplinary Design Optimization lab
+  mdolab.engin.umich.edu
+
+copyright July 2014
+"""
+
 import numpy
 import os
 import time
@@ -9,9 +26,9 @@ import matplotlib.pylab
 
 # USER SPECIFIED INPUTS:
 
-num_elem = 100
-num_cp = 20
-x_range = 18000.0
+num_elem = 2000
+num_cp = 200
+x_range = 150.0
 step = 1
 initial_ind = 0
 file_index = 0
@@ -66,61 +83,29 @@ while ((not os.path.isfile(folder_name+max_name))
             print 'Printing fig: ', folder_name+file_name+'...'
             fig.clf()
             nr, nc = 4, 3
+
+            values = [altitude/1e3, speed, eta, 
+                      gamma, mach, alpha,
+                      rho, throttle, lift_c,
+                      fuel/1e3, thrust/1e3, drag_c]
+            labels = ['Altitude (*10^3 ft)', 'TAS (knots)', 'Trim (deg)',
+                      'Path Angle (deg)', 'Mach Number', 'AoA (deg)',
+                      'Density (kg/m^3)', 'Throttle', 'C_L',
+                      'Fuel wt. (10^3 lb)', 'Thrust (10^3 lb)', 'C_D']
+            limits = [[-1, 51], [100, 600], [-10, 10],
+                      [-32.0, 32.0], [0.05, 1.2], [-5, 10],
+                      [0.0, 1.3], [-0.1, 1.1], [0.0, 0.8],
+                      [-100.0/1e3, fuel_guess/1e3], [0.0, 250.0], [0.01*3, 0.05*3]]
+
             fplot = fig.add_subplot
-            fplot(nr, nc, 1).plot(dist, altitude/1e3)
-            fplot(nr, nc, 1).set_ylabel('Altitude (*10^3 ft)')
-            fplot(nr, nc, 1).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 1).set_ylim([-1, 51])
-            fplot(nr, nc, 2).plot(dist, speed)
-            fplot(nr, nc, 2).set_ylabel('Airspeed (knots)')
-            fplot(nr, nc, 2).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 2).set_ylim([100, 600])
-            fplot(nr, nc, 6).plot(dist, alpha)
-            fplot(nr, nc, 6).set_ylabel('AoA (deg)')
-            fplot(nr, nc, 6).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 6).set_ylim([-5, 10])
-            fplot(nr, nc, 5).plot(dist, mach)
-            fplot(nr, nc, 5).set_ylabel('Mach Number')
-            fplot(nr, nc, 5).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 5).set_ylim([0.05, 1.2])
-            fplot(nr, nc, 8).plot(dist, throttle)
-            fplot(nr, nc, 8).set_ylabel('Throttle')
-            fplot(nr, nc, 8).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 8).set_ylim([-0.1, 1.1])
-            fplot(nr, nc, 3).plot(dist, eta)
-            fplot(nr, nc, 3).set_ylabel('Trim Angle (deg)')
-            fplot(nr, nc, 3).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 3).set_ylim([-10, 10])
-            fplot(nr, nc, 10).plot(dist, fuel/1e3)
-            fplot(nr, nc, 10).set_ylabel('Fuel Weight (10^3 lb)')
-            fplot(nr, nc, 10).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 10).set_ylim([-100.0/1e3, fuel_guess/1e3])
-            fplot(nr, nc, 10).plot(dist, fuel)
-            fplot(nr, nc, 10).set_ylabel('Fuel Weight (lb)')
-            fplot(nr, nc, 10).set_xlim([-100.0, rnd(x_range, -3)+100.0])
-            fplot(nr, nc, 10).set_ylim([-100.0, 80000.0])
-            fplot(nr, nc, 7).plot(dist, rho)
-            fplot(nr, nc, 7).set_ylabel('Density (kg/m^3)')
-            fplot(nr, nc, 7).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 7).set_ylim([0.0, 1.3])
-            fplot(nr, nc, 9).plot(dist, lift_c)
-            fplot(nr, nc, 9).set_ylabel('Lift Coef')
-            fplot(nr, nc, 9).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 9).set_ylim([0.0, 0.8])
-            fplot(nr, nc, 12).plot(dist, drag_c)
-            fplot(nr, nc, 12).set_ylabel('Drag Coef')
-            fplot(nr, nc, 12).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 12).set_ylim([0.01*3, 0.05*3])
+            for i in xrange(12):
+                fplot(nr, nc, i+1).plot(dist, values[i])
+                fplot(nr, nc, i+1).set_ylabel(labels[i])
+                fplot(nr, nc, i+1).set_xlim([-100.0, rnd(x_range, -2)+100.0])
+                fplot(nr, nc, i+1).set_ylim(limits[i])
+
             fplot(nr, nc, 10).set_xlabel('Distance (km)')
-            fplot(nr, nc, 11).plot(dist, thrust/1e3)
-            fplot(nr, nc, 11).set_ylabel('Thrust (10^3 lb)')
-            fplot(nr, nc, 11).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 11).set_ylim([0.0, 250.0])
             fplot(nr, nc, 11).set_xlabel('Distance (km)')
-            fplot(nr, nc, 4).plot(dist, gamma)
-            fplot(nr, nc, 4).set_ylabel('Path Angle (deg)')
-            fplot(nr, nc, 4).set_xlim([-100.0, rnd(x_range, -2)+100.0])
-            fplot(nr, nc, 4).set_ylim([-12.0, 12.0])
             fplot(nr, nc, 12).set_xlabel('Distance (km)')
             fig.savefig(folder_name+'fig-'+file_name+'.png')
 

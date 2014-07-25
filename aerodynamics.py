@@ -2,6 +2,15 @@
 INTENDED FOR MISSION ANALYSIS USE
 This file contains the aerodynamic models used by the mission analysis
 code. The present implementation uses linear aerodynamics.
+The mission analysis and trajectory optimization tool was developed by:
+    Jason Kao*
+    John Hwang*
+
+* University of Michigan Department of Aerospace Engineering,
+  Multidisciplinary Design Optimization lab
+  mdolab.engin.umich.edu
+
+copyright July 2014
 """
 
 # pylint: disable=E1101
