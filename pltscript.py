@@ -24,6 +24,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pylab
 
+###########################
 # USER SPECIFIED INPUTS:
 
 num_elem = 2000
@@ -37,13 +38,15 @@ folder_name = '/home/jason/Documents/Results/test-'
 fuel_guess = 10000.0
 
 # END USER SPECIFIED INPUTS
+###########################
 
+# initialize figure, set up folder-paths
 fig = matplotlib.pylab.figure(figsize=(18.0,8.0))
 index = initial_ind
 folder_name = folder_name + 'dist'+str(int(x_range))+'km-'\
     +str(num_cp)+'-'+str(num_elem)+'-'+str(file_index)+'/'
 if not os.path.exists(folder_name):
-    raise('ERROR: SPECIFIED CASE DOES NOT EXIST')
+    raise Exception('ERROR: SPECIFIED CASE DOES NOT EXIST')
 
 max_name = str(int(x_range))+'km-'+str(num_cp)+\
     '-'+str(num_elem)+'-maxmin.dat'
@@ -55,16 +58,25 @@ file_name = '%ikm-%i-%i-%04i' % (int(x_range),
                                  index)
 sleep = False
 
+# continues loop for figure generation until BOTH end file (*-maxmin.dat)
+# has been found AND the next .dat file doesn't exist
 while ((not os.path.isfile(folder_name+max_name))
        or (os.path.isfile(folder_name+file_name+'.dat'))):
+
+    # skip figure generation if a corresponding figure exists already
     if os.path.isfile(folder_name+'fig-'+file_name+'.png'):
         index += step
         file_name = '%ikm-%i-%i-%04i' % (int(x_range),
                                          num_cp,
                                          num_elem,
                                          index)
+
+    # reads data file and save figure if the next file is found
     else:
         if os.path.isfile(folder_name+file_name+'.dat'):
+
+            # this delay is necesesary to prevent the script from reading
+            # the data file before history.py is done writing it
             if sleep == True:
                 time.sleep(0.1)
                 sleep = False
@@ -115,10 +127,13 @@ while ((not os.path.isfile(folder_name+max_name))
                                              num_elem,
                                              index)
 
+        # The next data file hasn't been written yet, so wait until it
+        # exists
         else:
             sleep = True
             time.sleep(0.1)
 
+# generate video of history from the figures
 if video == True:
     file_name = '%ikm-%i-%i' % (int(x_range),
                                      num_cp,
