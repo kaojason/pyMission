@@ -55,6 +55,7 @@ v_init = numpy.ones(num_cp)*2.3
 x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
 h_init = 1 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
 
+altitude = numpy.zeros(num_elem+1)
 
 start = time.time()
 while num_cp <= num_cp_max:
@@ -71,6 +72,8 @@ while num_cp <= num_cp_max:
     traj.set_init_x(x_init)
     traj.set_params(params)
     traj.set_folder_name(folder_name)
+    traj.setup_MBI()
+    traj.set_init_h_pt(altitude)
     main = traj.initialize_framework()
 
     main.compute(True)
@@ -78,16 +81,13 @@ while num_cp <= num_cp_max:
     # initialize the trajectory optimization problem using the framework
     # instance initialized before with Optimization.py
     traj.set_gamma_bound(gamma_lb, gamma_ub)
-    opt = traj.initialize_opt(main, h_init)
+    opt = traj.initialize_opt(main)
 
     # start timing, and perform optimization
     opt('SNOPT')
 
     altitude = main.vec['u']('h')
     num_cp += num_cp_step
-
-    if num_cp <= num_cp_max:
-        h_init = traj.multi_grid(num_cp_step, altitude)
     
 print 'OPTIMIZATION TIME', time.time() - start
 main.history.print_max_min(main.vec['u'])
