@@ -34,7 +34,7 @@ step = 1
 initial_ind = 0
 file_index = 0
 video = True
-folder_name = '/home/jason/Documents/Results/committest-'
+folder_name = '/home/jason/Documents/Results/MGtest-'
 fuel_guess = 10000.0
 
 # END USER SPECIFIED INPUTS

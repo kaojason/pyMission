@@ -36,7 +36,7 @@ num_cp_init = 10
 num_cp_max = 200
 num_cp_step = 10
 x_range = 1000.0
-folder_name = '/home/jason/Documents/Results/committest-'
+folder_name = '/home/jason/Documents/Results/MGtest-'
 
 # END USER SPECIFIED DATA
 ##########################
@@ -45,35 +45,50 @@ num_cp = num_cp_init
 if ((num_cp_max - num_cp_init)%num_cp_step) != 0:
     raise Exception('Specified max control pts and step do not agree!')
 
+# define bounds for the flight path angle
+gamma_lb = numpy.tan(-10.0 * (numpy.pi/180.0))/1e-1
+gamma_ub = numpy.tan(10.0 * (numpy.pi/180.0))/1e-1
+
 # define initial altitude profile, as well as fixed profile for
 # x-distance and airspeed
 v_init = numpy.ones(num_cp)*2.3
 x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
 h_init = 1 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
 
-# define bounds for the flight path angle
-gamma_lb = numpy.tan(-10.0 * (numpy.pi/180.0))/1e-1
-gamma_ub = numpy.tan(10.0 * (numpy.pi/180.0))/1e-1
 
-# initialize the mission analysis problem with the framework
-traj = OptTrajectory(num_elem, num_cp)
-traj.set_init_h(h_init)
-traj.set_init_v(v_init)
-traj.set_init_x(x_init)
-traj.set_params(params)
-traj.set_folder_name(folder_name)
-main = traj.initialize_framework()
-
-main.compute(True)
-
-# initialize the trajectory optimization problem using the framework
-# instance initialized before with Optimization.py
-traj.set_gamma_bound(gamma_lb, gamma_ub)
-opt = traj.initialize_opt(main, h_init)
-
-# start timing, and perform optimization
 start = time.time()
-opt('SNOPT')
+while num_cp <= num_cp_max:
+
+    # define initial altitude profile, as well as fixed profile for
+    # x-distance and airspeed
+    v_init = numpy.ones(num_cp)*2.3
+    x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
+
+    # initialize the mission analysis problem with the framework
+    traj = OptTrajectory(num_elem, num_cp)
+    traj.set_init_h(h_init)
+    traj.set_init_v(v_init)
+    traj.set_init_x(x_init)
+    traj.set_params(params)
+    traj.set_folder_name(folder_name)
+    main = traj.initialize_framework()
+
+    main.compute(True)
+
+    # initialize the trajectory optimization problem using the framework
+    # instance initialized before with Optimization.py
+    traj.set_gamma_bound(gamma_lb, gamma_ub)
+    opt = traj.initialize_opt(main, h_init)
+
+    # start timing, and perform optimization
+    opt('SNOPT')
+
+    altitude = main.vec['u']('h')
+    num_cp += num_cp_step
+
+    if num_cp <= num_cp_max:
+        h_init = traj.multi_grid(num_cp_step, altitude)
+    
 print 'OPTIMIZATION TIME', time.time() - start
 main.history.print_max_min(main.vec['u'])
 run_case, last_itr = main.history.get_index()
