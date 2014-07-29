@@ -24,7 +24,7 @@ import matplotlib.pylab
 class History(object):
     """ class used to write optimization history onto disk """
 
-    def __init__(self, num_elem, num_cp, x_range, folder_name):
+    def __init__(self, num_elem, num_cp, x_range, folder_path, name, first=False):
         """ initialize variables, set folder name to 
             distxxxxkm-yyyy-zzzz-nnn/
             where xxxx is the distance of the mission
@@ -37,15 +37,21 @@ class History(object):
         self.num_elem = num_elem
         self.num_cp = num_cp
         self.x_range = x_range
-        self.folder_name = folder_name + 'dist'+\
-            str(int(x_range*1e3))+'km-'\
-            +str(num_cp)+'-'+str(num_elem)
+        self.folder_name = folder_path + name
+        self.name = name
+
         index = 0
-        while os.path.exists(self.folder_name+'-'+str(index)):
+        while os.path.exists(self.folder_name+'_%03i' % (index)):
             index += 1
-        self.folder_name = self.folder_name+'-'+str(index)+'/'
-        os.makedirs(self.folder_name)
-        self.index = index
+
+        if first == True:
+            self.folder_name = self.folder_name+'_%03i/' % (index)
+            os.makedirs(self.folder_name)
+            self.index = index
+        else:
+            index -= 1
+            self.folder_name = self.folder_name+'_%03i/' % (index)
+            self.index = index
 
         self.hist_counter = 0
 
@@ -85,10 +91,8 @@ class History(object):
         temp = vecu('Temp') * 1e2
         SFC = vecu('SFC') * 1e-6
 
-        file_name = '%ikm-%i-%i-%04i.dat' % (int(self.x_range*1e3),
-                                             self.num_cp,
-                                             self.num_elem,
-                                             self.hist_counter)
+        file_name = self.name + '_%04i_%04i.dat' % (self.num_cp,
+                                                  self.hist_counter)
 
         output_file = self.folder_name + file_name
 
@@ -134,8 +138,7 @@ class History(object):
             index += 1
 
         file_array = [self.variable_min, self.variable_max]
-        file_name = str(int(self.x_range*1e3))+'km-'+str(self.num_cp)+'-'\
-            +str(self.num_elem)+'-maxmin.dat'
+        file_name = self.name + '_maxmin.dat'
         output_file = self.folder_name+file_name
         numpy.savetxt(output_file, file_array)
 

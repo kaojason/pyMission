@@ -16,6 +16,7 @@ class Optimization(object):
         """ Takes system containing all DVs and outputs """
         self._system = system
         self._variables = {'dv': {}, 'func': {}}
+        self.sens_callback = None
 
     def _get_name(self, var_id):
         """ Returns unique string for the variable """
@@ -49,6 +50,9 @@ class Optimization(object):
         """ Self-explanatory; part of API """
         self._add_var('func', var, lower=lower, upper=upper,
                       get_jacs=get_jacs, linear=linear)
+
+    def add_sens_callback(self, callback):
+        self.sens_callback = callback
 
     def obj_func(self, dv_dict):
         """ Objective function passed to pyOptSparse """
@@ -150,6 +154,9 @@ class Optimization(object):
 
         if fail:
             system.vec['du'].array[:] = 0.0
+
+        if self.sens_callback is not None:
+            self.sens_callback()
 
         return sens_dict, fail
 

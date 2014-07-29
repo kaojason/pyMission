@@ -31,12 +31,12 @@ params = {
     'e': 0.8,
     }
 
-num_elem = 100
+num_elem = 1000
 num_cp_init = 10
-num_cp_max = 200
-num_cp_step = 10
-x_range = 1000.0
-folder_name = '/home/jason/Documents/Results/MGtest-'
+num_cp_max = 210
+num_cp_step = 40
+x_range = 5000.0
+folder_path = '/home/jason/Documents/Results/MGtest_'
 
 # END USER SPECIFIED DATA
 ##########################
@@ -44,6 +44,14 @@ folder_name = '/home/jason/Documents/Results/MGtest-'
 num_cp = num_cp_init
 if ((num_cp_max - num_cp_init)%num_cp_step) != 0:
     raise Exception('Specified max control pts and step do not agree!')
+
+# determine folder name
+name = '%ikm_i%i_d%i_f%i_p%i' % (int(x_range),
+                                 num_cp_init,
+                                 num_cp_step,
+                                 num_cp_max,
+                                 num_elem)
+
 
 # define bounds for the flight path angle
 gamma_lb = numpy.tan(-10.0 * (numpy.pi/180.0))/1e-1
@@ -57,6 +65,7 @@ h_init = 1 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
 
 altitude = numpy.zeros(num_elem+1)
 
+first = True
 start = time.time()
 while num_cp <= num_cp_max:
 
@@ -66,12 +75,13 @@ while num_cp <= num_cp_max:
     x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
 
     # initialize the mission analysis problem with the framework
-    traj = OptTrajectory(num_elem, num_cp)
+    traj = OptTrajectory(num_elem, num_cp, first)
     traj.set_init_h(h_init)
     traj.set_init_v(v_init)
     traj.set_init_x(x_init)
     traj.set_params(params)
-    traj.set_folder_name(folder_name)
+    traj.set_folder(folder_path)
+    traj.set_name(name)
     traj.setup_MBI()
     traj.set_init_h_pt(altitude)
     main = traj.initialize_framework()
@@ -86,15 +96,15 @@ while num_cp <= num_cp_max:
     # start timing, and perform optimization
     opt('SNOPT')
 
+    run_case, last_itr = traj.history.get_index()
+    folder_name = folder_path + name + '_%03i/' % (run_case)
+    call (["mv", "./SNOPT_print.out", folder_name + 'SNOPT_%04i_print.out' %(num_cp)])
     altitude = main.vec['u']('h')
     num_cp += num_cp_step
+    first = False
     
 print 'OPTIMIZATION TIME', time.time() - start
-main.history.print_max_min(main.vec['u'])
-run_case, last_itr = main.history.get_index()
+traj.history.print_max_min(main.vec['u'])
 
-# move SNOPT output file to specified folder
-folder_name = folder_name + 'dist'+str(int(x_range))\
-    +'km-'+str(num_cp)+'-'+str(num_elem)+'-'+str(run_case)+'/.'
-call (["mv", "./SNOPT_print.out", folder_name])
+
 
