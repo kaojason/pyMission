@@ -29,15 +29,15 @@ import matplotlib.pylab
 
 num_elem = 1000
 num_cp_init = 10
-num_cp_max = 210
-num_cp_step = 40
+num_cp_max = 110
+num_cp_step = 50
 x_range = 5000.0
 step = 1
 initial_ind = 0
-file_index = 1
+file_index = 2
 video = True
-folder_path = '/home/jason/Documents/Results/MGtest_'
-fuel_guess = 10000.0
+folder_path = '/home/jason/Documents/Results/trash_'
+fuel_guess = 100000.0
 
 # END USER SPECIFIED INPUTS
 ###########################
@@ -114,7 +114,7 @@ while ((not os.path.isfile(folder_name+max_name))
             limits = [[-1, 51], [100, 600], [-10, 10],
                       [-32.0, 32.0], [0.05, 1.2], [-5, 10],
                       [0.0, 1.3], [-0.1, 1.1], [0.0, 0.8],
-                      [-100.0/1e3, fuel_guess/1e3], [0.0, 250.0], [0.01*3, 0.05*3]]
+                      [-100.0/1e3, fuel_guess/1e3], [0.0, 250.0], [0.01, 0.05]]
 
             fplot = fig.add_subplot
             for i in xrange(12):
@@ -140,9 +140,11 @@ while ((not os.path.isfile(folder_name+max_name))
         # The next data file hasn't been written yet, so wait until it
         # exists
         else:
-            print folder_name+file_name+'.dat'
             sleep = True
             time.sleep(0.1)
+index -= 1
+file_name = name + '_%04i_%04i' % (num_cp, index)
+fig.savefig(folder_name+'fig-'+file_name+'.pdf')
 
 print folder_name+file_name+'.dat'
 print folder_name+next_file_name+'.dat'

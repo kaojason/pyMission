@@ -33,10 +33,10 @@ params = {
 
 num_elem = 1000
 num_cp_init = 10
-num_cp_max = 210
-num_cp_step = 40
+num_cp_max = 110
+num_cp_step = 50
 x_range = 5000.0
-folder_path = '/home/jason/Documents/Results/MGtest_'
+folder_path = '/home/jason/Documents/Results/trash_'
 
 # END USER SPECIFIED DATA
 ##########################
@@ -59,8 +59,8 @@ gamma_ub = numpy.tan(10.0 * (numpy.pi/180.0))/1e-1
 
 # define initial altitude profile, as well as fixed profile for
 # x-distance and airspeed
-v_init = numpy.ones(num_cp)*2.3
 x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
+v_init = numpy.ones(num_cp)*2.3
 h_init = 1 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
 
 altitude = numpy.zeros(num_elem+1)
@@ -86,7 +86,7 @@ while num_cp <= num_cp_max:
     traj.set_init_h_pt(altitude)
     main = traj.initialize_framework()
 
-    main.compute(True)
+    main.compute(output=True)
 
     # initialize the trajectory optimization problem using the framework
     # instance initialized before with Optimization.py
@@ -99,6 +99,7 @@ while num_cp <= num_cp_max:
     run_case, last_itr = traj.history.get_index()
     folder_name = folder_path + name + '_%03i/' % (run_case)
     call (["mv", "./SNOPT_print.out", folder_name + 'SNOPT_%04i_print.out' %(num_cp)])
+    call (["mv", "./hist.hst", folder_name + 'hist_%04i.hst' %(num_cp)])
     altitude = main.vec['u']('h')
     num_cp += num_cp_step
     first = False
