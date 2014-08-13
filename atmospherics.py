@@ -20,66 +20,6 @@ import sys
 from framework import *
 import numpy
 
-class SysSFC(ExplicitSystem):
-    """ linear SFC model wrt altitude """
-
-    def _declare(self):
-        """ owned variable: SFC (specific fuel consumption)
-            dependencies: h (altitude)
-                          SFCSL (sea-level SFC value)
-        """
-
-        self.num_elem = self.kwargs['num_elem']
-        num_pts = self.num_elem+1
-        ind_pts = range(num_pts)
-
-        self._declare_variable('SFC', size=num_pts)
-        self._declare_argument('h', indices=ind_pts)
-        self._declare_argument(['SFCSL', 0], indices=[0])
-
-    def apply_G(self):
-        """ compute SFC value using sea level SFC and altitude
-            the model is a linear correction for altitude changes
-        """
-
-        pvec = self.vec['p']
-        uvec = self.vec['u']
-        alt = pvec('h') * 1e3
-        sfcsl = pvec(['SFCSL', 0]) * 1e-6
-        sfc = uvec('SFC')
-
-        sfc_temp = sfcsl + (6.39e-13) * alt
-        sfc[:] = sfc_temp / 1e-6
-
-    def apply_dGdp(self, args):
-        """ compute SFC derivatives wrt sea level SFC and altitude """
-
-        dpvec = self.vec['dp']
-        dgvec = self.vec['dg']
-
-        dalt = dpvec('h')
-        dsfcsl = dpvec('SFCSL')
-        dsfc = dgvec('SFC')
-
-        dsfc_dalt = 6.39e-13
-
-        if self.mode == 'fwd':
-            dsfc[:] = 0.0
-            if self.get_id('h') in args:
-                dsfc[:] += (dsfc_dalt * dalt) * 1e3/1e-6
-            if self.get_id('SFCSL') in args:
-                dsfc[:] += dsfcsl
-
-        if self.mode == 'rev':
-            dalt[:] = 0.0
-            dsfcsl[:] = 0.0
-
-            if self.get_id('h') in args:
-                dalt[:] += dsfc_dalt * dsfc * 1e3/1e-6
-            if self.get_id('SFCSL') in args:
-                dsfcsl[:] += numpy.sum(dsfc)
-
-
 class SysTemp(ExplicitSystem):
     """ linear temperature model using standard atmosphere with smoothing
         at the temperature discontinuity
@@ -93,7 +33,7 @@ class SysTemp(ExplicitSystem):
         self.num_elem = self.kwargs['num_elem']
         num_pts = self.num_elem+1
         ind_pts = range(num_pts)
-        self.epsilon = 100
+        self.epsilon = 500
 
         self._declare_variable('Temp', size=num_pts, lower=0.001)
         self._declare_argument('h', indices=ind_pts)
@@ -241,7 +181,7 @@ class SysRho(ExplicitSystem):
         self._declare_argument('Temp', indices=ind_pts)
         self._declare_argument('h', indices=ind_pts)
 
-        self.epsilon = 100
+        self.epsilon = 500
         h_lower = 11000 - self.epsilon
         h_upper = 11000 + self.epsilon
         matrix = numpy.array([[h_lower**3, h_lower**2, h_lower, 1],
@@ -287,7 +227,7 @@ class SysRho(ExplicitSystem):
             else:
                 h_star = alt[index]
                 pressure = a*h_star**3 + b*h_star**2 + c*h_star + d
-                rho[index] = pressure / (288 + temp[index])
+                rho[index] = pressure / (288 * temp[index])
 
     def apply_dGdp(self, args):
         """ compute density derivative wrt altitude and temperature """
