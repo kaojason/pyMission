@@ -27,17 +27,17 @@ import matplotlib.pylab
 ###########################
 # USER SPECIFIED INPUTS:
 
-num_elem = 1000
+num_elem = 3000
 num_cp_init = 10
-num_cp_max = 110
-num_cp_step = 50
-x_range = 5000.0
+num_cp_max = 210
+num_cp_step = 100
+x_range = 15000.0
 step = 1
 initial_ind = 0
-file_index = 4
+file_index = 2
 video = True
 folder_path = '/home/jason/Documents/Results/trash_'
-fuel_guess = 100000.0
+fuel_guess = 200000.0
 
 # END USER SPECIFIED INPUTS
 ###########################

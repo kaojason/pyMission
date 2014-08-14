@@ -46,7 +46,7 @@ class SysSFC(ExplicitSystem):
         sfcsl = pvec(['SFCSL', 0]) * 1e-6
         sfc = uvec('SFC')
 
-        sfc_temp = sfcsl + (6.39e-13) * alt
+        sfc_temp = sfcsl + (6.39e-13*9.81) * alt
         sfc[:] = sfc_temp / 1e-6
 
     def apply_dGdp(self, args):
@@ -59,7 +59,7 @@ class SysSFC(ExplicitSystem):
         dsfcsl = dpvec('SFCSL')
         dsfc = dgvec('SFC')
 
-        dsfc_dalt = 6.39e-13
+        dsfc_dalt = 6.39e-13 * 9.81
 
         if self.mode == 'fwd':
             dsfc[:] = 0.0

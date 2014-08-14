@@ -26,16 +26,16 @@ params = {
     'S': 427.8/1e2,
     'ac_w': 210000*9.81/1e6,
     'thrust_sl': 1020000.0/1e6,
-    'SFCSL': 40,#8.951,
+    'SFCSL': 8.951*9.81,
     'AR': 8.68,
     'e': 0.8,
     }
 
-num_elem = 1000
+num_elem = 3000
 num_cp_init = 10
-num_cp_max = 110
-num_cp_step = 50
-x_range = 5000.0
+num_cp_max = 210
+num_cp_step = 100
+x_range = 15000.0
 folder_path = '/home/jason/Documents/Results/trash_'
 
 # END USER SPECIFIED DATA
@@ -54,8 +54,8 @@ name = '%ikm_i%i_d%i_f%i_p%i' % (int(x_range),
 
 
 # define bounds for the flight path angle
-gamma_lb = numpy.tan(-10.0 * (numpy.pi/180.0))/1e-1
-gamma_ub = numpy.tan(10.0 * (numpy.pi/180.0))/1e-1
+gamma_lb = numpy.tan(-35.0 * (numpy.pi/180.0))/1e-1
+gamma_ub = numpy.tan(35.0 * (numpy.pi/180.0))/1e-1
 
 # define initial altitude profile, as well as fixed profile for
 # x-distance and airspeed
