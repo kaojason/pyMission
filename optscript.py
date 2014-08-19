@@ -31,12 +31,12 @@ params = {
     'e': 0.8,
     }
 
-num_elem = 3000
+num_elem = 1000
 num_cp_init = 10
-num_cp_max = 210
-num_cp_step = 100
+num_cp_max = 110
+num_cp_step = 50
 x_range = 15000.0
-folder_path = '/home/jason/Documents/Results/trash_'
+folder_path = '/home/jason/Documents/Results/PlotTest_'
 
 # END USER SPECIFIED DATA
 ##########################

@@ -27,16 +27,16 @@ import matplotlib.pylab
 ###########################
 # USER SPECIFIED INPUTS:
 
-num_elem = 3000
+num_elem = 1000
 num_cp_init = 10
-num_cp_max = 210
-num_cp_step = 100
+num_cp_max = 110
+num_cp_step = 50
 x_range = 15000.0
 step = 1
 initial_ind = 0
-file_index = 2
+file_index = 0
 video = True
-folder_path = '/home/jason/Documents/Results/trash_'
+folder_path = '/home/jason/Documents/Results/PlotTest_'
 fuel_guess = 200000.0
 
 # END USER SPECIFIED INPUTS
@@ -66,6 +66,7 @@ max_name = name + '_maxmin.dat'
 file_name = name + '_%04i_%04i' % (num_cp, index)
 next_file_name = name + '_%04i_%04i' % (num_cp+num_cp_step, 0)
 sleep = False
+nr, nc = 4, 3
 
 # continues loop for figure generation until BOTH end file (*-maxmin.dat)
 # has been found AND the next .dat file doesn't exist
@@ -101,7 +102,6 @@ while ((not os.path.isfile(folder_name+max_name))
 
             print 'Printing fig: ', folder_name+file_name+'...'
             fig.clf()
-            nr, nc = 4, 3
 
             values = [altitude/1e3, speed, eta, 
                       gamma, mach, alpha,
@@ -143,11 +143,15 @@ while ((not os.path.isfile(folder_name+max_name))
             sleep = True
             time.sleep(0.1)
 index -= 1
+[v_min, v_max] = numpy.loadtxt(folder_name+name+'_maxmin.dat')
+v_min[15] *= 3.28
+v_max[15] *= 3.28
+v_min[15] /= 1e3
+v_max[15] /= 1e3
+fplot(nr, nc, 1).plot(dist, numpy.ones(num_elem+1)*v_min[15], ':r')
+fplot(nr, nc, 1).plot(dist, numpy.ones(num_elem+1)*v_max[15], ':r')
 file_name = name + '_%04i_%04i' % (num_cp, index)
 fig.savefig(folder_name+'fig-'+file_name+'.pdf')
-
-print folder_name+file_name+'.dat'
-print folder_name+next_file_name+'.dat'
 
 # generate video of history from the figures
 if video == True:
