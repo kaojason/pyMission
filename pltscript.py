@@ -27,16 +27,16 @@ import matplotlib.pylab
 ###########################
 # USER SPECIFIED INPUTS:
 
-num_elem = 1000
+num_elem = 3000
 num_cp_init = 10
 num_cp_max = 110
-num_cp_step = 50
-x_range = 15000.0
+num_cp_step = 100
+x_range = 5500.0
 step = 1
 initial_ind = 0
 file_index = 0
 video = True
-folder_path = '/home/jason/Documents/Results/PlotTest_'
+folder_path = '/home/jason/Documents/Results/TIME-Test_'
 fuel_guess = 200000.0
 
 # END USER SPECIFIED INPUTS
@@ -47,7 +47,7 @@ fig = matplotlib.pylab.figure(figsize=(18.0,8.0))
 index = initial_ind
 
 # determine folder path
-name = '%ikm_i%i_d%i_f%i_p%i' % (int(x_range),
+name = '%inm_i%i_d%i_f%i_p%i' % (int(x_range),
                                  num_cp_init,
                                  num_cp_step,
                                  num_cp_max,
@@ -92,7 +92,7 @@ while ((not os.path.isfile(folder_name+max_name))
             [dist, altitude, speed, alpha, throttle, eta, fuel,
              rho, lift_c, drag_c, thrust, gamma, weight, temp,
              SFC] = numpy.loadtxt(folder_name+file_name+'.dat')
-            dist = dist/1e3
+            dist = dist/(1e3 * 1.852)
             mach = speed / numpy.sqrt(1.4*288.0*temp)
             altitude *= 3.28
             speed *= 1.94
@@ -123,9 +123,9 @@ while ((not os.path.isfile(folder_name+max_name))
                 fplot(nr, nc, i+1).set_xlim([-100.0, rnd(x_range, -2)+100.0])
                 fplot(nr, nc, i+1).set_ylim(limits[i])
 
-            fplot(nr, nc, 10).set_xlabel('Distance (km)')
-            fplot(nr, nc, 11).set_xlabel('Distance (km)')
-            fplot(nr, nc, 12).set_xlabel('Distance (km)')
+            fplot(nr, nc, 10).set_xlabel('Distance (nm)')
+            fplot(nr, nc, 11).set_xlabel('Distance (nm)')
+            fplot(nr, nc, 12).set_xlabel('Distance (nm)')
             fig.savefig(folder_name+'fig-'+file_name+'.png')
 
             index += 1

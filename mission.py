@@ -296,6 +296,7 @@ class OptTrajectory(object):
                                             num_elem=self.num_elem),
                                 SysSlopeMax('gamma_max',
                                             num_elem=self.num_elem),
+                                SysBlockTime('time', num_elem=self.num_elem),
                                 ]),
                         ]),
                  ]).setup()

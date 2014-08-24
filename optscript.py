@@ -31,12 +31,12 @@ params = {
     'e': 0.8,
     }
 
-num_elem = 1000
+num_elem = 3000
 num_cp_init = 10
 num_cp_max = 110
-num_cp_step = 50
-x_range = 15000.0
-folder_path = '/home/jason/Documents/Results/PlotTest_'
+num_cp_step = 100
+x_range = 5500.0      # range in nautical miles!
+folder_path = '/home/jason/Documents/Results/TIME-Test_'
 
 # END USER SPECIFIED DATA
 ##########################
@@ -46,12 +46,11 @@ if ((num_cp_max - num_cp_init)%num_cp_step) != 0:
     raise Exception('Specified max control pts and step do not agree!')
 
 # determine folder name
-name = '%ikm_i%i_d%i_f%i_p%i' % (int(x_range),
+name = '%inm_i%i_d%i_f%i_p%i' % (int(x_range),
                                  num_cp_init,
                                  num_cp_step,
                                  num_cp_max,
                                  num_elem)
-
 
 # define bounds for the flight path angle
 gamma_lb = numpy.tan(-35.0 * (numpy.pi/180.0))/1e-1
@@ -59,6 +58,7 @@ gamma_ub = numpy.tan(35.0 * (numpy.pi/180.0))/1e-1
 
 # define initial altitude profile, as well as fixed profile for
 # x-distance and airspeed
+x_range *= 1.852
 x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
 v_init = numpy.ones(num_cp)*2.3
 h_init = 1 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
@@ -104,7 +104,11 @@ while num_cp <= num_cp_max:
     num_cp += num_cp_step
     first = False
     
-print 'OPTIMIZATION TIME', time.time() - start
+print 'OPTIMIZATION TIME:', time.time() - start
+seconds = main.vec['u']('time') * 1e4
+mnt, sec = divmod(seconds, 60)
+hrs, mnt = divmod(mnt, 60)
+print 'FLIGHT TIME:', '%d:%02d:%02d' % (hrs, mnt, sec)
 traj.history.print_max_min(main.vec['u'])
 
 

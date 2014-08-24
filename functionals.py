@@ -355,3 +355,108 @@ class SysFuelObj(ExplicitSystem):
             dp('fuel_w')[0] = 0.0
             if self.get_id('fuel_w') in arguments:
                 dp('fuel_w')[0] += dg('wf_obj')[0]
+
+class SysBlockTime(ExplicitSystem):
+    """ used to compute block time of a particular flight """
+
+    def _declare(self):
+        """ owned variable: blocktime
+            dependencies: airspeed (v),
+                          dist (x)
+            scaling: 1e4
+        """
+        num_elem = self.kwargs['num_elem']
+        ind = range(num_elem+1)
+
+        self._declare_variable('time', size=1)
+        self._declare_argument('v', indices=ind)
+        self._declare_argument('x', indices=ind)
+        self._declare_argument('gamma', indices=ind)
+
+    def apply_G(self):
+        """ compute the block time required by numerically integrating
+            (using the mid-point rule) the velocity values. this assumes
+            that the airspeed varies linearly between data points.
+        """
+
+        pvec = self.vec['p']
+        uvec = self.vec['u']
+
+        speed = pvec('v') * 1e2
+        dist = pvec('x') * 1e6
+        gamma = pvec('gamma') * 1e-1
+        time = uvec('time')
+
+        time_temp = ((dist[1:] - dist[0:-1]) /
+                     (((speed[1:] + speed[0:-1])/2) *
+                      numpy.cos((gamma[1:] + gamma[0:-1])/2)))
+        time[0] = numpy.sum(time_temp)/1e4
+
+    def apply_dGdp(self, args):
+        """ compute the derivatives of blocktime wrt the velocity
+            and distance points
+        """
+
+        pvec = self.vec['p']
+        dpvec = self.vec['dp']
+        dgvec = self.vec['dg']
+
+        speed = pvec('v') * 1e2
+        dist = pvec('x') * 1e6
+        gamma = pvec('gamma') * 1e-1
+        dspeed = dpvec('v')
+        ddist = dpvec('x')
+        dgamma = dpvec('gamma')
+        dtime = dgvec('time')
+
+        if self.mode == 'fwd':
+            dtime[:] = 0.0
+            if self.get_id('x') in args:
+                dtime[0] += numpy.sum((ddist[1:] - ddist[0:-1]) /
+                                      ((speed[1:] + speed[0:-1])/2 *
+                                       numpy.cos((gamma[1:] + gamma[0:-1])/2))) \
+                    * 1e6/1e4
+            if self.get_id('v') in args:
+                dtime[0] += numpy.sum(-2*(dist[1:] - dist[0:-1]) *
+                                      (dspeed[1:] + dspeed[0:-1]) /
+                                      ((speed[1:] + speed[0:-1])**2 *
+                                       numpy.cos((gamma[1:] + gamma[0:-1])/2))) \
+                    * 1e2/1e4
+            if self.get_id('gamma') in args:
+                dtime[0] += numpy.sum((numpy.sin((gamma[1:] + gamma[0:-1])/2)/
+                                       (numpy.cos((gamma[1:] +
+                                                   gamma[0:-1])/2))**2) *
+                                      (dgamma[1:] + dgamma[0:-1]) *
+                                      ((dist[1:] - dist[0:-1])/
+                                       (speed[1:] + speed[0:-1]))) * 1e-1/1e4
+        if self.mode == 'rev':
+            dspeed[:] = 0.0
+            ddist[:] = 0.0
+            dgamma[:] = 0.0
+            if self.get_id('x') in args:
+                ddist[0:-1] += (-2/((speed[0:-1] + speed[1:]) *
+                                    numpy.cos((gamma[0:-1] + gamma[1:])/2)) *
+                                dtime[0]) * 1e6/1e4
+                ddist[1:] += (2/((speed[0:-1] + speed[1:]) *
+                                 numpy.cos((gamma[0:-1] + gamma[1:])/2)) *
+                              dtime[0]) * 1e6/1e4
+            if self.get_id('v') in args:
+                dspeed[0:-1] -= 2*((dist[1:] - dist[0:-1]) * dtime[0] /
+                                   ((speed[1:] + speed[0:-1])**2 *
+                                    numpy.cos((gamma[1:] + gamma[0:-1])/2))
+                                   * 1e2/1e4)
+                dspeed[1:] -= 2*((dist[1:] - dist[0:-1]) * dtime[0] /
+                                 ((speed[1:] + speed[0:-1])**2 *
+                                  numpy.cos((gamma[1:] + gamma[0:-1])/2))
+                                 * 1e2/1e4)
+            if self.get_id('gamma') in args:
+                dgamma[0:-1] += (((dist[1:] - dist[0:-1]) /
+                                  (speed[1:] + speed[0:-1])) *
+                                 ((numpy.sin((gamma[1:] + gamma[0:-1])/2)) /
+                                  (numpy.cos((gamma[1:] + gamma[0:-1])/2))**2) *
+                                 dtime[0]) * 1e-1/1e4
+                dgamma[1:] += (((dist[1:] - dist[0:-1]) /
+                                (speed[1:] + speed[0:-1])) *
+                               ((numpy.sin((gamma[1:] + gamma[0:-1])/2)) /
+                                (numpy.cos((gamma[1:] + gamma[0:-1])/2))**2) *
+                               dtime[0]) * 1e-1/1e4
