@@ -106,6 +106,8 @@ class OptTrajectory(object):
         self.sfc_sl = kw['SFCSL']
         self.aspect_ratio = kw['AR']
         self.oswald = kw['e']
+        self.t_c = kw['t_c']
+        self.sweep = kw['sweep']
 
     def set_folder(self, folder_path):
         self.folder_path = folder_path
@@ -139,6 +141,8 @@ class OptTrajectory(object):
                         IndVar('SFCSL', val=self.sfc_sl, size=1),
                         IndVar('AR', val=self.aspect_ratio, size=1),
                         IndVar('e', val=self.oswald, size=1),
+                        IndVar('t_c', val=self.t_c, size=1),
+                        IndVar('sweep', val=self.sweep, size=1),
                         ]),
                 SerialSystem('segment',
                              NL='NLN_GS',
@@ -231,7 +235,8 @@ class OptTrajectory(object):
                                              LN_rtol=1e-10,
                                              LN_atol=1e-10,
                                              subsystems=[
-                                        SysAeroSurrogate('CL', num_elem=self.num_elem),
+                                        SysCLSurrogate('CL', num_elem=self.num_elem),
+                                        SysCDSurrogate('CD', num_elem=self.num_elem),
                                         SysAlpha('alpha',
                                                  num_elem=self.num_elem),
                                         ]),
@@ -296,6 +301,8 @@ class OptTrajectory(object):
                                             num_elem=self.num_elem),
                                 SysSlopeMax('gamma_max',
                                             num_elem=self.num_elem),
+                                SysVi('v_i'),
+                                SysVf('v_f', num_elem=self.num_elem),
                                 SysBlockTime('time', num_elem=self.num_elem),
                                 ]),
                         ]),
@@ -310,12 +317,19 @@ class OptTrajectory(object):
         self.gamma_lb = gamma_lb
         self.gamma_ub = gamma_ub
 
+    def set_takeoff_speed(self, v_to):
+        self.v_to = v_to
+
+    def set_landing_speed(self, v_ld):
+        self.v_ld = v_ld
+
     def initialize_opt(self, main):
         gamma_lb = self.gamma_lb
         gamma_ub = self.gamma_ub
 
         opt = Optimization(main)
         opt.add_design_variable('h_pt', value=self.h_pts, lower=0.0, upper=20.0)
+        opt.add_design_variable('v_pt', value=self.v_pts, lower=0.0, upper=10.0)
         opt.add_objective('wf_obj')
         opt.add_constraint('h_i', lower=0.0, upper=0.0)
         opt.add_constraint('h_f', lower=0.0, upper=0.0)
@@ -323,6 +337,9 @@ class OptTrajectory(object):
         opt.add_constraint('Tmax', upper=0.0)
         opt.add_constraint('gamma', lower=gamma_lb, upper=gamma_ub,
                            get_jacs=main('gamma').get_jacs, linear=True)
+        opt.add_constraint('v_i', lower=self.v_to, upper=self.v_to)
+        opt.add_constraint('v_f', lower=self.v_ld, upper=self.v_ld)
+        opt.add_constraint('time', lower=0.0, upper=11*3600.0)
         opt.add_sens_callback(self.callback)
         return opt
 

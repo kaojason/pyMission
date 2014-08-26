@@ -356,6 +356,75 @@ class SysFuelObj(ExplicitSystem):
             if self.get_id('fuel_w') in arguments:
                 dp('fuel_w')[0] += dg('wf_obj')[0]
 
+class SysVi(ExplicitSystem):
+    """ initial airspeed point used for constraints """
+
+    def _declare(self):
+        """ owned variable: v_i (initial airspeed point)
+            dependencies: v (airspeed points)
+        """
+
+        self._declare_variable('v_i')
+        self._declare_argument('v', indices=[0])
+
+    def apply_G(self):
+        """ assign system to the initial airspeed point """
+
+        speed_i = self.vec['u']('v_i')
+        speed = self.vec['p']('v')
+
+        speed_i[0] = speed[0]
+
+    def apply_dGdp(self, args):
+        """ derivative of this is same as initial airspeed point """
+
+        dspeed_i = self.vec['dg']('v_i')
+        dspeed = self.vec['dp']('v')
+
+        if self.mode == 'fwd':
+            dspeed_i[0] = 0.0
+            if self.get_id('v') in args:
+                dspeed_i[0] += dspeed[0]
+        if self.mode == 'rev':
+            dspeed[0] = 0.0
+            if self.get_id('v') in args:
+                dspeed[0] += dspeed_i[0]
+
+class SysVf(ExplicitSystem):
+    """ final airspeed point used for constraints """
+
+    def _declare(self):
+        """ owned variable: v_f (final airspeed point)
+            dependencies: v (airspeed points)
+        """
+
+        num_elem = self.kwargs['num_elem']
+        self._declare_variable('v_f')
+        self._declare_argument('v', indices=[num_elem])
+
+    def apply_G(self):
+        """ assign system to the final airspeed point """
+
+        speed_f = self.vec['u']('v_f')
+        speed = self.vec['p']('v')
+
+        speed_f[0] = speed[0]
+
+    def apply_dGdp(self, args):
+        """ derivative of this is same as final airspeed point """
+
+        dspeed_f = self.vec['dg']('v_f')
+        dspeed = self.vec['dp']('v')
+
+        if self.mode == 'fwd':
+            dspeed_f[0] = 0.0
+            if self.get_id('v') in args:
+                dspeed_f[0] += dspeed[0]
+        if self.mode == 'rev':
+            dspeed[0] = 0.0
+            if self.get_id('v') in args:
+                dspeed[0] += dspeed_f[0]
+
 class SysBlockTime(ExplicitSystem):
     """ used to compute block time of a particular flight """
 

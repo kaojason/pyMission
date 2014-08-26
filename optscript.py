@@ -29,14 +29,16 @@ params = {
     'SFCSL': 8.951*9.81,
     'AR': 8.68,
     'e': 0.8,
+    't_c': 0.09,
+    'sweep': 31.6 * numpy.pi/180,
     }
 
-num_elem = 3000
+num_elem = 10#00
 num_cp_init = 10
 num_cp_max = 110
 num_cp_step = 100
 x_range = 5500.0      # range in nautical miles!
-folder_path = '/home/jason/Documents/Results/TIME-Test_'
+folder_path = '/home/jason/Documents/Results/TIME-OptTest_'
 
 # END USER SPECIFIED DATA
 ##########################
@@ -55,6 +57,8 @@ name = '%inm_i%i_d%i_f%i_p%i' % (int(x_range),
 # define bounds for the flight path angle
 gamma_lb = numpy.tan(-35.0 * (numpy.pi/180.0))/1e-1
 gamma_ub = numpy.tan(35.0 * (numpy.pi/180.0))/1e-1
+takeoff_speed = 83.3
+landing_speed = 72.2
 
 # define initial altitude profile, as well as fixed profile for
 # x-distance and airspeed
@@ -88,9 +92,14 @@ while num_cp <= num_cp_max:
 
     main.compute(output=True)
 
+    main.check_derivatives_all()
+    exit()
+
     # initialize the trajectory optimization problem using the framework
     # instance initialized before with Optimization.py
     traj.set_gamma_bound(gamma_lb, gamma_ub)
+    traj.set_takeoff_speed(takeoff_speed)
+    traj.set_landing_speed(landing_speed)
     opt = traj.initialize_opt(main)
 
     # start timing, and perform optimization
