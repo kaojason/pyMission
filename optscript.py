@@ -40,7 +40,7 @@ num_elem = 3000
 num_cp_init = 10
 num_cp_max = 10
 num_cp_step = 100
-x_range = 5500.0      # range in nautical miles!
+x_range = 8100.0      # range in nautical miles!
 folder_path = '/home/jason/Documents/Results/SurrogateTest_'
 
 # END USER SPECIFIED DATA
@@ -94,10 +94,10 @@ while num_cp <= num_cp_max:
     traj.set_init_h_pt(altitude)
     main = traj.initialize_framework()
 
-    start_comp = time.time()
+    #start_comp = time.time()
     main.compute(output=True)
-    print 'FINISHED COMPUTING:', time.time() - start_comp
-    exit()
+    #print 'FINISHED COMPUTING:', time.time() - start_comp
+    #exit()
 
     #dist = main.vec['u']('x')*1e3
     #alt = main.vec['u']('h')*1e3

@@ -382,7 +382,6 @@ class System(object):
 
     def solve_dFdu(self):
         """ Solve Jacobian, df |-> du [fwd] or du |-> df [rev] """
-        self.apply_F()
         if numpy.linalg.norm(self.rhs_vec.array) < 1e-15:
             self.sol_vec.array[:] = 0.0
             return True
