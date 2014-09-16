@@ -227,53 +227,31 @@ class SysCM(ImplicitSystem):
         self.num_elem = self.kwargs['num_elem']
         ind_pts = range(self.num_elem+1)
 
-        self._declare_variable('eta', size=self.num_elem+1)
-        self._declare_argument('alpha', indices=ind_pts)
+        self._declare_variable('eta', size=self.num_elem+1)#, lower=-20*numpy.pi/180/1e-1, upper=20*numpy.pi/180/1e-1)
+        self._declare_argument('Cm', indices=ind_pts)
 
     def apply_F(self):
         """ compute CM value using alpha and eta, and use the CM value as
             residual for eta
         """
 
-        pvec = self.vec['p']
-        uvec = self.vec['u']
-        fvec = self.vec['f']
+        res = self.vec['f']('eta')
+        Cm = self.vec['p']('Cm')
 
-        alpha = pvec('alpha') * 1e-1
-        eta = uvec('eta') * 1e-1
-        eta_res = fvec('eta')
-
-        mmt_ca = 0.63
-        mmt_ce = 1.06
-
-        eta_res[:] = (mmt_ca * alpha + mmt_ce * eta) / 1e-1
+        res[:] = Cm
 
     def apply_dFdpu(self, args):
         """ compute the derivatives of tail rotation angle wrt angle of attack
         """
 
-        dpvec = self.vec['dp']
-        duvec = self.vec['du']
-        dfvec = self.vec['df']
-
-        dalpha = dpvec('alpha')
-        deta = duvec('eta')
-        deta_res = dfvec('eta')
-
-        mmt_ca = 0.63
-        mmt_ce = 1.06
+        dres = self.vec['df']('eta')
+        dCm = self.vec['dp']('Cm')
 
         if self.mode == 'fwd':
-            deta_res[:] = 0.0
-            if self.get_id('alpha') in args:
-                deta_res[:] += mmt_ca * dalpha
-            if self.get_id('eta') in args:
-                deta_res[:] += mmt_ce * deta
-
+            dres[:] = 0.0
+            if self.get_id('Cm') in args:
+                dres[:] += dCm
         elif self.mode == 'rev':
-            dalpha[:] = 0.0
-            deta[:] = 0.0
-            if self.get_id('alpha') in args:
-                dalpha[:] += mmt_ca * deta_res
-            if self.get_id('eta') in args:
-                deta[:] += mmt_ce * deta_res
+            dCm[:] = 0.0
+            if self.get_id('Cm') in args:
+                dCm[:] += dres

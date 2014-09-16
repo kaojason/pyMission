@@ -123,7 +123,7 @@ class Optimization(object):
                         = numpy.zeros((nfunc, ndv))
 
                 for ind in xrange(nfunc):
-                    temp, success = system.compute_derivatives('rev', func_id, ind, False)
+                    temp, success = system.compute_derivatives('rev', func_id, ind, True)
                     fail = fail or not success
 
                     for dv_name in variables['dv'].keys():

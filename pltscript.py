@@ -30,11 +30,11 @@ import matplotlib.pylab
 num_elem = 3000
 num_cp_init = 10
 num_cp_max = 110
-num_cp_step = 100
+num_cp_step = 50
 x_range = 5500.0
 step = 1
 initial_ind = 0
-file_index = 1
+file_index = 0
 video = True
 folder_path = '/home/jason/Documents/Results/TIME-OptTest_'
 fuel_guess = 200000.0
@@ -111,7 +111,7 @@ while ((not os.path.isfile(folder_name+max_name))
                       'Path Angle (deg)', 'Mach Number', 'AoA (deg)',
                       'Density (kg/m^3)', 'Throttle', 'C_L',
                       'Fuel wt. (10^3 lb)', 'Thrust (10^3 lb)', 'C_D']
-            limits = [[-1, 75], [100, 1000], [-10, 10],
+            limits = [[-1, 45], [100, 1000], [-10, 10],
                       [-32.0, 32.0], [0.05, 1.7], [-5, 10],
                       [0.0, 1.3], [-0.1, 1.1], [0.0, 0.8],
                       [-100.0/1e3, fuel_guess/1e3], [0.0, 250.0], [0.01, 0.05]]
