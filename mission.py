@@ -10,7 +10,7 @@ from coupled_analysis import *
 from functionals import *
 from aerodynamics import *
 from propulsion import *
-from aeroTripan import *
+#from aeroTripan import *
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pylab
