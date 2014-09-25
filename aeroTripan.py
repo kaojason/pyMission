@@ -6,7 +6,7 @@ import cPickle
 import time
 import MBI, scipy.sparse
 
-class SysTripanSurrogate(ExplicitSystem):
+class SysTripanCLSurrogate(ImplicitSystem):
 
     def setup_bsplines(self):
         [M_surr, a_surr, h_surr,
@@ -23,8 +23,6 @@ class SysTripanSurrogate(ExplicitSystem):
         h_num = self.h_num
         e_num = self.e_num
         mbi_CL = numpy.zeros((M_num, a_num, h_num, e_num))
-        mbi_CD = numpy.zeros((M_num, a_num, h_num, e_num))
-        mbi_CM = numpy.zeros((M_num, a_num, h_num, e_num))
 
         count = 0
         for i in xrange(M_num):
@@ -32,15 +30,9 @@ class SysTripanSurrogate(ExplicitSystem):
                 for k in xrange(h_num):
                     for l in xrange(e_num):
                         mbi_CL[i][j][k][l] = CL[count]
-                        mbi_CD[i][j][k][l] = CD[count]
-                        mbi_CM[i][j][k][l] = CM[count]
                         count += 1
 
         self.CL_arr = MBI.MBI(mbi_CL, [M_surr, a_surr, h_surr, e_surr],
-                              [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
-        self.CD_arr = MBI.MBI(mbi_CD, [M_surr, a_surr, h_surr, e_surr],
-                              [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
-        self.CM_arr = MBI.MBI(mbi_CM, [M_surr, a_surr, h_surr, e_surr],
                               [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
 
     def _declare(self):
@@ -48,20 +40,48 @@ class SysTripanSurrogate(ExplicitSystem):
         self.num_elem = self.kwargs['num_elem']
         ind_pts = range(self.num_elem + 1)
 
-        self._declare_variable('CL', size=self.num_elem+1)
-        self._declare_variable('CD', size=self.num_elem+1)
-        self._declare_variable('Cm', size=self.num_elem+1)
-        self._declare_argument('alpha', indices=ind_pts)
+        self._declare_variable('alpha', size=self.num_elem+1)
         self._declare_argument('M', indices=ind_pts)
         self._declare_argument('h', indices=ind_pts)
         self._declare_argument('eta', indices=ind_pts)
+        self._declare_argument('CL_tar', indices=ind_pts)
 
         self.setup_bsplines()
         self.J_CL = [None for i in range(4)]
-        self.J_CD = [None for i in range(4)]
-        self.J_CM = [None for i in range(4)]
 
-    def apply_G(self):
+    def apply_F(self):
+
+        pvec = self.vec['p']
+        uvec = self.vec['u']
+        fvec = self.vec['f']
+
+        M_num = self.M_num
+        a_num = self.a_num
+        h_num = self.h_num
+        e_num = self.e_num
+
+        Mach = pvec('M')
+        alpha = uvec('alpha') * 180 / numpy.pi * 1e-1
+        alt = pvec('h') * 3.28 * 1e3
+        eta = pvec('eta') * 180 / numpy.pi * 1e-1
+        CL_tar = pvec('CL_tar')
+        alpha_res = fvec('alpha')
+
+        inputs = numpy.zeros((self.num_elem + 1, 4))
+        inputs[:, 0] = Mach
+        inputs[:, 1] = alpha
+        inputs[:, 2] = alt
+        inputs[:, 3] = eta
+
+        CL_temp = self.CL_arr.evaluate(inputs)
+
+        CL = numpy.zeros(self.num_elem+1)
+        for index in xrange(self.num_elem + 1):
+            CL[index] = CL_temp[index, 0]
+
+        alpha_res[:] = CL - CL_tar
+
+    def linearize(self):
 
         pvec = self.vec['p']
         uvec = self.vec['u']
@@ -72,39 +92,7 @@ class SysTripanSurrogate(ExplicitSystem):
         e_num = self.e_num
 
         Mach = pvec('M')
-        alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
-        alt = pvec('h') * 3.28 * 1e3
-        eta = pvec('eta') * 180 / numpy.pi * 1e-1
-        CL = uvec('CL')
-        CD = uvec('CD')
-        CM = uvec('Cm')
-
-        inputs = numpy.zeros((self.num_elem + 1, 4))
-        inputs[:, 0] = Mach
-        inputs[:, 1] = alpha
-        inputs[:, 2] = alt
-        inputs[:, 3] = eta
-
-        CL_temp = self.CL_arr.evaluate(inputs)
-        CD_temp = self.CD_arr.evaluate(inputs)
-        CM_temp = self.CM_arr.evaluate(inputs)
-
-        for index in xrange(self.num_elem + 1):
-            CL[index] = CL_temp[index, 0]
-            CD[index] = CD_temp[index, 0] / 1e-1
-            CM[index] = CM_temp[index, 0]
-
-    def linearize(self):
-
-        pvec = self.vec['p']
-
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
-
-        Mach = pvec('M')
-        alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
+        alpha = uvec('alpha') * 180 / numpy.pi * 1e-1
         alt = pvec('h') * 3.28 * 1e3
         eta = pvec('eta') * 180 / numpy.pi * 1e-1
 
@@ -117,68 +105,51 @@ class SysTripanSurrogate(ExplicitSystem):
         for index in xrange(4):
             self.J_CL[index] = self.CL_arr.evaluate(inputs,
                                                     1+index, 0)[:, 0]
-            self.J_CD[index] = self.CD_arr.evaluate(inputs,
-                                                    1+index, 0)[:, 0]
-            self.J_CM[index] = self.CM_arr.evaluate(inputs,
-                                                    1+index, 0)[:, 0]
 
-    def apply_dGdp(self, args):
+    def apply_dFdpu(self, args):
 
         dpvec = self.vec['dp']
-        dgvec = self.vec['dg']
+        duvec = self.vec['du']
+        dfvec = self.vec['df']
 
         dMach = dpvec('M')
-        dalpha = dpvec('alpha')
+        dalpha = duvec('alpha')
         dalt = dpvec('h')
         deta = dpvec('eta')
+        dCL = dpvec('CL_tar')
 
-        dCL = dgvec('CL')
-        dCD = dgvec('CD')
-        dCM = dgvec('Cm')
+        dres = dfvec('alpha')
 
         if self.mode == 'fwd':
-            dCL[:] = 0.0
-            dCD[:] = 0.0
-            dCM[:] = 0.0
+            dres[:] = 0.0
             if self.get_id('M') in args:
-                dCL[:] += self.J_CL[0] * dMach
-                dCD[:] += self.J_CD[0] * dMach / 1e-1
-                dCM[:] += self.J_CM[0] * dMach
+                dres[:] += self.J_CL[0] * dMach
             if self.get_id('alpha') in args:
-                dCL[:] += self.J_CL[1] * dalpha * 180 / numpy.pi * 1e-1
-                dCD[:] += self.J_CD[1] * dalpha * 180 / numpy.pi
-                dCM[:] += self.J_CM[1] * dalpha * 180 / numpy.pi * 1e-1
+                dres[:] += self.J_CL[1] * dalpha * 180 / numpy.pi * 1e-1
             if self.get_id('h') in args:
-                dCL[:] += self.J_CL[2] * dalt * 0.3048 * 1e3
-                dCD[:] += self.J_CD[2] * dalt * 0.3048 * 1e3 / 1e-1
-                dCM[:] += self.J_CM[2] * dalt * 0.3048 * 1e3
+                dres[:] += self.J_CL[2] * dalt * 3.28 * 1e3
             if self.get_id('eta') in args:
-                dCL[:] += self.J_CL[3] * deta * 180 / numpy.pi * 1e-1
-                dCD[:] += self.J_CD[3] * deta * 180 / numpy.pi
-                dCM[:] += self.J_CM[3] * deta * 180 / numpy.pi * 1e-1
+                dres[:] += self.J_CL[3] * deta * 180 / numpy.pi * 1e-1
+            if self.get_id('CL_tar') in args:
+                dres[:] -= dCL
         elif self.mode == 'rev':
             dMach[:] = 0.0
             dalpha[:] = 0.0
             dalt[:] = 0.0
             deta[:] = 0.0
+            dCL[:] = 0.0
             if self.get_id('M') in args:
-                dMach[:] += self.J_CL[0] * dCL
-                dMach[:] += self.J_CD[0] * dCD / 1e-1
-                dMach[:] += self.J_CM[0]
+                dMach[:] += self.J_CL[0] * dres
             if self.get_id('alpha') in args:
-                dalpha[:] += self.J_CL[1] * dCL * 180 / numpy.pi * 1e-1
-                dalpha[:] += self.J_CD[1] * dCD * 180 / numpy.pi
-                dalpha[:] += self.J_CM[1] * dCM * 180 / numpy.pi * 1e-1
+                dalpha[:] += self.J_CL[1] * dres * 180 / numpy.pi * 1e-1
             if self.get_id('h') in args:
-                dalt[:] += self.J_CL[2] * dCL * 0.3048 * 1e3
-                dalt[:] += self.J_CD[2] * dCD * 0.3048 * 1e3 / 1e-1
-                dalt[:] += self.J_CM[2] * dCM * 0.3048 * 1e3
+                dalt[:] += self.J_CL[2] * dres * 3.28 * 1e3
             if self.get_id('eta') in args:
-                deta[:] += self.J_CL[3] * dCL * 180 / numpy.pi * 1e-1
-                deta[:] += self.J_CD[3] * dCD * 180 / numpy.pi
-                deta[:] += self.J_CM[3] * dCM * 180 / numpy.pi * 1e-1
-'''
-class SysTripanSurrogate(ExplicitSystem):
+                deta[:] += self.J_CL[3] * dres * 180 / numpy.pi * 1e-1
+            if self.get_id('CL_tar') in args:
+                dCL[:] -= dres
+
+class SysTripanCDSurrogate(ExplicitSystem):
 
     def setup_bsplines(self):
         [M_surr, a_surr, h_surr,
@@ -195,7 +166,6 @@ class SysTripanSurrogate(ExplicitSystem):
         h_num = self.h_num
         e_num = self.e_num
         mbi_CD = numpy.zeros((M_num, a_num, h_num, e_num))
-        mbi_CM = numpy.zeros((M_num, a_num, h_num, e_num))
 
         count = 0
         for i in xrange(M_num):
@@ -203,11 +173,8 @@ class SysTripanSurrogate(ExplicitSystem):
                 for k in xrange(h_num):
                     for l in xrange(e_num):
                         mbi_CD[i][j][k][l] = CD[count]
-                        mbi_CM[i][j][k][l] = CM[count]
                         count += 1
         self.CD_arr = MBI.MBI(mbi_CD, [M_surr, a_surr, h_surr, e_surr],
-                              [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
-        self.CM_arr = MBI.MBI(mbi_CM, [M_surr, a_surr, h_surr, e_surr],
                               [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
 
     def _declare(self):
@@ -216,7 +183,6 @@ class SysTripanSurrogate(ExplicitSystem):
         ind_pts = range(self.num_elem + 1)
 
         self._declare_variable('CD', size=self.num_elem+1)
-        self._declare_variable('Cm', size=self.num_elem+1)
         self._declare_argument('alpha', indices=ind_pts)
         self._declare_argument('M', indices=ind_pts)
         self._declare_argument('h', indices=ind_pts)
@@ -224,7 +190,6 @@ class SysTripanSurrogate(ExplicitSystem):
 
         self.setup_bsplines()
         self.J_CD = [None for i in range(4)]
-        self.J_CM = [None for i in range(4)]
 
     def apply_G(self):
 
@@ -241,7 +206,6 @@ class SysTripanSurrogate(ExplicitSystem):
         alt = pvec('h') * 3.28 * 1e3
         eta = pvec('eta') * 180 / numpy.pi * 1e-1
         CD = uvec('CD')
-        CM = uvec('Cm')
 
         inputs = numpy.zeros((self.num_elem + 1, 4))
         inputs[:, 0] = Mach
@@ -250,11 +214,9 @@ class SysTripanSurrogate(ExplicitSystem):
         inputs[:, 3] = eta
 
         CD_temp = self.CD_arr.evaluate(inputs)
-        CM_temp = self.CM_arr.evaluate(inputs)
 
         for index in xrange(self.num_elem + 1):
             CD[index] = CD_temp[index, 0] / 1e-1
-            CM[index] = CM_temp[index, 0]
 
     def linearize(self):
 
@@ -279,8 +241,6 @@ class SysTripanSurrogate(ExplicitSystem):
         for index in xrange(4):
             self.J_CD[index] = self.CD_arr.evaluate(inputs,
                                                     1+index, 0)[:,0]
-            self.J_CM[index] = self.CM_arr.evaluate(inputs,
-                                                    1+index, 0)[:,0]
 
     def apply_dGdp(self, args):
 
@@ -293,23 +253,17 @@ class SysTripanSurrogate(ExplicitSystem):
         deta = dpvec('eta')
 
         dCD = dgvec('CD')
-        dCM = dgvec('Cm')
 
         if self.mode == 'fwd':
             dCD[:] = 0.0
-            dCM[:] = 0.0
             if self.get_id('M') in args:
                 dCD[:] += self.J_CD[0] * dMach / 1e-1
-                dCM[:] += self.J_CM[0] * dMach
             if self.get_id('alpha') in args:
                 dCD[:] += self.J_CD[1] * dalpha * 180 / numpy.pi
-                dCM[:] += self.J_CM[1] * dalpha * 180 / numpy.pi * 1e-1
             if self.get_id('h') in args:
-                dCD[:] += self.J_CD[2] * dalt * 0.3048 * 1e3 / 1e-1
-                dCM[:] += self.J_CM[2] * dalt * 0.3048 * 1e3
+                dCD[:] += self.J_CD[2] * dalt * 3.28 * 1e3 / 1e-1
             if self.get_id('eta') in args:
                 dCD[:] += self.J_CD[3] * deta * 180 / numpy.pi
-                dCM[:] += self.J_CM[3] * deta * 180 / numpy.pi * 1e-1
         elif self.mode == 'rev':
             dMach[:] = 0.0
             dalpha[:] = 0.0
@@ -317,17 +271,144 @@ class SysTripanSurrogate(ExplicitSystem):
             deta[:] = 0.0
             if self.get_id('M') in args:
                 dMach[:] += self.J_CD[0] * dCD / 1e-1
-                dMach[:] += self.J_CM[0] * dCM
             if self.get_id('alpha') in args:
                 dalpha[:] += self.J_CD[1] * dCD * 180 / numpy.pi
-                dalpha[:] += self.J_CM[1] * dCM * 180 / numpy.pi * 1e-1
             if self.get_id('h') in args:
-                dalt[:] += self.J_CD[2] * dCD * 0.3048 * 1e3 / 1e-1
-                dalt[:] += self.J_CM[2] * dCM * 0.3048 * 1e3
+                dalt[:] += self.J_CD[2] * dCD * 3.28 * 1e3 / 1e-1
             if self.get_id('eta') in args:
                 deta[:] += self.J_CD[3] * dCD * 180 / numpy.pi
+
+class SysTripanCMSurrogate(ExplicitSystem):
+
+    def setup_bsplines(self):
+        [M_surr, a_surr, h_surr,
+         e_surr] = numpy.loadtxt('/home/jason/Documents/surr_inputs.dat')
+        [CL, CD, CM] = numpy.loadtxt('/home/jason/Documents/surr_outputs.dat')
+
+        self.M_num = 11
+        self.a_num = 11
+        self.h_num = 11
+        self.e_num = 11
+
+        M_num = self.M_num
+        a_num = self.a_num
+        h_num = self.h_num
+        e_num = self.e_num
+        mbi_CM = numpy.zeros((M_num, a_num, h_num, e_num))
+
+        count = 0
+        for i in xrange(M_num):
+            for j in xrange(a_num):
+                for k in xrange(h_num):
+                    for l in xrange(e_num):
+                        mbi_CM[i][j][k][l] = CM[count]
+                        count += 1
+        self.CM_arr = MBI.MBI(mbi_CM, [M_surr, a_surr, h_surr, e_surr],
+                              [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
+
+    def _declare(self):
+
+        self.num_elem = self.kwargs['num_elem']
+        ind_pts = range(self.num_elem + 1)
+
+        self._declare_variable('eta', size=self.num_elem+1)
+        self._declare_argument('alpha', indices=ind_pts)
+        self._declare_argument('M', indices=ind_pts)
+        self._declare_argument('h', indices=ind_pts)
+
+        self.setup_bsplines()
+        self.J_CM = [None for i in range(4)]
+
+    def apply_F(self):
+
+        pvec = self.vec['p']
+        uvec = self.vec['u']
+        fvec = self.vec['f']
+
+        M_num = self.M_num
+        a_num = self.a_num
+        h_num = self.h_num
+        e_num = self.e_num
+
+        Mach = pvec('M')
+        alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
+        alt = pvec('h') * 3.28 * 1e3
+        eta = uvec('eta') * 180 / numpy.pi * 1e-1
+        res = fvec('eta')
+
+        inputs = numpy.zeros((self.num_elem + 1, 4))
+        inputs[:, 0] = Mach
+        inputs[:, 1] = alpha
+        inputs[:, 2] = alt
+        inputs[:, 3] = eta
+
+        CM_temp = self.CM_arr.evaluate(inputs)
+
+        for index in xrange(self.num_elem + 1):
+            res[index] = CM_temp[index, 0]
+
+    def linearize(self):
+
+        pvec = self.vec['p']
+        uvec = self.vec['u']
+
+        M_num = self.M_num
+        a_num = self.a_num
+        h_num = self.h_num
+        e_num = self.e_num
+
+        Mach = pvec('M')
+        alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
+        alt = pvec('h') * 3.28 * 1e3
+        eta = uvec('eta') * 180 / numpy.pi * 1e-1
+
+        inputs = numpy.zeros((self.num_elem + 1, 4))
+        inputs[:, 0] = Mach
+        inputs[:, 1] = alpha
+        inputs[:, 2] = alt
+        inputs[:, 3] = eta
+
+        for index in xrange(4):
+            self.J_CM[index] = self.CM_arr.evaluate(inputs,
+                                                    1+index, 0)[:,0]
+
+    def apply_dFdpu(self, args):
+
+        dpvec = self.vec['dp']
+        duvec = self.vec['du']
+        dfvec = self.vec['df']
+
+        dMach = dpvec('M')
+        dalpha = dpvec('alpha')
+        dalt = dpvec('h')
+        deta = duvec('eta')
+        dCM = dfvec('eta')
+
+        if self.mode == 'fwd':
+            dCM[:] = 0.0
+            if self.get_id('M') in args:
+                dCM[:] += self.J_CM[0] * dMach
+            if self.get_id('alpha') in args:
+                dCM[:] += self.J_CM[1] * dalpha * 180 / numpy.pi * 1e-1
+            if self.get_id('h') in args:
+                dCM[:] += self.J_CM[2] * dalt * 3.28 * 1e3
+            if self.get_id('eta') in args:
+                dCM[:] += self.J_CM[3] * deta * 180 / numpy.pi * 1e-1
+        elif self.mode == 'rev':
+            dMach[:] = 0.0
+            dalpha[:] = 0.0
+            dalt[:] = 0.0
+            deta[:] = 0.0
+            if self.get_id('M') in args:
+                dMach[:] += self.J_CM[0] * dCM
+            if self.get_id('alpha') in args:
+                dalpha[:] += self.J_CM[1] * dCM * 180 / numpy.pi * 1e-1
+            if self.get_id('h') in args:
+                dalt[:] += self.J_CM[2] * dCM * 3.28 * 1e3
+            if self.get_id('eta') in args:
                 deta[:] += self.J_CM[3] * dCM * 180 / numpy.pi * 1e-1
 
+'''
 class SysTripanSurrogate1(ExplicitSystem):
 
     def setupGlobalModel(self, Data, theta0, GE=False, bf_flag=False, corrfunction=0, scaling=True):

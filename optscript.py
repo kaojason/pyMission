@@ -7,7 +7,7 @@ The mission analysis and trajectory optimization tool was developed by:
     John Hwang*
 
 * University of Michigan Department of Aerospace Engineering,
-  Multidisciplinary Design Optimization lab
+  Multidisciplinary Design Optimization Lab
   mdolab.engin.umich.edu
 
 copyright July 2014
@@ -99,6 +99,12 @@ while num_cp <= num_cp_max:
     #print 'FINISHED COMPUTING:', time.time() - start_comp
     #exit()
 
+    print 'computing derivatives'
+    start_comp = time.time()
+    main.compute_derivatives('rev', 'wf_obj', output=True)
+    print 'FINISHED COMPUTING:', time.time() - start_comp
+    exit()
+
     #dist = main.vec['u']('x')*1e3
     #alt = main.vec['u']('h')*1e3
     #speed = main.vec['u']('v')*1e2
@@ -113,7 +119,7 @@ while num_cp <= num_cp_max:
     #gamma = main.vec['u']('gamma')*1e-1
     #Mach = main.vec['u']('M')
     #thrust *= (0.5 * rho * speed**2 * 427.8)
-    
+
     #values = [alt*3.28, speed*1.94, eta*180/numpy.pi,
     #          gamma*180/numpy.pi, Mach, alpha*180/numpy.pi,
     #          rho, throttle, lift_c,
@@ -134,7 +140,7 @@ while num_cp <= num_cp_max:
     #print 'F NORM:', numpy.linalg.norm(main.vec['f'].array)
     #main.check_derivatives_all()
     #exit()
-    
+
     # initialize the trajectory optimization problem using the framework
     # instance initialized before with Optimization.py
     traj.set_gamma_bound(gamma_lb, gamma_ub)

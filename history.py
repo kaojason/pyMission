@@ -86,7 +86,7 @@ class History(object):
         rho = vecu('rho')
         thrust = vecu('CT_tar')*0.5*rho*speed**2*vecu('S')*1e2 * 1e-1
         drag_c = vecu('CD') * 1e-1
-        lift_c = vecu('CL')
+        lift_c = vecu('CL_tar')
         gamma = vecu('gamma') * 1e-1 * 180/numpy.pi
         weight = (vecu('ac_w') + vecu('fuel_w')) * 1e6
         temp = vecu('Temp') * 1e2
@@ -123,7 +123,7 @@ class History(object):
         rho = vecu('rho')
         thrust = vecu('CT_tar')*0.5*rho*speed**2*vecu('S') * 1e-1
         drag_c = vecu('CD') * 1e-1
-        lift_c = vecu('CL')
+        lift_c = vecu('CL_tar')
         gamma = vecu('gamma') * 1e-1 * 180/numpy.pi
         weight = (vecu('ac_w') + vecu('fuel_w')) * 1e6
         temp = vecu('Temp') * 1e2
