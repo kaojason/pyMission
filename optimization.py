@@ -80,6 +80,9 @@ class Optimization(object):
         print '-------------------------'
         print
 
+        if fail:
+            exit()
+
         func_dict = {}
         for func_name in variables['func'].keys():
             func_id = variables['func'][func_name]['ID']

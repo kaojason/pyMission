@@ -37,8 +37,8 @@ params = {
     }
 
 num_elem = 3000
-num_cp_init = 10
-num_cp_max = 10
+num_cp_init = 50
+num_cp_max = 50
 num_cp_step = 100
 x_range = 8100.0      # range in nautical miles!
 folder_path = '/home/jason/Documents/Results/SurrogateTest_'
@@ -99,11 +99,11 @@ while num_cp <= num_cp_max:
     #print 'FINISHED COMPUTING:', time.time() - start_comp
     #exit()
 
-    print 'computing derivatives'
-    start_comp = time.time()
-    main.compute_derivatives('rev', 'wf_obj', output=True)
-    print 'FINISHED COMPUTING:', time.time() - start_comp
-    exit()
+    #print 'computing derivatives'
+    #start_comp = time.time()
+    #main.compute_derivatives('rev', 'wf_obj', output=True)
+    #print 'FINISHED COMPUTING:', time.time() - start_comp
+    #exit()
 
     #dist = main.vec['u']('x')*1e3
     #alt = main.vec['u']('h')*1e3

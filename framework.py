@@ -1349,8 +1349,10 @@ class LinearGS(LinearSolver):
                 system.sol_buf.array[:] = system.rhs_buf.array[:]
                 for subsystem2 in system.subsystems['local']:
                     if subsystem is not subsystem2:
-                        args = [v for v in system.variables 
-                                if v not in subsystem2.variables]
+                        #args = [v for v in system.variables 
+                        #        if v not in subsystem2.variables]
+                        # added the following line
+                        args = subsystem.variables.keys()
                         system.rhs_vec.array[:] = 0.0
                         subsystem2.apply_dFdpu(args)
                         system.scatter('lin', subsystem2)

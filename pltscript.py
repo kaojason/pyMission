@@ -28,15 +28,15 @@ import matplotlib.pylab
 # USER SPECIFIED INPUTS:
 
 num_elem = 3000
-num_cp_init = 10
-num_cp_max = 110
-num_cp_step = 50
-x_range = 5500.0
+num_cp_init = 50
+num_cp_max = 50
+num_cp_step = 100
+x_range = 8100.0
 step = 1
 initial_ind = 0
-file_index = 0
+file_index = 12
 video = True
-folder_path = '/home/jason/Documents/Results/TIME-OptTest_'
+folder_path = '/home/jason/Documents/Results/SurrogateTest_'
 fuel_guess = 200000.0
 
 # END USER SPECIFIED INPUTS

@@ -203,7 +203,7 @@ class OptTrajectory(object):
                                      LN='KSP_PC',
                                      #PC='LIN_GS',
                                      LN_ilimit=50,
-                                     GL_GS_ilimit=2,
+                                     GL_GS_ilimit=1,
                                      GL_NT_ilimit=8,
                                      PC_ilimit=2,
                                      GL_GS_rtol=1e-6,
