@@ -82,13 +82,13 @@ class History(object):
         alpha = vecu('alpha') * 1e-1 * 180/numpy.pi
         throttle = vecu('tau')
         eta = vecu('eta') * 1e-1 * 180/numpy.pi
-        fuel = vecu('fuel_w') * 1e6
+        fuel = vecu('fuel_w') * 1e5
         rho = vecu('rho')
         thrust = vecu('CT_tar')*0.5*rho*speed**2*vecu('S')*1e2 * 1e-1
         drag_c = vecu('CD') * 1e-1
         lift_c = vecu('CL_tar')
         gamma = vecu('gamma') * 1e-1 * 180/numpy.pi
-        weight = (vecu('ac_w') + vecu('fuel_w')) * 1e6
+        weight = (vecu('ac_w')*1e6 + vecu('fuel_w')*1e5)
         temp = vecu('Temp') * 1e2
         SFC = vecu('SFC') * 1e-6
 
@@ -119,13 +119,13 @@ class History(object):
         alpha = vecu('alpha') * 1e-1 * 180/numpy.pi
         throttle = vecu('tau')
         eta = vecu('eta') * 1e-1 * 180/numpy.pi
-        fuel = vecu('fuel_w') * 1e6
+        fuel = vecu('fuel_w') * 1e5
         rho = vecu('rho')
         thrust = vecu('CT_tar')*0.5*rho*speed**2*vecu('S') * 1e-1
         drag_c = vecu('CD') * 1e-1
         lift_c = vecu('CL_tar')
         gamma = vecu('gamma') * 1e-1 * 180/numpy.pi
-        weight = (vecu('ac_w') + vecu('fuel_w')) * 1e6
+        weight = (vecu('ac_w')*1e6 + vecu('fuel_w')*1e5)
         temp = vecu('Temp') * 1e2
         SFC = vecu('SFC') * 1e-6
 
@@ -177,7 +177,7 @@ class History(object):
         params = {
             'SFCSL': vecu('SFCSL') * 1e-6,
             'wing_area': vecu('S') * 1e2,
-            'weight': (vecu('ac_w') + vecu('fuel_w')[0]) * 1e6,
+            'weight': (vecu('ac_w')*1e6 + vecu('fuel_w')[0]*1e5),
             'aspect_ratio': vecu('AR'),
             'oswald': vecu('e'),
             'coefs_t': coefs_temp,

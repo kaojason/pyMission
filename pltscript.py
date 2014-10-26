@@ -27,16 +27,16 @@ import matplotlib.pylab
 ###########################
 # USER SPECIFIED INPUTS:
 
-num_elem = 3000
-num_cp_init = 50
-num_cp_max = 50
+num_elem = 1200
+num_cp_init = 100
+num_cp_max = 100
 num_cp_step = 100
-x_range = 8100.0
+x_range = 1000.0
 step = 1
 initial_ind = 0
-file_index = 12
+file_index = 0
 video = True
-folder_path = '/home/jason/Documents/Results/SurrogateTest_'
+folder_path = '/home/jason/Documents/Results/VTest_'
 fuel_guess = 200000.0
 
 # END USER SPECIFIED INPUTS

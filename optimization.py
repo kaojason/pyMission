@@ -80,9 +80,6 @@ class Optimization(object):
         print '-------------------------'
         print
 
-        if fail:
-            exit()
-
         func_dict = {}
         for func_name in variables['func'].keys():
             func_id = variables['func'][func_name]['ID']
@@ -142,12 +139,12 @@ class Optimization(object):
                     sens_dict[func_name][dv_name] \
                         = jacs[dv_var]
 
-        print 'DVs:'
-        print dv_dict
-        print 'Functions:'
-        print func_dict
-        print 'Derivatives:'
-        print sens_dict
+        #print 'DVs:'
+        #print dv_dict
+        #print 'Functions:'
+        #print func_dict
+        #print 'Derivatives:'
+        #print sens_dict
         print 'Failure:', fail
         print
         print '---------------------------'

@@ -216,7 +216,7 @@ class SysTripanCDSurrogate(ExplicitSystem):
         CD_temp = self.CD_arr.evaluate(inputs)
 
         for index in xrange(self.num_elem + 1):
-            CD[index] = CD_temp[index, 0] / 1e-1
+            CD[index] = CD_temp[index, 0] / 1e-1 + 0.015/1e-1
 
     def linearize(self):
 

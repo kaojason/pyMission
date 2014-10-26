@@ -436,7 +436,7 @@ class SysSpeed(ExplicitSystem):
             else:
                 if self.get_id('Temp') in args:
                     dspeed[:] += ds_dT * dtemp
-                if self.get_id('M') in args:
+                if self.get_id('M_spline') in args:
                     dspeed[:] += ds_dM * dmach / 1e2
         
         elif self.mode == 'rev':
@@ -449,7 +449,7 @@ class SysSpeed(ExplicitSystem):
             else:
                 if self.get_id('Temp') in args:
                     dtemp[:] += ds_dT * dspeed
-                if self.get_id('M') in args:
+                if self.get_id('M_spline') in args:
                     dmach[:] += ds_dM * dspeed / 1e2
 
 class SysMach(ExplicitSystem):

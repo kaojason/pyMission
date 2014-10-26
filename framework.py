@@ -1236,7 +1236,7 @@ class KSP(LinearSolver):
         if 1:
             sol_buf = system.sol_vec.petsc.duplicate()
             rhs_buf = system.rhs_vec.petsc.duplicate()
-            sol_buf.array[:] = system.sol_vec.array[:]
+            sol_buf.array[:] = 0#system.sol_vec.array[:]
             rhs_buf.array[:] = system.rhs_vec.array[:]
             self.ksp.solve(rhs_buf, sol_buf)
             system.sol_vec.array[:] = sol_buf.array[:]

@@ -324,9 +324,16 @@ class SysFuelObj(ExplicitSystem):
         """ owned variable: objective fual burn (initial fuel carried)
             dependencies: weight of fuel (fuel_w)
         """
+        self.num_elem = self.kwargs['num_elem']
+        ind = range(self.num_elem+1)
+        ind2 = range(2*(self.num_elem+1))
 
         self._declare_variable('wf_obj', size=1)
         self._declare_argument('fuel_w', indices=[0])
+        
+        #self._declare_argument('tau', indices=ind)
+        #self._declare_argument('lambda', indices=ind2)
+        #self._declare_argument('slack', indices=ind2)
 
     def apply_G(self):
         """ set objective fuel weight to initial fuel carried (required for
@@ -337,24 +344,66 @@ class SysFuelObj(ExplicitSystem):
         u = self.vec['u']
         Wf = p('fuel_w')
 
-        u('wf_obj')[0] = Wf[0]
+        #tau = p('tau')
+        #lamb = p('lambda')
+        #slack = p('slack')
+
+        #cons = numpy.zeros(2*(self.num_elem+1))
+        #cons[:self.num_elem+1] = -tau
+        #cons[self.num_elem+1:] = tau - numpy.ones(self.num_elem+1)
+
+        u('wf_obj')[0] = Wf[0] #+ numpy.sum(lamb*(cons+slack))
 
     def apply_dGdp(self, arguments):
         """ compute objective derivatives (equal to initial fuel weight
             derivative
-        """
+            """
 
-        dp = self.vec['dp']
-        dg = self.vec['dg']
+        pvec = self.vec['p']
+        dpvec = self.vec['dp']
+        dgvec = self.vec['dg']
         
+        #tau = pvec('tau')
+        #lamb = pvec('lambda')
+        #slack = pvec('slack')
+
+        #dtau = dpvec('tau')
+        #dlamb = dpvec('lambda')
+        #dslack = dpvec('slack')
+        dwf_obj = dgvec('wf_obj')
+        dfuel = dpvec('fuel_w')
+
         if self.mode == 'fwd':
-            dg('wf_obj')[0] = 0.0
+            dwf_obj[0] = 0.0
             if self.get_id('fuel_w') in arguments:
-                dg('wf_obj')[0] += dp('fuel_w')[0]
+                dwf_obj[0] += dfuel[0]
+            #if self.get_id('tau') in arguments:
+            #    dwf_obj[0] -= numpy.sum(lamb[:self.num_elem+1] * dtau)
+            #    dwf_obj[0] += numpy.sum(lamb[self.num_elem+1:] * dtau)
+            #if self.get_id('lambda') in arguments:
+            #    cons = numpy.zeros(2*(self.num_elem+1))
+            #    cons[:self.num_elem+1] = -tau
+            #    cons[self.num_elem+1:] = tau - 1
+            #    dwf_obj[0] += numpy.sum((cons + slack) * dlamb)
+            #if self.get_id('slack') in arguments:
+            #    dwf_obj[0] += numpy.sum(lamb * dslack)
         if self.mode == 'rev':
-            dp('fuel_w')[0] = 0.0
+            dfuel[0] = 0.0
+            #dtau[:] = 0.0
+            #dlamb[:] = 0.0
+            #dslack[:] = 0.0
             if self.get_id('fuel_w') in arguments:
-                dp('fuel_w')[0] += dg('wf_obj')[0]
+                dfuel[0] += dwf_obj[0]
+            #if self.get_id('tau') in arguments:
+            #    dtau[:] -= lamb[:self.num_elem+1] * dwf_obj[0]
+            #    dtau[:] += lamb[self.num_elem+1:] * dwf_obj[0]
+            #if self.get_id('lambda') in arguments:
+            #    cons = numpy.zeros(2*(self.num_elem+1))
+            #    cons[:self.num_elem+1] = -tau
+            #    cons[self.num_elem+1:] = tau - 1
+            #    dlamb[:] += (cons + slack) * dwf_obj
+            #if self.get_id('slack') in arguments:
+            #    dslack[:] += lamb * dwf_obj
 
 class SysVi(ExplicitSystem):
     """ initial airspeed point used for constraints """
@@ -529,3 +578,71 @@ class SysBlockTime(ExplicitSystem):
                                ((numpy.sin((gamma[1:] + gamma[0:-1])/2)) /
                                 (numpy.cos((gamma[1:] + gamma[0:-1])/2))**2) *
                                dtime[0]) * 1e-1/1e4
+class SysMi(ExplicitSystem):
+    """ initial Mach number point used for constraints """
+
+    def _declare(self):
+        """ owned variable: M_i (initial Mach number point)
+            dependencies: M (Mach number points)
+        """
+
+        self._declare_variable('M_i')
+        self._declare_argument('M', indices=[0])
+
+    def apply_G(self):
+        """ assign system to the initial airspeed point """
+
+        mach_i = self.vec['u']('M_i')
+        mach = self.vec['p']('M')
+
+        mach_i[0] = mach[0]
+
+    def apply_dGdp(self, args):
+        """ derivative of this is same as initial airspeed point """
+
+        dmach_i = self.vec['dg']('M_i')
+        dmach = self.vec['dp']('M')
+
+        if self.mode == 'fwd':
+            dmach_i[0] = 0.0
+            if self.get_id('M') in args:
+                dmach_i[0] += dmach[0]
+        if self.mode == 'rev':
+            dmach[0] = 0.0
+            if self.get_id('M') in args:
+                dmach[0] += dmach_i[0]
+
+class SysMf(ExplicitSystem):
+    """ final Mach number point used for constraints """
+
+    def _declare(self):
+        """ owned variable: M_f (final Mach number point)
+            dependencies: M (Mach number points)
+        """
+
+        num_elem = self.kwargs['num_elem']
+        self._declare_variable('M_f')
+        self._declare_argument('M', indices=[num_elem])
+
+    def apply_G(self):
+        """ assign system to the final Mach number point """
+
+        mach_f = self.vec['u']('M_f')
+        mach = self.vec['p']('M')
+
+        mach_f[0] = mach[0]
+
+    def apply_dGdp(self, args):
+        """ derivative of this is same as final Mach number point """
+
+        dmach_f = self.vec['dg']('M_f')
+        dmach = self.vec['dp']('M')
+
+        if self.mode == 'fwd':
+            dmach_f[0] = 0.0
+            if self.get_id('M') in args:
+                dmach_f[0] += dmach[0]
+        if self.mode == 'rev':
+            dmach[0] = 0.0
+            if self.get_id('M') in args:
+                dmach[0] += dmach_f[0]

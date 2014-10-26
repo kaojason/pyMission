@@ -36,12 +36,12 @@ params = {
     'sweep': 31.6 * numpy.pi/180,
     }
 
-num_elem = 3000
-num_cp_init = 50
-num_cp_max = 50
+num_elem = 1200
+num_cp_init = 100
+num_cp_max = 100
 num_cp_step = 100
-x_range = 8100.0      # range in nautical miles!
-folder_path = '/home/jason/Documents/Results/SurrogateTest_'
+x_range = 1000.0      # range in nautical miles!
+folder_path = '/home/jason/Documents/Results/VTest_'
 
 # END USER SPECIFIED DATA
 ##########################
@@ -67,7 +67,7 @@ landing_speed = 72.2
 # x-distance and airspeed
 x_range *= 1.852
 x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
-v_init = numpy.ones(num_cp)*2.5
+M_init = numpy.ones(num_cp)*0.75
 h_init = 10 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
 
 altitude = numpy.zeros(num_elem+1)
@@ -79,13 +79,13 @@ while num_cp <= num_cp_max:
 
     # define initial altitude profile, as well as fixed profile for
     # x-distance and airspeed
-    v_init = numpy.ones(num_cp)*2.5
+    M_init = numpy.ones(num_cp)*0.75
     x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
 
     # initialize the mission analysis problem with the framework
     traj = OptTrajectory(num_elem, num_cp, first)
     traj.set_init_h(h_init)
-    traj.set_init_v(v_init)
+    traj.set_init_M(M_init)
     traj.set_init_x(x_init)
     traj.set_params(params)
     traj.set_folder(folder_path)
@@ -93,6 +93,8 @@ while num_cp <= num_cp_max:
     traj.setup_MBI()
     traj.set_init_h_pt(altitude)
     main = traj.initialize_framework()
+
+    print main.vec['u'].array.shape[0]
 
     #start_comp = time.time()
     main.compute(output=True)
@@ -105,39 +107,6 @@ while num_cp <= num_cp_max:
     #print 'FINISHED COMPUTING:', time.time() - start_comp
     #exit()
 
-    #dist = main.vec['u']('x')*1e3
-    #alt = main.vec['u']('h')*1e3
-    #speed = main.vec['u']('v')*1e2
-    #alpha = main.vec['u']('alpha')*1e-1
-    #throttle = main.vec['u']('tau')
-    #eta = main.vec['u']('eta')*1e-1
-    #fuel = main.vec['u']('fuel_w')*1e6
-    #rho = main.vec['u']('rho')
-    #lift_c = main.vec['u']('CL')
-    #drag_c = main.vec['u']('CD')*1e-1
-    #thrust = main.vec['u']('CT_tar')*1e-1
-    #gamma = main.vec['u']('gamma')*1e-1
-    #Mach = main.vec['u']('M')
-    #thrust *= (0.5 * rho * speed**2 * 427.8)
-
-    #values = [alt*3.28, speed*1.94, eta*180/numpy.pi,
-    #          gamma*180/numpy.pi, Mach, alpha*180/numpy.pi,
-    #          rho, throttle, lift_c,
-    #          fuel*0.225, thrust*0.225, drag_c]
-    #labels = ['altitude', 'TAS', 'trim',
-    #          'path angle', 'Mach', 'AoA',
-    #          'density', 'throttle', 'C_L',
-    #          'fuel', 'thrust', 'C_D']
-
-    #fig = matplotlib.pylab.figure(figsize=(18.0, 8.0))
-    #fplot = fig.add_subplot
-    #for i in xrange(12):
-    #    fplot(4, 3, i+1).plot(dist/1.852, values[i])
-    #    fplot(4, 3, i+1).set_ylabel(labels[i])
-    #fig.savefig('surrogate_test_results.png')
-
-    #print 'U NORM:', numpy.linalg.norm(main.vec['u'].array)
-    #print 'F NORM:', numpy.linalg.norm(main.vec['f'].array)
     #main.check_derivatives_all()
     #exit()
 

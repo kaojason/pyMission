@@ -144,6 +144,12 @@ class OptTrajectory(object):
                         IndVar('e', val=self.oswald, size=1),
                         IndVar('t_c', val=self.t_c, size=1),
                         IndVar('sweep', val=self.sweep, size=1),
+                        #IndVar('lambda', 
+                        #       val=numpy.ones(2*(self.num_elem+1)), 
+                        #       lower=0),
+                        #IndVar('slack',
+                        #       val=numpy.zeros(2*(self.num_elem+1)),
+                        #       lower=0),
                         ]),
                 SerialSystem('segment',
                              NL='NLN_GS',
@@ -212,7 +218,7 @@ class OptTrajectory(object):
                                      GL_NT_atol=1e-9,#14,
                                      NL_rtol=1e-9,
                                      NL_atol=1e-9,
-                                     LN_rtol=1e-14,#14,
+                                     LN_rtol=1e-20,#14,
                                      LN_atol=1e-14,#14,
                                      PC_rtol=1e-6,
                                      PC_atol=1e-10,
@@ -313,7 +319,7 @@ class OptTrajectory(object):
                                      output=True,
                                      subsystems=[
                                 SysTau('tau', num_elem=self.num_elem),
-                                SysFuelObj('wf_obj'),
+                                SysFuelObj('wf_obj', num_elem=self.num_elem),
                                 SysHi('h_i'),
                                 SysHf('h_f', num_elem=self.num_elem),
                                 SysTmin('Tmin', num_elem=self.num_elem),
@@ -322,8 +328,8 @@ class OptTrajectory(object):
                                             num_elem=self.num_elem),
                                 SysSlopeMax('gamma_max',
                                             num_elem=self.num_elem),
-                                SysVi('v_i'),
-                                SysVf('v_f', num_elem=self.num_elem),
+                                SysMi('M_i'),
+                                SysMf('M_f', num_elem=self.num_elem),
                                 SysBlockTime('time', num_elem=self.num_elem),
                                 ]),
                         ]),
@@ -340,16 +346,25 @@ class OptTrajectory(object):
 
     def set_takeoff_speed(self, v_to):
         self.v_to = v_to
+        self.M_to = v_to / numpy.sqrt(1.4*287*288)
 
     def set_landing_speed(self, v_ld):
         self.v_ld = v_ld
+        self.M_ld = v_ld / numpy.sqrt(1.4*287*288)
 
     def initialize_opt(self, main):
         gamma_lb = self.gamma_lb
         gamma_ub = self.gamma_ub
 
         opt = Optimization(main)
-        opt.add_design_variable('h_pt', value=self.h_pts, lower=0.0, upper=20.0)
+        opt.add_design_variable('h_pt', value=self.h_pts, lower=0.0, upper=15.0)
+        opt.add_design_variable('M_pt', value=self.M_pts, lower=0.001, upper=0.949)
+        #opt.add_design_variable('lambda',
+        #                        value=numpy.zeros(2*(self.num_elem+1)),
+        #                        lower=0.0)
+        #opt.add_design_variable('slack',
+        #                        value=numpy.zeros(2*(self.num_elem+1)),
+        #                        lower=0.0)
         #opt.add_design_variable('v_pt', value=self.v_pts, lower=0.0, upper=10.0)
         opt.add_objective('wf_obj')
         opt.add_constraint('h_i', lower=0.0, upper=0.0)
@@ -358,8 +373,8 @@ class OptTrajectory(object):
         opt.add_constraint('Tmax', upper=0.0)
         opt.add_constraint('gamma', lower=gamma_lb, upper=gamma_ub,
                            get_jacs=main('gamma').get_jacs, linear=True)
-        #opt.add_constraint('v_i', lower=self.v_to, upper=self.v_to)
-        #opt.add_constraint('v_f', lower=self.v_ld, upper=self.v_ld)
+        opt.add_constraint('M_i', lower=self.M_to, upper=self.M_to)
+        opt.add_constraint('M_f', lower=self.M_ld, upper=self.M_ld)
         #opt.add_constraint('time', lower=0.0, upper=11*3600.0)
         opt.add_sens_callback(self.callback)
         return opt
