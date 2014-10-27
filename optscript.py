@@ -41,7 +41,9 @@ num_cp_init = 100
 num_cp_max = 100
 num_cp_step = 100
 x_range = 300.0      # range in nautical miles!
-folder_path = '/home/jason/Documents/Results/VTest_'
+fileloc = open('./path.txt', 'r')
+folder_path = fileloc.readlines()[0][:-1]
+fileloc.close()
 
 # END USER SPECIFIED DATA
 ##########################

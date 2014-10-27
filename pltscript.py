@@ -36,8 +36,10 @@ step = 1
 initial_ind = 0
 file_index = 0
 video = True
-folder_path = '/home/jason/Documents/Results/VTest_'
 fuel_guess = 200000.0
+fileloc = open('./path.txt', 'r')
+folder_path = fileloc.readlines()[0][:-1]
+fileloc.close()
 
 # END USER SPECIFIED INPUTS
 ###########################
