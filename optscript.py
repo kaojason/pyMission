@@ -40,7 +40,7 @@ num_elem = 1200
 num_cp_init = 100
 num_cp_max = 100
 num_cp_step = 100
-x_range = 1000.0      # range in nautical miles!
+x_range = 300.0      # range in nautical miles!
 folder_path = '/home/jason/Documents/Results/VTest_'
 
 # END USER SPECIFIED DATA
