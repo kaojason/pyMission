@@ -5,3 +5,6 @@
 *.pyc
 *~
 *.pdf
+*.avi
+*.mp4
+path.txt
