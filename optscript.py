@@ -36,11 +36,11 @@ params = {
     'sweep': 31.6 * numpy.pi/180,
     }
 
-num_elem = 1200
-num_cp_init = 100
-num_cp_max = 100
+num_elem = 500
+num_cp_init = 50
+num_cp_max = 50
 num_cp_step = 100
-x_range = 300.0      # range in nautical miles!
+x_range = 1000.0      # range in nautical miles!
 fileloc = open('./path.txt', 'r')
 folder_path = fileloc.readlines()[0][:-1]
 fileloc.close()
@@ -124,7 +124,7 @@ while num_cp <= num_cp_max:
 
     run_case, last_itr = traj.history.get_index()
     folder_name = folder_path + name + '_%03i/' % (run_case)
-    call (["mv", "./SNOPT_print.out", folder_name + 'SNOPT_%04i_print.out' %(num_cp)])
+    call (["cp", "./SNOPT_print.out", folder_name + 'SNOPT_%04i_print.out' %(num_cp)])
     call (["mv", "./hist.hst", folder_name + 'hist_%04i.hst' %(num_cp)])
     altitude = main.vec['u']('h')
     num_cp += num_cp_step

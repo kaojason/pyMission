@@ -27,14 +27,14 @@ import matplotlib.pylab
 ###########################
 # USER SPECIFIED INPUTS:
 
-num_elem = 1200
-num_cp_init = 100
-num_cp_max = 100
+num_elem = 500
+num_cp_init = 50
+num_cp_max = 50
 num_cp_step = 100
-x_range = 300.0
+x_range = 1000.0
 step = 1
 initial_ind = 0
-file_index = 0
+file_index = 1
 video = True
 fuel_guess = 200000.0
 fileloc = open('./path.txt', 'r')
@@ -161,5 +161,8 @@ if video == True:
     call(["mencoder", "mf://"+folder_name+'fig-*.png', "-mf", 
           "fps=10:type=png", "-ovc", "x264", "-x264encopts", 
           "bitrate=15000", "-o", folder_name+file_name+".avi"])
+    call(["ffmpeg",  "-i", folder_name+file_name+".avi", 
+          "-acodec", "copy", "-vcodec", "copy",
+          folder_name+file_name+".mp4"])
 
 
