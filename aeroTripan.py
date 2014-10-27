@@ -151,8 +151,8 @@ class SysTripanCDSurrogate(ExplicitSystem):
 
     def setup_bsplines(self):
         [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt('/home/jason/Documents/surr_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt('/home/jason/Documents/surr_outputs.dat')
+         e_surr] = numpy.loadtxt('./surr_inputs.dat')
+        [CL, CD, CM] = numpy.loadtxt('./surr_outputs.dat')
 
         self.M_num = 11
         self.a_num = 11
@@ -280,8 +280,8 @@ class SysTripanCMSurrogate(ExplicitSystem):
 
     def setup_bsplines(self):
         [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt('/home/jason/Documents/surr_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt('/home/jason/Documents/surr_outputs.dat')
+         e_surr] = numpy.loadtxt('./surr_inputs.dat')
+        [CL, CD, CM] = numpy.loadtxt('./surr_outputs.dat')
 
         self.M_num = 11
         self.a_num = 11
