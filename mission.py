@@ -107,8 +107,7 @@ class OptTrajectory(object):
         self.sfc_sl = kw['SFCSL']
         self.aspect_ratio = kw['AR']
         self.oswald = kw['e']
-        self.t_c = kw['t_c']
-        self.sweep = kw['sweep']
+        self.surr_file = kw['surr']
 
     def set_folder(self, folder_path):
         self.folder_path = folder_path
@@ -142,8 +141,6 @@ class OptTrajectory(object):
                         IndVar('SFCSL', val=self.sfc_sl, size=1),
                         IndVar('AR', val=self.aspect_ratio, size=1),
                         IndVar('e', val=self.oswald, size=1),
-                        IndVar('t_c', val=self.t_c, size=1),
-                        IndVar('sweep', val=self.sweep, size=1),
                         #IndVar('lambda', 
                         #       val=numpy.ones(2*(self.num_elem+1)), 
                         #       lower=0),
@@ -248,7 +245,7 @@ class OptTrajectory(object):
                                              LN_rtol=1e-6,
                                              LN_atol=1e-6,
                                              subsystems=[
-                                        SysTripanCLSurrogate('alpha', num_elem=self.num_elem),
+                                        SysTripanCLSurrogate('alpha', num_elem=self.num_elem, surr=self.surr_file),
                                         #SysAeroSurrogate('aero', num_elem=self.num_elem),
                                         #SysCLSurrogate('CL', num_elem=self.num_elem),
                                         #SysCDSurrogate('CD', num_elem=self.num_elem),
@@ -265,7 +262,7 @@ class OptTrajectory(object):
                                              LN_rtol=1e-6,
                                              LN_atol=1e-6,
                                              subsystems=[
-                                        SysTripanCMSurrogate('eta', num_elem=self.num_elem),
+                                        SysTripanCMSurrogate('eta', num_elem=self.num_elem, surr=self.surr_file),
                                         ]),
                                 SerialSystem('tripan_drag',
                                              NL='NLN_GS',
@@ -277,7 +274,7 @@ class OptTrajectory(object):
                                              LN_rtol=1e-10,
                                              LN_atol=1e-10,
                                              subsystems=[
-                                        SysTripanCDSurrogate('drag', num_elem=self.num_elem),
+                                        SysTripanCDSurrogate('drag', num_elem=self.num_elem, surr=self.surr_file),
                                         ]),
                                 SerialSystem('hor_eqlm',
                                              NL='NLN_GS',

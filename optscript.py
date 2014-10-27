@@ -25,16 +25,7 @@ import matplotlib.pylab
 ##########################
 # USER SPECIFIED DATA
 
-params = {
-    'S': 427.8/1e2,
-    'ac_w': 210000*9.81/1e6,
-    'thrust_sl': 1020000.0/1e6,
-    'SFCSL': 8.951*9.81,
-    'AR': 8.68,
-    'e': 0.8,
-    't_c': 0.09,
-    'sweep': 31.6 * numpy.pi/180,
-    }
+execfile('./bwb_params.py')
 
 num_elem = 500
 num_cp_init = 50

@@ -8,8 +8,8 @@ class SysTripanCLSurrogate(ImplicitSystem):
 
     def setup_bsplines(self):
         [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt('./surr_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt('./surr_outputs.dat')
+         e_surr] = numpy.loadtxt(self.surr_file+'_inputs.dat')
+        [CL, CD, CM] = numpy.loadtxt(self.surr_file+'_outputs.dat')
 
         self.M_num = 11
         self.a_num = 11
@@ -36,6 +36,7 @@ class SysTripanCLSurrogate(ImplicitSystem):
     def _declare(self):
 
         self.num_elem = self.kwargs['num_elem']
+        self.surr_file = self.kwargs['surr']
         ind_pts = range(self.num_elem + 1)
 
         self._declare_variable('alpha', size=self.num_elem+1)
@@ -151,8 +152,8 @@ class SysTripanCDSurrogate(ExplicitSystem):
 
     def setup_bsplines(self):
         [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt('./surr_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt('./surr_outputs.dat')
+         e_surr] = numpy.loadtxt(self.surr_file+'_inputs.dat')
+        [CL, CD, CM] = numpy.loadtxt(self.surr_file+'_outputs.dat')
 
         self.M_num = 11
         self.a_num = 11
@@ -178,6 +179,7 @@ class SysTripanCDSurrogate(ExplicitSystem):
     def _declare(self):
 
         self.num_elem = self.kwargs['num_elem']
+        self.surr_file = self.kwargs['surr']
         ind_pts = range(self.num_elem + 1)
 
         self._declare_variable('CD', size=self.num_elem+1)
@@ -280,8 +282,8 @@ class SysTripanCMSurrogate(ExplicitSystem):
 
     def setup_bsplines(self):
         [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt('./surr_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt('./surr_outputs.dat')
+         e_surr] = numpy.loadtxt(self.surr_file+'_inputs.dat')
+        [CL, CD, CM] = numpy.loadtxt(self.surr_file+'_outputs.dat')
 
         self.M_num = 11
         self.a_num = 11
@@ -307,6 +309,7 @@ class SysTripanCMSurrogate(ExplicitSystem):
     def _declare(self):
 
         self.num_elem = self.kwargs['num_elem']
+        self.surr_file = self.kwargs['surr']
         ind_pts = range(self.num_elem + 1)
 
         self._declare_variable('eta', size=self.num_elem+1)
