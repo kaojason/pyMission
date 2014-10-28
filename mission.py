@@ -99,7 +99,9 @@ class OptTrajectory(object):
         self.jac_h = jac
         self.jac_gamma = jace
 
-
+        [self.CL_arr, self.CD_arr, self.CM_arr, self.num] = \
+            setup_surrogate(self.surr_file)
+        
     def set_params(self, kw):
         self.wing_area = kw['S']
         self.ac_w = kw['ac_w']
@@ -243,7 +245,7 @@ class OptTrajectory(object):
                                              LN_rtol=1e-6,
                                              LN_atol=1e-6,
                                              subsystems=[
-                                        SysTripanCLSurrogate('alpha', num_elem=self.num_elem, surr=self.surr_file),
+                                        SysTripanCLSurrogate('alpha', num_elem=self.num_elem, num=self.num, CL=self.CL_arr),
                                         #SysAeroSurrogate('aero', num_elem=self.num_elem),
                                         #SysCLSurrogate('CL', num_elem=self.num_elem),
                                         #SysCDSurrogate('CD', num_elem=self.num_elem),
@@ -260,7 +262,7 @@ class OptTrajectory(object):
                                              LN_rtol=1e-6,
                                              LN_atol=1e-6,
                                              subsystems=[
-                                        SysTripanCMSurrogate('eta', num_elem=self.num_elem, surr=self.surr_file),
+                                        SysTripanCMSurrogate('eta', num_elem=self.num_elem, num=self.num, CM=self.CM_arr),
                                         ]),
                                 SerialSystem('tripan_drag',
                                              NL='NLN_GS',
@@ -272,7 +274,7 @@ class OptTrajectory(object):
                                              LN_rtol=1e-10,
                                              LN_atol=1e-10,
                                              subsystems=[
-                                        SysTripanCDSurrogate('drag', num_elem=self.num_elem, surr=self.surr_file),
+                                        SysTripanCDSurrogate('drag', num_elem=self.num_elem, num=self.num, CD=self.CD_arr),
                                         ]),
                                 SerialSystem('hor_eqlm',
                                              NL='NLN_GS',
@@ -354,7 +356,7 @@ class OptTrajectory(object):
 
         opt = Optimization(main)
         opt.add_design_variable('h_pt', value=self.h_pts, lower=0.0, upper=15.0)
-        opt.add_design_variable('M_pt', value=self.M_pts, lower=0.001, upper=0.949)
+        #opt.add_design_variable('M_pt', value=self.M_pts, lower=0.001, upper=0.949)
         #opt.add_design_variable('lambda',
         #                        value=numpy.zeros(2*(self.num_elem+1)),
         #                        lower=0.0)
@@ -369,8 +371,8 @@ class OptTrajectory(object):
         opt.add_constraint('Tmax', upper=0.0)
         opt.add_constraint('gamma', lower=gamma_lb, upper=gamma_ub,
                            get_jacs=main('gamma').get_jacs, linear=True)
-        opt.add_constraint('M_i', lower=self.M_to, upper=self.M_to)
-        opt.add_constraint('M_f', lower=self.M_ld, upper=self.M_ld)
+        #opt.add_constraint('M_i', lower=self.M_to, upper=self.M_to)
+        #opt.add_constraint('M_f', lower=self.M_ld, upper=self.M_ld)
         #opt.add_constraint('time', lower=0.0, upper=11*3600.0)
         opt.add_sens_callback(self.callback)
         return opt

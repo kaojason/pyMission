@@ -25,11 +25,11 @@ import matplotlib.pylab
 ##########################
 # USER SPECIFIED DATA
 
-execfile('./bwb_params.py')
+execfile('./crm_params.py')
 
-num_elem = 500
-num_cp_init = 50
-num_cp_max = 50
+num_elem = 100#50
+num_cp_init = 10#5
+num_cp_max = 10#5
 num_cp_step = 100
 x_range = 1000.0      # range in nautical miles!
 fileloc = open('./path.txt', 'r')

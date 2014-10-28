@@ -4,39 +4,55 @@ import numpy
 import time
 import MBI, scipy.sparse
 
+def setup_surrogate(surr_file):
+
+    raw = numpy.loadtxt(surr_file+'_inputs.dat')
+    [CL, CD, CM] = numpy.loadtxt(surr_file+'_outputs.dat')
+
+    M_num, a_num, h_num, e_num = raw[:4].astype(int)
+    M_surr = raw[4:4 + M_num]
+    a_surr = raw[4 + M_num:4 + M_num + a_num]
+    h_surr = raw[4 + M_num + a_num:4 + M_num + a_num + h_num]
+    e_surr = raw[4 + M_num + a_num + h_num:]
+
+    mbi_CL = numpy.zeros((M_num, a_num, h_num, e_num))
+    mbi_CD = numpy.zeros((M_num, a_num, h_num, e_num))
+    mbi_CM = numpy.zeros((M_num, a_num, h_num, e_num))
+    
+    count = 0
+    for i in xrange(M_num):
+        for j in xrange(a_num):
+            for k in xrange(h_num):
+                for l in xrange(e_num):
+                    mbi_CL[i][j][k][l] = CL[count]
+                    mbi_CD[i][j][k][l] = CD[count]
+                    mbi_CM[i][j][k][l] = CM[count]
+                    count += 1
+
+    CL_arr = MBI.MBI(mbi_CL, [M_surr, a_surr, h_surr, e_surr],
+                     [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
+    CD_arr = MBI.MBI(mbi_CD, [M_surr, a_surr, h_surr, e_surr],
+                     [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
+    CM_arr = MBI.MBI(mbi_CM, [M_surr, a_surr, h_surr, e_surr],
+                     [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
+
+    nums = {
+        'M': M_num,
+        'a': a_num,
+        'h': h_num,
+        'e': e_num,
+        }
+        
+    return [CL_arr, CD_arr, CM_arr, nums]
+
+
 class SysTripanCLSurrogate(ImplicitSystem):
-
-    def setup_bsplines(self):
-        [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt(self.surr_file+'_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt(self.surr_file+'_outputs.dat')
-
-        self.M_num = 11
-        self.a_num = 11
-        self.h_num = 11
-        self.e_num = 11
-
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
-        mbi_CL = numpy.zeros((M_num, a_num, h_num, e_num))
-
-        count = 0
-        for i in xrange(M_num):
-            for j in xrange(a_num):
-                for k in xrange(h_num):
-                    for l in xrange(e_num):
-                        mbi_CL[i][j][k][l] = CL[count]
-                        count += 1
-
-        self.CL_arr = MBI.MBI(mbi_CL, [M_surr, a_surr, h_surr, e_surr],
-                              [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
 
     def _declare(self):
 
         self.num_elem = self.kwargs['num_elem']
-        self.surr_file = self.kwargs['surr']
+        self.num = self.kwargs['num']
+        self.CL_arr = self.kwargs['CL']
         ind_pts = range(self.num_elem + 1)
 
         self._declare_variable('alpha', size=self.num_elem+1)
@@ -45,7 +61,6 @@ class SysTripanCLSurrogate(ImplicitSystem):
         self._declare_argument('eta', indices=ind_pts)
         self._declare_argument('CL_tar', indices=ind_pts)
 
-        self.setup_bsplines()
         self.J_CL = [None for i in range(4)]
 
     def apply_F(self):
@@ -54,10 +69,10 @@ class SysTripanCLSurrogate(ImplicitSystem):
         uvec = self.vec['u']
         fvec = self.vec['f']
 
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
+        M_num = self.num['M']
+        a_num = self.num['a']
+        h_num = self.num['h']
+        e_num = self.num['e']
 
         Mach = pvec('M')
         alpha = uvec('alpha') * 180 / numpy.pi * 1e-1
@@ -85,10 +100,10 @@ class SysTripanCLSurrogate(ImplicitSystem):
         pvec = self.vec['p']
         uvec = self.vec['u']
 
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
+        M_num = self.num['M']
+        a_num = self.num['a']
+        h_num = self.num['h']
+        e_num = self.num['e']
 
         Mach = pvec('M')
         alpha = uvec('alpha') * 180 / numpy.pi * 1e-1
@@ -150,36 +165,11 @@ class SysTripanCLSurrogate(ImplicitSystem):
 
 class SysTripanCDSurrogate(ExplicitSystem):
 
-    def setup_bsplines(self):
-        [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt(self.surr_file+'_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt(self.surr_file+'_outputs.dat')
-
-        self.M_num = 11
-        self.a_num = 11
-        self.h_num = 11
-        self.e_num = 11
-
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
-        mbi_CD = numpy.zeros((M_num, a_num, h_num, e_num))
-
-        count = 0
-        for i in xrange(M_num):
-            for j in xrange(a_num):
-                for k in xrange(h_num):
-                    for l in xrange(e_num):
-                        mbi_CD[i][j][k][l] = CD[count]
-                        count += 1
-        self.CD_arr = MBI.MBI(mbi_CD, [M_surr, a_surr, h_surr, e_surr],
-                              [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
-
     def _declare(self):
 
         self.num_elem = self.kwargs['num_elem']
-        self.surr_file = self.kwargs['surr']
+        self.num = self.kwargs['num']
+        self.CD_arr = self.kwargs['CD']
         ind_pts = range(self.num_elem + 1)
 
         self._declare_variable('CD', size=self.num_elem+1)
@@ -188,7 +178,6 @@ class SysTripanCDSurrogate(ExplicitSystem):
         self._declare_argument('h', indices=ind_pts)
         self._declare_argument('eta', indices=ind_pts)
 
-        self.setup_bsplines()
         self.J_CD = [None for i in range(4)]
 
     def apply_G(self):
@@ -196,10 +185,10 @@ class SysTripanCDSurrogate(ExplicitSystem):
         pvec = self.vec['p']
         uvec = self.vec['u']
 
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
+        M_num = self.num['M']
+        a_num = self.num['a']
+        h_num = self.num['h']
+        e_num = self.num['e']
 
         Mach = pvec('M')
         alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
@@ -222,10 +211,10 @@ class SysTripanCDSurrogate(ExplicitSystem):
 
         pvec = self.vec['p']
 
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
+        M_num = self.num['M']
+        a_num = self.num['a']
+        h_num = self.num['h']
+        e_num = self.num['e']
 
         Mach = pvec('M')
         alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
@@ -280,36 +269,11 @@ class SysTripanCDSurrogate(ExplicitSystem):
 
 class SysTripanCMSurrogate(ExplicitSystem):
 
-    def setup_bsplines(self):
-        [M_surr, a_surr, h_surr,
-         e_surr] = numpy.loadtxt(self.surr_file+'_inputs.dat')
-        [CL, CD, CM] = numpy.loadtxt(self.surr_file+'_outputs.dat')
-
-        self.M_num = 11
-        self.a_num = 11
-        self.h_num = 11
-        self.e_num = 11
-
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
-        mbi_CM = numpy.zeros((M_num, a_num, h_num, e_num))
-
-        count = 0
-        for i in xrange(M_num):
-            for j in xrange(a_num):
-                for k in xrange(h_num):
-                    for l in xrange(e_num):
-                        mbi_CM[i][j][k][l] = CM[count]
-                        count += 1
-        self.CM_arr = MBI.MBI(mbi_CM, [M_surr, a_surr, h_surr, e_surr],
-                              [M_num, a_num, h_num, e_num], [4, 4, 4, 4])
-
     def _declare(self):
 
         self.num_elem = self.kwargs['num_elem']
-        self.surr_file = self.kwargs['surr']
+        self.num = self.kwargs['num']
+        self.CM_arr = self.kwargs['CM']
         ind_pts = range(self.num_elem + 1)
 
         self._declare_variable('eta', size=self.num_elem+1)
@@ -317,7 +281,6 @@ class SysTripanCMSurrogate(ExplicitSystem):
         self._declare_argument('M', indices=ind_pts)
         self._declare_argument('h', indices=ind_pts)
 
-        self.setup_bsplines()
         self.J_CM = [None for i in range(4)]
 
     def apply_F(self):
@@ -326,10 +289,10 @@ class SysTripanCMSurrogate(ExplicitSystem):
         uvec = self.vec['u']
         fvec = self.vec['f']
 
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
+        M_num = self.num['M']
+        a_num = self.num['a']
+        h_num = self.num['h']
+        e_num = self.num['e']
 
         Mach = pvec('M')
         alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
@@ -353,10 +316,10 @@ class SysTripanCMSurrogate(ExplicitSystem):
         pvec = self.vec['p']
         uvec = self.vec['u']
 
-        M_num = self.M_num
-        a_num = self.a_num
-        h_num = self.h_num
-        e_num = self.e_num
+        M_num = self.num['M']
+        a_num = self.num['a']
+        h_num = self.num['h']
+        e_num = self.num['e']
 
         Mach = pvec('M')
         alpha = pvec('alpha') * 180 / numpy.pi * 1e-1
