@@ -109,54 +109,6 @@ class SysTemp(ExplicitSystem):
                 dalt[:] += smooth * (3*a*alt**2 + 2*b*alt + c) *\
                     dtemp * 1e3 / 1e2
 
-class SysTempOld(ExplicitSystem):
-    """ linear temperature model using the standard atmosphere """
-
-    def _declare(self):
-        """ owned variable: Temp (temperature)
-            dependencies: h (altitude)
-        """
-
-        self.num_elem = self.kwargs['num_elem']
-        num_pts = self.num_elem+1
-        ind_pts = range(num_pts)
-
-        self._declare_variable('Temp', size=num_pts, lower=0.001)
-        self._declare_argument('h', indices=ind_pts)
-
-    def apply_G(self):
-        """ temperature model extracted from linear portion of the
-            standard atmosphere
-        """
-
-        pvec = self.vec['p']
-        uvec = self.vec['u']
-        alt = pvec('h') * 1e3
-        temp = uvec('Temp')
-
-        temp[:] = (288.16 - (6.5e-3) * alt) / 1e2
-
-    def apply_dGdp(self, args):
-        """ compute temperature derivative wrt altitude """
-
-        dpvec = self.vec['dp']
-        dgvec = self.vec['dg']
-
-        dalt = dpvec('h')
-        dtemp = dgvec('Temp')
-
-        dtemp_dalt = -6.5e-3
-
-        if self.mode == 'fwd':
-            dtemp[:] = 0.0
-            if self.get_id('h') in args:
-                dtemp[:] += (dtemp_dalt * dalt) * \
-                    1e3/1e2
-        if self.mode == 'rev':
-            dalt[:] = 0.0
-            if self.get_id('h') in args:
-                dalt[:] = dtemp_dalt * dtemp * 1e3/1e2
-
 class SysRho(ExplicitSystem):
     """ density model using standard atmosphere model with 
         troposphere, stratosphere
@@ -314,59 +266,6 @@ class SysRho(ExplicitSystem):
                                     d)
                         dtemp[index] += -pressure / (288*temp[index]**2) *\
                             drho[index] * 1e2
-
-class SysRhoOld(ExplicitSystem):
-    """ density model using the linear temperature std atm model """
-
-    def _declare(self):
-        """ owned variable: rho (density)
-            dependencies: temp (temperature)
-        """
-
-        self.num_elem = self.kwargs['num_elem']
-        num_pts = self.num_elem+1
-        ind_pts = range(num_pts)
-
-        self._declare_variable('rho', size=num_pts, lower=0.001)
-        self._declare_argument('Temp', indices=ind_pts)
-
-    def apply_G(self):
-        """ Density model extracted from the standard atmosphere.
-            Only dependence on temperature, with indirect dependence on
-            altitude. Temperature model extracted from linear portion of
-            the standard atmosphere
-        """
-
-        pvec = self.vec['p']
-        uvec = self.vec['u']
-        temp = pvec('Temp') * 1e2
-        rho = uvec('rho')
-
-        rho[:] = 1.225*(temp/288.16)**(-((9.81/((-6.5e-3)*287))+1))
-
-    def apply_dGdp(self, args):
-        """ compute density derivative wrt temperature """
-
-        pvec = self.vec['p']
-        dpvec = self.vec['dp']
-        dgvec = self.vec['dg']
-
-        temp = pvec('Temp') * 1e2
-
-        dtemp = dpvec('Temp')
-        drho = dgvec('rho')
-
-        drho_dtemp = 1.225*(temp/288.16)**(-((9.81/((-6.5e-3)*287))+2)) * \
-                     (-9.81/((-6.5e-3)*287)-1)*(1/288.16)
-
-        if self.mode == 'fwd':
-            drho[:] = 0.0
-            if self.get_id('Temp') in args:
-                drho[:] += (drho_dtemp * dtemp) * 1e2
-        if self.mode == 'rev':
-            dtemp[:] = 0.0
-            if self.get_id('Temp') in args:
-                dtemp[:] += drho_dtemp * drho * 1e2
 
 class SysSpeed(ExplicitSystem):
     """ compute airspeed using specified Mach number """

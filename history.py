@@ -66,7 +66,7 @@ class History(object):
 
         return self.index, (self.hist_counter - 1)
 
-    def save_history(self, vecu):
+    def save_history(self, vecu, S, ac_w):
         """ saves all relevant variables within the u vector into the folder
             name mentioned before, and the file name is:
             xxxxkm-yyyy-zzzz-nnnn.dat
@@ -84,11 +84,11 @@ class History(object):
         eta = vecu('eta') * 1e-1 * 180/numpy.pi
         fuel = vecu('fuel_w') * 1e5
         rho = vecu('rho')
-        thrust = vecu('CT_tar')*0.5*rho*speed**2*vecu('S')*1e2 * 1e-1
+        thrust = vecu('CT_tar')*0.5*rho*speed**2*S*1e2 * 1e-1
         drag_c = vecu('CD') * 1e-1
         lift_c = vecu('CL_tar')
         gamma = vecu('gamma') * 1e-1 * 180/numpy.pi
-        weight = (vecu('ac_w')*1e6 + vecu('fuel_w')*1e5)
+        weight = (ac_w*1e6 + vecu('fuel_w')*1e5)
         temp = vecu('Temp') * 1e2
         SFC = vecu('SFC') * 1e-6
 
@@ -104,7 +104,7 @@ class History(object):
 
         self.hist_counter += 1
 
-    def print_max_min(self, vecu):
+    def print_max_min(self, kw):
         """ print the maximum and the minimum of each variable throughout
             the optimization history into the file
             xxxxkm-yyyy-zzzz-maxmin.dat
@@ -112,6 +112,9 @@ class History(object):
                   yyyy is the number of control points
                   zzzz is the number of elements
         """
+
+        S = kw['S']
+        ac_w = kw['ac_w']
 
         dist = vecu('x') * 1e6
         altitude = vecu('h') * 1e3
@@ -121,11 +124,11 @@ class History(object):
         eta = vecu('eta') * 1e-1 * 180/numpy.pi
         fuel = vecu('fuel_w') * 1e5
         rho = vecu('rho')
-        thrust = vecu('CT_tar')*0.5*rho*speed**2*vecu('S') * 1e-1
+        thrust = vecu('CT_tar')*0.5*rho*speed**2*S * 1e-1
         drag_c = vecu('CD') * 1e-1
         lift_c = vecu('CL_tar')
         gamma = vecu('gamma') * 1e-1 * 180/numpy.pi
-        weight = (vecu('ac_w')*1e6 + vecu('fuel_w')*1e5)
+        weight = (ac_w*1e6 + vecu('fuel_w')*1e5)
         temp = vecu('Temp') * 1e2
         SFC = vecu('SFC') * 1e-6
 
@@ -138,7 +141,7 @@ class History(object):
             self.variable_min[index] = min(variable)
             index += 1
 
-        opt_alt = self.compute_est(vecu)
+        opt_alt = self.compute_est(vecu, kw)
         self.variable_min[index] = opt_alt[0]
         self.variable_max[index] = opt_alt[1]
 
@@ -175,11 +178,11 @@ class History(object):
         coefs_dens = numpy.linalg.solve(matrix, rhs)
 
         params = {
-            'SFCSL': vecu('SFCSL') * 1e-6,
-            'wing_area': vecu('S') * 1e2,
-            'weight': (vecu('ac_w')*1e6 + vecu('fuel_w')[0]*1e5),
-            'aspect_ratio': vecu('AR'),
-            'oswald': vecu('e'),
+            'SFCSL': kw['SFCSL'] * 1e-6,
+            'wing_area': kw['S'] * 1e2,
+            'weight': (kw['ac_w']*1e6 + vecu('fuel_w')[0]*1e5),
+            'aspect_ratio': kw['AR'],
+            'oswald': kw['e'],
             'coefs_t': coefs_temp,
             'coefs_d': coefs_dens,
             }
@@ -200,7 +203,7 @@ class History(object):
             res = f_2
         h_to = copy.copy(h_guess)
 
-        params['weight'] = vecu('ac_w') * 1e6
+        params['weight'] = kw['ac_w'] * 1e6
         h_1 = 10000
         h_2 = 15000
         res = 1.0

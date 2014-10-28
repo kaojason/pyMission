@@ -126,7 +126,7 @@ seconds = main.vec['u']('time') * 1e4
 mnt, sec = divmod(seconds, 60)
 hrs, mnt = divmod(mnt, 60)
 print 'FLIGHT TIME:', '%d:%02d:%02d' % (hrs, mnt, sec)
-traj.history.print_max_min(main.vec['u'])
+traj.history.print_max_min(main.vec['u'], params)
 
 
 

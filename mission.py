@@ -135,12 +135,7 @@ class OptTrajectory(object):
                              NL_ilimit=1,
                              output=True,
                              subsystems=[
-                        IndVar('S', val=self.wing_area, size=1),
-                        IndVar('ac_w', val=self.ac_w, size=1),
-                        IndVar('thrust_sl', val=self.thrust_sl, size=1),
-                        IndVar('SFCSL', val=self.sfc_sl, size=1),
-                        IndVar('AR', val=self.aspect_ratio, size=1),
-                        IndVar('e', val=self.oswald, size=1),
+                        IndVar('jason', val=100000, size=1),
                         #IndVar('lambda', 
                         #       val=numpy.ones(2*(self.num_elem+1)), 
                         #       lower=0),
@@ -194,7 +189,8 @@ class OptTrajectory(object):
                                      NL_ilimit=1,
                                      output=True,
                                      subsystems=[
-                                SysSFC('SFC', num_elem=self.num_elem),
+                                SysSFC('SFC', num_elem=self.num_elem,
+                                       SFCSL=self.sfc_sl),
                                 SysTemp('Temp', num_elem=self.num_elem),
                                 SysRho('rho', num_elem=self.num_elem),
                                 SysSpeed('v', num_elem=self.num_elem,
@@ -232,7 +228,9 @@ class OptTrajectory(object):
                                              LN_atol=1e-10,
                                              subsystems=[
                                         SysCLTar('CL_tar',
-                                                 num_elem=self.num_elem),
+                                                 num_elem=self.num_elem,
+                                                 S=self.wing_area,
+                                                 ac_w = self.ac_w),
                                         ]),
                                 SerialSystem('tripan_alpha',
                                              NL='NLN_GS',
@@ -287,7 +285,9 @@ class OptTrajectory(object):
                                              LN_atol=1e-10,
                                              subsystems=[
                                         SysCTTar('CT_tar',
-                                                 num_elem=self.num_elem),
+                                                 num_elem=self.num_elem,
+                                                 S=self.wing_area,
+                                                 ac_w=self.ac_w),
                                         ]),
                                 SerialSystem('weight',
                                              NL='NLN_GS',
@@ -301,7 +301,8 @@ class OptTrajectory(object):
                                              subsystems=[
                                         SysFuelWeight('fuel_w',
                                                       num_elem=self.num_elem,
-                                                      fuel_w_0=numpy.linspace(1.0, 0.0, self.num_elem+1)),
+                                                      fuel_w_0=numpy.linspace(1.0, 0.0, self.num_elem+1),
+                                                      S=self.wing_area),
                                         ]),
                                 ]),
                         SerialSystem('functionals',
@@ -315,16 +316,14 @@ class OptTrajectory(object):
                                      LN_ato1=1e-10,
                                      output=True,
                                      subsystems=[
-                                SysTau('tau', num_elem=self.num_elem),
-                                SysFuelObj('wf_obj', num_elem=self.num_elem),
+                                SysTau('tau', num_elem=self.num_elem,
+                                       thrust_sl=self.thrust_sl,
+                                       S=self.wing_area),
+                                SysFuelObj('fuelburn', num_elem=self.num_elem),
                                 SysHi('h_i'),
                                 SysHf('h_f', num_elem=self.num_elem),
                                 SysTmin('Tmin', num_elem=self.num_elem),
                                 SysTmax('Tmax', num_elem=self.num_elem),
-                                SysSlopeMin('gamma_min',
-                                            num_elem=self.num_elem),
-                                SysSlopeMax('gamma_max',
-                                            num_elem=self.num_elem),
                                 SysMi('M_i'),
                                 SysMf('M_f', num_elem=self.num_elem),
                                 SysBlockTime('time', num_elem=self.num_elem),
@@ -363,7 +362,7 @@ class OptTrajectory(object):
         #                        value=numpy.zeros(2*(self.num_elem+1)),
         #                        lower=0.0)
         #opt.add_design_variable('v_pt', value=self.v_pts, lower=0.0, upper=10.0)
-        opt.add_objective('wf_obj')
+        opt.add_objective('fuelburn')
         opt.add_constraint('h_i', lower=0.0, upper=0.0)
         opt.add_constraint('h_f', lower=0.0, upper=0.0)
         opt.add_constraint('Tmin', upper=0.0)
@@ -377,5 +376,6 @@ class OptTrajectory(object):
         return opt
 
     def callback(self):        
-        self.history.save_history(self.main.vec['u'])
+        self.history.save_history(self.main.vec['u'], self.wing_area,
+                                  self.ac_w)
 

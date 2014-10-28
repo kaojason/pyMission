@@ -328,7 +328,7 @@ class SysFuelObj(ExplicitSystem):
         ind = range(self.num_elem+1)
         ind2 = range(2*(self.num_elem+1))
 
-        self._declare_variable('wf_obj', size=1)
+        self._declare_variable('fuelburn', size=1)
         self._declare_argument('fuel_w', indices=[0])
         
         #self._declare_argument('tau', indices=ind)
@@ -352,7 +352,7 @@ class SysFuelObj(ExplicitSystem):
         #cons[:self.num_elem+1] = -tau
         #cons[self.num_elem+1:] = tau - numpy.ones(self.num_elem+1)
 
-        u('wf_obj')[0] = Wf[0] #+ numpy.sum(lamb*(cons+slack))
+        u('fuelburn')[0] = Wf[0] #+ numpy.sum(lamb*(cons+slack))
 
     def apply_dGdp(self, arguments):
         """ compute objective derivatives (equal to initial fuel weight
@@ -370,7 +370,7 @@ class SysFuelObj(ExplicitSystem):
         #dtau = dpvec('tau')
         #dlamb = dpvec('lambda')
         #dslack = dpvec('slack')
-        dwf_obj = dgvec('wf_obj')
+        dwf_obj = dgvec('fuelburn')
         dfuel = dpvec('fuel_w')
 
         if self.mode == 'fwd':
