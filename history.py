@@ -104,7 +104,7 @@ class History(object):
 
         self.hist_counter += 1
 
-    def print_max_min(self, kw):
+    def print_max_min(self, vecu, kw):
         """ print the maximum and the minimum of each variable throughout
             the optimization history into the file
             xxxxkm-yyyy-zzzz-maxmin.dat
@@ -150,7 +150,7 @@ class History(object):
         output_file = self.folder_name+file_name
         numpy.savetxt(output_file, file_array)
 
-    def compute_est(self, vecu):
+    def compute_est(self, vecu, kw):
         """ computes the estimated optimal flight altitude with
             empty weight and takeoff gross weight. this data is
             intended to be stored in the max-min file and be used
