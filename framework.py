@@ -551,11 +551,19 @@ class System(object):
         
         return self.sol_vec, success
 
-    def check_derivatives_all(self, print_jac=[None, None]):
+    def check_derivatives_all(self, print_jac=[None, None], elemsys_ids=None):
         self.compute(output=False)
 
+        if elemsys_ids is None:
+            elemsystems = self.subsystems['elem']
+        else:
+            elemsys_ids = [self.get_id(sys_id)
+                           for sys_id in elemsys_ids]
+            elemsystems = [sys for sys in self.subsystems['elem']
+                           if (sys.name, sys.copy) in elemsys_ids]
+
         norm = numpy.linalg.norm
-        for elemsystem in self.subsystems['elem']:
+        for elemsystem in elemsystems:
             for var in elemsystem.variables.keys():
                 nvar = self.variables[var]['size']
                 for arg in elemsystem.arguments.keys() + [var]:
