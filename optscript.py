@@ -27,11 +27,11 @@ import matplotlib.pylab
 
 execfile('./crm_params.py')
 
-num_elem = 100#50
+num_elem = 3000#50
 num_cp_init = 10#5
 num_cp_max = 10#5
-num_cp_step = 100
-x_range = 1000.0      # range in nautical miles!
+num_cp_step = 10
+x_range = 8100.0      # range in nautical miles!
 fileloc = open('./path.txt', 'r')
 folder_path = fileloc.readlines()[0][:-1]
 fileloc.close()

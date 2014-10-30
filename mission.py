@@ -8,7 +8,7 @@ from bsplines import *
 from atmospherics import *
 from coupled_analysis import *
 from functionals import *
-from aerodynamics import *
+from aerodynamics_old import *
 from propulsion import *
 from aeroTripan import *
 import matplotlib
@@ -245,37 +245,36 @@ class OptTrajectory(object):
                                              LN_rtol=1e-6,
                                              LN_atol=1e-6,
                                              subsystems=[
-                                        SysTripanCLSurrogate('alpha', num_elem=self.num_elem, num=self.num, CL=self.CL_arr),
-                                        #SysAeroSurrogate('aero', num_elem=self.num_elem),
-                                        #SysCLSurrogate('CL', num_elem=self.num_elem),
-                                        #SysCDSurrogate('CD', num_elem=self.num_elem),
-                                        #SysAlpha('alpha', num_elem=self.num_elem),
+                                        #SysTripanCLSurrogate('alpha', num_elem=self.num_elem, num=self.num, CL=self.CL_arr),
+                                        SysAeroSurrogate('aero', num_elem=self.num_elem),
+                                        SysAlpha('alpha', num_elem=self.num_elem),
+                                        SysCM('eta', num_elem=self.num_elem),
                                         ]),
-                                SerialSystem('tripan_eta',
-                                             NL='NLN_GS',
-                                             LN='LIN_GS',
-                                             LN_ilimit=18,
-                                             NL_ilimit=1,
-                                             PC_ilimit=2,
-                                             NL_rtol=1e-10,
-                                             NL_atol=1e-10,
-                                             LN_rtol=1e-6,
-                                             LN_atol=1e-6,
-                                             subsystems=[
-                                        SysTripanCMSurrogate('eta', num_elem=self.num_elem, num=self.num, CM=self.CM_arr),
-                                        ]),
-                                SerialSystem('tripan_drag',
-                                             NL='NLN_GS',
-                                             LN='KSP_PC',
-                                             LN_ilimit=1,
-                                             NL_ilimit=1,
-                                             NL_rtol=1e-10,
-                                             NL_atol=1e-10,
-                                             LN_rtol=1e-10,
-                                             LN_atol=1e-10,
-                                             subsystems=[
-                                        SysTripanCDSurrogate('drag', num_elem=self.num_elem, num=self.num, CD=self.CD_arr),
-                                        ]),
+                                #SerialSystem('tripan_eta',
+                                #             NL='NLN_GS',
+                                #             LN='LIN_GS',
+                                #             LN_ilimit=18,
+                                #             NL_ilimit=1,
+                                #             PC_ilimit=2,
+                                #             NL_rtol=1e-10,
+                                #             NL_atol=1e-10,
+                                #             LN_rtol=1e-6,
+                                #             LN_atol=1e-6,
+                                #             subsystems=[
+                                #        SysTripanCMSurrogate('eta', num_elem=self.num_elem, num=self.num, CM=self.CM_arr),
+                                #        ]),
+                                #SerialSystem('tripan_drag',
+                                #             NL='NLN_GS',
+                                #             LN='KSP_PC',
+                                #             LN_ilimit=1,
+                                #             NL_ilimit=1,
+                                #             NL_rtol=1e-10,
+                                #             NL_atol=1e-10,
+                                #             LN_rtol=1e-10,
+                                #             LN_atol=1e-10,
+                                #             subsystems=[
+                                #        SysTripanCDSurrogate('drag', num_elem=self.num_elem, num=self.num, CD=self.CD_arr),
+                                #        ]),
                                 SerialSystem('hor_eqlm',
                                              NL='NLN_GS',
                                              LN='KSP_PC',
