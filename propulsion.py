@@ -18,6 +18,32 @@ import sys
 from framework import *
 import numpy
 
+def setup_prop_surrogate(prop_file):
+
+    alt_num = 11
+    mach_num = 10
+
+    tmp = numpy.loadtxt('PAX300.outputFLOPS')
+
+    tmp[:, 3] = (tmp[:, 3] - tmp[:, 4]) # total thrust = thrust - ram drag
+
+    for i in xrange(len(tmp)):
+        if tmp[i, 2] == 50:
+            tmax = tmp[i, 3]
+        tmp[i, 2] = tmp[i, 3] / tmax # change from power code to throttle
+
+    output_array = numpy.zeros((len(tmp), 5))
+    output_array[:, 0] = tmp[:, 1] # altitude
+    output_array[:, 1] = tmp[:, 0] # mach number
+    output_array[:, 2] = tmp[:, 2] # throttle
+    output_array[:, 3] = tmp[:, 3] # thrust
+    output_array[:, 4] = tmp[:, 6] # TSFC
+
+    mbi_Thrust = numpy.zeros((alt_num, mach_num, throttle_num))
+    mbi_TSFC = numpy.zeros((alt_num, mach_num, throttle_num))
+
+    #Thrust_arr = MBI.MBI(mbi_Thrust, [
+
 class SysSFC(ExplicitSystem):
     """ linear SFC model wrt altitude """
 
@@ -113,9 +139,9 @@ class SysTau(ExplicitSystem):
         wing_area = self.wing_area * 1e2
         tau = uvec('tau')
 
-        cThrust = thrust_sl - 0.072 * alt
+        cThrust = thrust_sl - 72 * alt
         Thrust = 0.5*rho*speed**2*wing_area*thrust_c
-        tau[:] = Thrust / cThrust
+        tau[:] = (Thrust / cThrust)
 
     def linearize(self):
         """ pre-compute the throttle derivatives wrt density, velocity
@@ -131,11 +157,11 @@ class SysTau(ExplicitSystem):
         rho = pvec('rho')
         speed = pvec('v') * 1e2
 
-        self.dt_drho = (0.5*speed**2*wing_area*thrust_c) / (thrust_sl-0.072*alt)
-        self.dt_dspeed = (rho*speed*wing_area*thrust_c) / (thrust_sl-0.072*alt)
-        self.dt_dthrust_c = (0.5*rho*speed**2*wing_area) / (thrust_sl-0.072*alt)
-        self.dt_dalt = 0.072 * (0.5*rho*speed**2*wing_area*thrust_c) /\
-                       (thrust_sl-0.072*alt)**2
+        self.dt_drho = ((0.5*speed**2*wing_area*thrust_c) / (thrust_sl-72*alt))
+        self.dt_dspeed = ((rho*speed*wing_area*thrust_c) / (thrust_sl-72*alt))
+        self.dt_dthrust_c = ((0.5*rho*speed**2*wing_area) / (thrust_sl-72*alt))
+        self.dt_dalt = 72 * ((0.5*rho*speed**2*wing_area*thrust_c) /\
+                       (thrust_sl-72*alt)**2)
 
     def apply_dGdp(self, arguments):
         """ assign throttle directional derivatives """

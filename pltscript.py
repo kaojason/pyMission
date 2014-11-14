@@ -27,14 +27,14 @@ import matplotlib.pylab
 ###########################
 # USER SPECIFIED INPUTS:
 
-num_elem = 500
-num_cp_init = 50
-num_cp_max = 50
+num_elem = 1500
+num_cp_init = 300
+num_cp_max = 300
 num_cp_step = 100
-x_range = 1000.0
+x_range = 9000.0
 step = 1
 initial_ind = 0
-file_index = 3
+file_index = 0
 video = True
 fuel_guess = 200000.0
 fileloc = open('./path.txt', 'r')

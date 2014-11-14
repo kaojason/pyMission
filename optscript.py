@@ -27,11 +27,11 @@ import matplotlib.pylab
 
 execfile('./crm_params.py')
 
-num_elem = 3000#50
-num_cp_init = 10#5
-num_cp_max = 10#5
-num_cp_step = 10
-x_range = 8100.0      # range in nautical miles!
+num_elem = 1500#50
+num_cp_init = 300#5
+num_cp_max = 300#5
+num_cp_step = 100
+x_range = 9000.0      # range in nautical miles!
 fileloc = open('./path.txt', 'r')
 folder_path = fileloc.readlines()[0][:-1]
 fileloc.close()
@@ -60,7 +60,8 @@ landing_speed = 72.2
 # x-distance and airspeed
 x_range *= 1.852
 x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
-M_init = numpy.ones(num_cp)*0.75
+#M_init = numpy.ones(num_cp)*0.75
+M_init = numpy.ones(num_cp)*0.82
 h_init = 10 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
 
 altitude = numpy.zeros(num_elem+1)
@@ -72,7 +73,7 @@ while num_cp <= num_cp_max:
 
     # define initial altitude profile, as well as fixed profile for
     # x-distance and airspeed
-    M_init = numpy.ones(num_cp)*0.75
+    M_init = numpy.ones(num_cp)*0.8
     x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
 
     # initialize the mission analysis problem with the framework
@@ -121,7 +122,9 @@ while num_cp <= num_cp_max:
     num_cp += num_cp_step
     first = False
     
-print 'OPTIMIZATION TIME:', time.time() - start
+opt_time = time.time() - start
+print 'OPTIMIZATION TIME:', opt_time
+numpy.savetxt('%inm_%i_time.dat' %(x_range, num_cp), [opt_time])
 seconds = main.vec['u']('time') * 1e4
 mnt, sec = divmod(seconds, 60)
 hrs, mnt = divmod(mnt, 60)
