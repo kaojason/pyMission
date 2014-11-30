@@ -221,7 +221,7 @@ class OptTrajectory(object):
                                      subsystems=[
                                 SerialSystem('vert_eqlm',
                                              NL='NLN_GS',
-                                             LN='KSP_PC',
+                                             LN='LIN_GS',
                                              LN_ilimit=1,
                                              NL_ilimit=1,
                                              NL_rtol=1e-10,
@@ -236,9 +236,9 @@ class OptTrajectory(object):
                                         ]),
                                 SerialSystem('tripan_alpha',
                                              NL='NLN_GS',
-                                             LN='LIN_GS',
+                                             LN='KSP_PC',
                                              LN_ilimit=18,
-                                             NL_ilimit=1,
+                                             NL_ilimit=18,
                                              PC_ilimit=2,
                                              NL_rtol=1e-10,
                                              NL_atol=1e-10,
@@ -252,9 +252,9 @@ class OptTrajectory(object):
                                         ]),
                                 SerialSystem('tripan_eta',
                                              NL='NLN_GS',
-                                             LN='LIN_GS',
+                                             LN='KSP_PC',
                                              LN_ilimit=18,
-                                             NL_ilimit=1,
+                                             NL_ilimit=18,
                                              PC_ilimit=2,
                                              NL_rtol=1e-10,
                                              NL_atol=1e-10,
@@ -265,7 +265,7 @@ class OptTrajectory(object):
                                         ]),
                                 SerialSystem('tripan_drag',
                                              NL='NLN_GS',
-                                             LN='KSP_PC',
+                                             LN='LIN_GS',
                                              LN_ilimit=1,
                                              NL_ilimit=1,
                                              NL_rtol=1e-10,
@@ -277,7 +277,7 @@ class OptTrajectory(object):
                                         ]),
                                 SerialSystem('hor_eqlm',
                                              NL='NLN_GS',
-                                             LN='KSP_PC',
+                                             LN='LIN_GS',
                                              LN_ilimit=1,
                                              NL_ilimit=1,
                                              NL_rtol=1e-10,
@@ -292,7 +292,7 @@ class OptTrajectory(object):
                                         ]),
                                 SerialSystem('weight',
                                              NL='NLN_GS',
-                                             LN='KSP_PC',
+                                             LN='LIN_GS',
                                              LN_ilimit=1,
                                              NL_ilimit=1,
                                              NL_rtol=1e-10,
@@ -355,7 +355,7 @@ class OptTrajectory(object):
 
         opt = Optimization(main)
         opt.add_design_variable('h_pt', value=self.h_pts, lower=0.0, upper=14.1)
-        #opt.add_design_variable('M_pt', value=self.M_pts, lower=0.001, upper=0.949)
+        opt.add_design_variable('M_pt', value=self.M_pts, lower=0.001, upper=0.949)
         #opt.add_design_variable('lambda',
         #                        value=numpy.zeros(2*(self.num_elem+1)),
         #                        lower=0.0)
@@ -370,9 +370,9 @@ class OptTrajectory(object):
         opt.add_constraint('Tmax', upper=0.0)
         opt.add_constraint('gamma', lower=gamma_lb, upper=gamma_ub,
                            get_jacs=main('gamma').get_jacs, linear=True)
-        #opt.add_constraint('M_i', lower=self.M_to, upper=self.M_to)
-        #opt.add_constraint('M_f', lower=self.M_ld, upper=self.M_ld)
-        #opt.add_constraint('time', lower=0.0, upper=11*3600.0)
+        opt.add_constraint('M_i', lower=self.M_to, upper=self.M_to)
+        opt.add_constraint('M_f', lower=self.M_ld, upper=self.M_ld)
+        opt.add_constraint('time', lower=0.0, upper=11*3600.0)
         opt.add_sens_callback(self.callback)
         return opt
 

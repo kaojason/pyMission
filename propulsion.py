@@ -139,7 +139,7 @@ class SysTau(ExplicitSystem):
         wing_area = self.wing_area * 1e2
         tau = uvec('tau')
 
-        cThrust = thrust_sl - 72 * alt
+        cThrust = thrust_sl - 72/1e3 * alt
         Thrust = 0.5*rho*speed**2*wing_area*thrust_c
         tau[:] = (Thrust / cThrust)
 
@@ -157,11 +157,11 @@ class SysTau(ExplicitSystem):
         rho = pvec('rho')
         speed = pvec('v') * 1e2
 
-        self.dt_drho = ((0.5*speed**2*wing_area*thrust_c) / (thrust_sl-72*alt))
-        self.dt_dspeed = ((rho*speed*wing_area*thrust_c) / (thrust_sl-72*alt))
-        self.dt_dthrust_c = ((0.5*rho*speed**2*wing_area) / (thrust_sl-72*alt))
-        self.dt_dalt = 72 * ((0.5*rho*speed**2*wing_area*thrust_c) /\
-                       (thrust_sl-72*alt)**2)
+        self.dt_drho = ((0.5*speed**2*wing_area*thrust_c) / (thrust_sl-72/1e3*alt))
+        self.dt_dspeed = ((rho*speed*wing_area*thrust_c) / (thrust_sl-72/1e3*alt))
+        self.dt_dthrust_c = ((0.5*rho*speed**2*wing_area) / (thrust_sl-72/1e3*alt))
+        self.dt_dalt = 72/1e3 * ((0.5*rho*speed**2*wing_area*thrust_c) /\
+                       (thrust_sl-72/1e3*alt)**2)
 
     def apply_dGdp(self, arguments):
         """ assign throttle directional derivatives """

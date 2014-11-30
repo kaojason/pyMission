@@ -27,11 +27,13 @@ import matplotlib.pylab
 
 execfile('./crm_params.py')
 
-num_elem = 1500#50
-num_cp_init = 300#5
-num_cp_max = 300#5
+#params['ac_w'] += 400*84*9.81/1e6
+
+num_elem = 30*5#50
+num_cp_init = 30#5
+num_cp_max = 30#5
 num_cp_step = 100
-x_range = 9000.0      # range in nautical miles!
+x_range = 1000      # range in nautical miles!
 fileloc = open('./path.txt', 'r')
 folder_path = fileloc.readlines()[0][:-1]
 fileloc.close()
@@ -60,11 +62,12 @@ landing_speed = 72.2
 # x-distance and airspeed
 x_range *= 1.852
 x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
-#M_init = numpy.ones(num_cp)*0.75
 M_init = numpy.ones(num_cp)*0.82
+#M_init = numpy.ones(num_cp)*0.82
 h_init = 10 * numpy.sin(numpy.pi * x_init / (x_range/1e3))
+#h_init = numpy.zeros(num_cp)
 
-altitude = numpy.zeros(num_elem+1)
+#altitude = numpy.ones(num_elem+1)
 altitude = 10 * numpy.sin(numpy.pi * numpy.linspace(0,1,num_elem+1))
 
 first = True
@@ -73,8 +76,9 @@ while num_cp <= num_cp_max:
 
     # define initial altitude profile, as well as fixed profile for
     # x-distance and airspeed
-    M_init = numpy.ones(num_cp)*0.8
-    x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
+    M_init = numpy.ones(num_cp)*0.82
+    #M_init = 0.5 * numpy.sin(numpy.pi * x_init / (x_range/1e3)) + 0.3
+    #x_init = x_range * 1e3 * (1-numpy.cos(numpy.linspace(0, 1, num_cp)*numpy.pi))/2/1e6
 
     # initialize the mission analysis problem with the framework
     traj = OptTrajectory(num_elem, num_cp, first)
@@ -88,7 +92,7 @@ while num_cp <= num_cp_max:
     traj.set_init_h_pt(altitude)
     main = traj.initialize_framework()
 
-    print main.vec['u'].array.shape[0]
+    #print main.vec['u'].array.shape[0]
 
     #start_comp = time.time()
     main.compute(output=True)
@@ -129,6 +133,7 @@ seconds = main.vec['u']('time') * 1e4
 mnt, sec = divmod(seconds, 60)
 hrs, mnt = divmod(mnt, 60)
 print 'FLIGHT TIME:', '%d:%02d:%02d' % (hrs, mnt, sec)
+print 'BLOCK FUEL:', main.vec['u']('fuel_w')[0]*2.21/9.81
 traj.history.print_max_min(main.vec['u'], params)
 
 

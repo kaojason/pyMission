@@ -93,7 +93,10 @@ class SysTripanCLSurrogate(ImplicitSystem):
         for index in xrange(self.num_elem + 1):
             CL[index] = CL_temp[index, 0]
 
-        alpha_res[:] = CL - CL_tar
+        flaps = Mach <= 0.4
+        flaps = flaps * 5*(0.4-Mach)
+
+        alpha_res[:] = (CL + flaps) - CL_tar
 
     def linearize(self):
 
@@ -125,6 +128,11 @@ class SysTripanCLSurrogate(ImplicitSystem):
         dpvec = self.vec['dp']
         duvec = self.vec['du']
         dfvec = self.vec['df']
+        pvec = self.vec['p']
+
+        Mach = pvec('M')
+        flaps = Mach <= 0.4
+        flaps = flaps * (-5)
 
         dMach = dpvec('M')
         dalpha = duvec('alpha')
@@ -137,7 +145,7 @@ class SysTripanCLSurrogate(ImplicitSystem):
         if self.mode == 'fwd':
             dres[:] = 0.0
             if self.get_id('M') in args:
-                dres[:] += self.J_CL[0] * dMach
+                dres[:] += (self.J_CL[0]+flaps) * dMach
             if self.get_id('alpha') in args:
                 dres[:] += self.J_CL[1] * dalpha * 180 / numpy.pi * 1e-1
             if self.get_id('h') in args:
@@ -153,7 +161,7 @@ class SysTripanCLSurrogate(ImplicitSystem):
             deta[:] = 0.0
             dCL[:] = 0.0
             if self.get_id('M') in args:
-                dMach[:] += self.J_CL[0] * dres
+                dMach[:] += (self.J_CL[0]+flaps) * dres
             if self.get_id('alpha') in args:
                 dalpha[:] += self.J_CL[1] * dres * 180 / numpy.pi * 1e-1
             if self.get_id('h') in args:
@@ -207,6 +215,11 @@ class SysTripanCDSurrogate(ExplicitSystem):
         for index in xrange(self.num_elem + 1):
             CD[index] = CD_temp[index, 0] / 1e-1 + 0.015/1e-1
 
+        flaps = Mach <= 0.4
+        flaps = flaps * 0.25*(0.4-Mach)
+
+        CD[:] += flaps/1e-1
+
     def linearize(self):
 
         pvec = self.vec['p']
@@ -235,6 +248,12 @@ class SysTripanCDSurrogate(ExplicitSystem):
 
         dpvec = self.vec['dp']
         dgvec = self.vec['dg']
+        pvec = self.vec['p']
+
+        Mach = pvec('M')
+
+        flaps = Mach <= 0.4
+        flaps = flaps * (-0.25)
 
         dMach = dpvec('M')
         dalpha = dpvec('alpha')
@@ -246,7 +265,7 @@ class SysTripanCDSurrogate(ExplicitSystem):
         if self.mode == 'fwd':
             dCD[:] = 0.0
             if self.get_id('M') in args:
-                dCD[:] += self.J_CD[0] * dMach / 1e-1
+                dCD[:] += (self.J_CD[0]+flaps) * dMach / 1e-1
             if self.get_id('alpha') in args:
                 dCD[:] += self.J_CD[1] * dalpha * 180 / numpy.pi
             if self.get_id('h') in args:
@@ -259,7 +278,7 @@ class SysTripanCDSurrogate(ExplicitSystem):
             dalt[:] = 0.0
             deta[:] = 0.0
             if self.get_id('M') in args:
-                dMach[:] += self.J_CD[0] * dCD / 1e-1
+                dMach[:] += (self.J_CD[0]+flaps) * dCD / 1e-1
             if self.get_id('alpha') in args:
                 dalpha[:] += self.J_CD[1] * dCD * 180 / numpy.pi
             if self.get_id('h') in args:
@@ -267,7 +286,7 @@ class SysTripanCDSurrogate(ExplicitSystem):
             if self.get_id('eta') in args:
                 deta[:] += self.J_CD[3] * dCD * 180 / numpy.pi
 
-class SysTripanCMSurrogate(ExplicitSystem):
+class SysTripanCMSurrogate(ImplicitSystem):
 
     def _declare(self):
 
